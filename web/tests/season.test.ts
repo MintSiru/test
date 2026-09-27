@@ -101,3 +101,17 @@ describe('weather hash parity', () => {
     expect(mix32(hashStr('42:2026-07-01'))).toBe(3842815896);
   });
 });
+
+describe('long run (10년)', () => {
+  it('keeps enough active pro players for the idol system', () => {
+    const state = startNewGame({ schoolName: '한빛고', managerName: '테스트', groupId: 'honamA', seed: 11 });
+    playUntil(state, '2036-03-10');
+    const active = state.pros.filter((p) => !p.retired).length;
+    const fans = Object.values(state.players).filter((p) => p.idolId).length;
+    const retiredOrig = state.pros.filter((p) => p.retired).length;
+    console.log('10년 후 현역 프로', active, '전체 명단', state.pros.length, '은퇴(유지)', retiredOrig, '동경 선수 수', fans, '세이브 KB', Math.round(JSON.stringify(state).length / 1024));
+    expect(active).toBeGreaterThanOrEqual(35);
+    expect(fans).toBeGreaterThan(200);
+    expect(state.year).toBe(2036);
+  }, 600000);
+});

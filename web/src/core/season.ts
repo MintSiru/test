@@ -524,6 +524,16 @@ export function runDraft(state: GameState, rng: Rng) {
       });
     }
   });
+  // 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
+  picks.filter(({ p }) => p.teamId !== state.userTeamId).slice(0, 10).forEach(({ p }) => {
+    state.pros.push({
+      id: `pro${uid(state, 'x')}`, sur: p.sur, given: p.given, teamId: p.draft!.teamId, pos: p.pos, style: styleFromPlayer(p),
+      number: rng.int(1, 99), birthYear: state.year - 18, line: '신인', alumniOf: p.teamId,
+    });
+  });
+  // 은퇴했고 아무도 동경하지 않는 프로 선수는 명단에서 정리 (우리 OB 는 유지)
+  const idolized = new Set(Object.values(state.players).map((p) => p.idolId).filter(Boolean));
+  state.pros = state.pros.filter((x) => !x.retired || idolized.has(x.id) || x.alumniOf === state.userTeamId);
   const top = picks[0]?.p;
   state.news.push({ date: state.date, kind: 'info', text: `KBO 신인 드래프트 개최. 전체 1순위: ${top ? `${state.teams[top.teamId].name} ${name(top)}` : '-'}` });
   state.popups.push({

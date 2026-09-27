@@ -593,6 +593,23 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 			state["budget"] = int(state.get("budget", 0)) + int(Facilities.data()["draftDonation"])
 			state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": p["sur"], "given": p["given"], "teamId": team["id"], "pos": p["pos"],
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
+	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
+	var added := 0
+	for pk in picks:
+		var q: Dictionary = pk["p"]
+		if q["teamId"] == state["userTeamId"]:
+			continue
+		state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": q["sur"], "given": q["given"], "teamId": q["draft"]["teamId"], "pos": q["pos"],
+			"style": _style_from_player(q), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": q["teamId"]})
+		added += 1
+		if added >= 10:
+			break
+	# 은퇴했고 아무도 동경하지 않는 프로 선수는 명단에서 정리 (우리 OB 는 유지)
+	var idolized := {}
+	for pl in state["players"].values():
+		if pl.get("idolId") != null:
+			idolized[pl["idolId"]] = true
+	state["pros"] = state["pros"].filter(func(x): return not x.get("retired", false) or idolized.has(x["id"]) or x.get("alumniOf") == state["userTeamId"])
 	if not picks.is_empty():
 		var top: Dictionary = picks[0]["p"]
 		_news(state, "info", "KBO 신인 드래프트 개최. 전체 1순위: %s %s" % [state["teams"][top["teamId"]]["name"], PlayerUtil.full_name(top)])
