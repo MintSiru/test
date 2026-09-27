@@ -38,7 +38,7 @@ export function generateProspects(state: GameState, rng: Rng) {
       interest: clamp(Math.round(5 + state.reputation * 0.3 + rng.int(0, 20) - (quality - 50) * 0.3 + alumniBonus), 0, 90),
       visits: 0,
       revealed: 0,
-      rival: rng.pick(rivals),
+      rival: state.rivalId && rng.chance(0.35) ? state.teams[state.rivalId].name : rng.pick(rivals),
     });
   }
   state.prospects = out.sort((a, b) => b.player.talent - a.player.talent);

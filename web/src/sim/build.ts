@@ -5,8 +5,9 @@ import type { LineupSlot, Player, Team } from '../core/types';
 import type { SideInput, SimPlayer } from './types';
 
 /** 선수 → 경기용 능력 (컨디션 ±3%/단계, 피로 페널티) */
-export function toSim(p: Player, date: string): SimPlayer {
-  const m = 1 + p.cond * 0.03 - Math.max(0, p.fatigue - 50) * 0.002;
+export function toSim(p: Player, date: string, condBonus = 0): SimPlayer {
+  const cond = Math.min(2, p.cond + condBonus);
+  const m = 1 + cond * 0.03 - Math.max(0, p.fatigue - 50) * 0.002;
   const f = (v: number) => clamp(v * m, 1, 110);
   return {
     id: p.id,
@@ -21,7 +22,7 @@ export function toSim(p: Player, date: string): SimPlayer {
     spd: f(p.r.speed),
     arm: f(p.r.arm),
     fld: f(p.r.fielding),
-    velo: p.r.velo + p.cond * 0.8,
+    velo: p.r.velo + cond * 0.8,
     ctl: f(p.r.control),
     sta: f(p.r.stamina),
     stuff: breakingScore(p.r.pitches),
@@ -31,7 +32,7 @@ export function toSim(p: Player, date: string): SimPlayer {
   };
 }
 
-export function buildSide(team: Team, roster: Player[], date: string, opts: { lineup?: LineupSlot[]; starterId?: string } = {}): SideInput {
+export function buildSide(team: Team, roster: Player[], date: string, opts: { lineup?: LineupSlot[]; starterId?: string; condBonus?: number } = {}): SideInput {
   const healthy = roster.filter((p) => p.injury <= 0);
   const starter = (opts.starterId && healthy.find((p) => p.id === opts.starterId)) || pickStarter(healthy, date, team.rotation) || healthy[0];
   let lineup = opts.lineup ?? team.lineup;
@@ -45,7 +46,7 @@ export function buildSide(team: Team, roster: Player[], date: string, opts: { li
     teamId: team.id,
     name: team.name,
     colors: team.colors,
-    players: healthy.map((p) => toSim(p, date)),
+    players: healthy.map((p) => toSim(p, date, opts.condBonus ?? 0)),
     lineup: lineup!,
     pitcherId: starter.id,
     isUser: team.isUser,

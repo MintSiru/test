@@ -32,9 +32,10 @@ func has(ab: String) -> bool:
 
 
 ## 선수 Dictionary → SimPlayer. 컨디션 단계당 ±3%, 피로 50 초과분 페널티
-static func from_player(p: Dictionary, date: String) -> SimPlayer:
+static func from_player(p: Dictionary, date: String, cond_bonus := 0) -> SimPlayer:
 	var s := SimPlayer.new()
-	var m: float = 1.0 + p["cond"] * 0.03 - maxf(0.0, p["fatigue"] - 50.0) * 0.002
+	var cond := mini(2, int(p["cond"]) + cond_bonus)
+	var m: float = 1.0 + cond * 0.03 - maxf(0.0, p["fatigue"] - 50.0) * 0.002
 	var r: Dictionary = p["r"]
 	s.id = p["id"]
 	s.name = PlayerUtil.full_name(p)
@@ -48,7 +49,7 @@ static func from_player(p: Dictionary, date: String) -> SimPlayer:
 	s.spd = clampf(r["speed"] * m, 1, 110)
 	s.arm = clampf(r["arm"] * m, 1, 110)
 	s.fld = clampf(r["fielding"] * m, 1, 110)
-	s.velo = r["velo"] + p["cond"] * 0.8
+	s.velo = r["velo"] + cond * 0.8
 	s.ctl = clampf(r["control"] * m, 1, 110)
 	s.sta = clampf(r["stamina"] * m, 1, 110)
 	s.stuff = PlayerUtil.breaking_score(r["pitches"])

@@ -17,6 +17,7 @@ static func save_rng(state: Dictionary, rng: Rng) -> void:
 
 static func start_new_game(o: Dictionary) -> Dictionary:
 	var state := WorldGen.new_game(o)
+	Rival.init_rival(state)
 	var rng := rng_of(state)
 	create_season_competitions(state, rng)
 	save_rng(state, rng)
@@ -305,8 +306,11 @@ static func create_match(state: Dictionary, f: Dictionary, rng: Rng, user_opts :
 	var home: Dictionary = state["teams"][f["home"]]
 	var away: Dictionary = state["teams"][f["away"]]
 	var comp = comp_by_id(state, f["compId"])
-	var hs := SideBuilder.build(home, WorldGen.team_players(state, home["id"]), f["date"], user_opts if home["isUser"] else {})
-	var as_ := SideBuilder.build(away, WorldGen.team_players(state, away["id"]), f["date"], user_opts if away["isUser"] else {})
+	var uo := user_opts.duplicate()
+	if Rival.is_rival_game(state, f):
+		uo["condBonus"] = 1 # 라이벌전 투지
+	var hs := SideBuilder.build(home, WorldGen.team_players(state, home["id"]), f["date"], uo if home["isUser"] else {})
+	var as_ := SideBuilder.build(away, WorldGen.team_players(state, away["id"]), f["date"], uo if away["isUser"] else {})
 	return MatchEngine.new(hs, as_, rng, rules_for(comp))
 
 
@@ -377,6 +381,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	if is_user_game:
 		state.erase("pendingFixture")
 		var opp: Dictionary = state["teams"][f["away"] if f["home"] == u else f["home"]]
+		Rival.record(state, opp["id"], res["winner"])
 		var us: int = res["homeScore"] if f["home"] == u else res["awayScore"]
 		var them: int = res["awayScore"] if f["home"] == u else res["homeScore"]
 		var outcome := "승리" if res["winner"] == u else ("패배" if res["winner"] != null else "무승부")
@@ -579,6 +584,7 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 			state["players"][p["id"]] = p
 			t["playerIds"].append(p["id"])
 		t["prestige"] = clampi(roundi(t["prestige"] * 0.9 + 4.5), 10, 95)
+	Rival.season_update(state)
 	var joined := Scouting.enroll(state, rng)
 	WorldGen.user_team(state).erase("lineup")
 	state["reputation"] = clampi(roundi(state["reputation"] * 0.92 + 1.6), 0, 100)

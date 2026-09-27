@@ -32,7 +32,8 @@ static func build(team: Dictionary, roster: Array, date: String, opts: Dictionar
 			valid = false
 	if not valid:
 		lineup = Lineup.auto_lineup(healthy, [starter["id"]])
-	var sims := healthy.map(func(p): return SimPlayer.from_player(p, date))
+	var bonus: int = opts.get("condBonus", 0)
+	var sims := healthy.map(func(p): return SimPlayer.from_player(p, date, bonus))
 	return {
 		"teamId": team["id"], "name": team["name"], "colors": team["colors"], "players": sims,
 		"lineup": lineup, "pitcherId": starter["id"], "isUser": team.get("isUser", false),

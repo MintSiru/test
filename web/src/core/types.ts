@@ -329,4 +329,10 @@ export interface GameState {
   budget?: number;
   /** 시설 레벨 */
   facilities?: Record<string, number>;
+  /** 라이벌 학교 */
+  rivalId?: string;
+  /** 상대 전적 */
+  h2h?: Record<string, { w: number; l: number; d: number }>;
+  /** 이번 시즌 상대별 패배 수 (라이벌 갱신용) */
+  rivalLoss?: Record<string, number>;
 }

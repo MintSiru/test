@@ -5,6 +5,7 @@ import {
 } from './competition';
 import { LEAGUE_GROUPS } from './data';
 import { weeklyEvent } from './events';
+import { initRival, isRivalGame, recordH2H, seasonRivalUpdate } from './rival';
 import { addPrize, FAC_DATA, facLevel, monthlyIncome } from './facilities';
 import { checkIdolMilestones, idolOf, proName, proSeasonEnd, proTeamName, weeklyProNews } from './idol';
 import { josa } from './names';
@@ -36,6 +37,7 @@ export function rngOf(state: GameState): Rng {
 
 export function startNewGame(o: NewGameOpts): GameState {
   const state = newGame(o);
+  initRival(state);
   const rng = rngOf(state);
   createSeasonCompetitions(state, rng);
   state.rngState = rng.state;
@@ -249,8 +251,9 @@ export function createMatch(state: GameState, f: Fixture, rng: Rng, userOpts: { 
   const home = state.teams[f.home];
   const away = state.teams[f.away];
   const comp = state.competitions.find((c) => c.id === f.compId)!;
-  const hs = buildSide(home, teamPlayers(state, home.id), f.date, home.isUser ? { starterId: userOpts.starterId } : {});
-  const as = buildSide(away, teamPlayers(state, away.id), f.date, away.isUser ? { starterId: userOpts.starterId } : {});
+  const bonus = isRivalGame(state, f) ? 1 : 0; // 라이벌전 투지
+  const hs = buildSide(home, teamPlayers(state, home.id), f.date, home.isUser ? { starterId: userOpts.starterId, condBonus: bonus } : {});
+  const as = buildSide(away, teamPlayers(state, away.id), f.date, away.isUser ? { starterId: userOpts.starterId, condBonus: bonus } : {});
   return new Match(hs, as, rng, rulesFor(comp));
 }
 
@@ -320,6 +323,7 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
     state.pendingFixture = undefined;
     const u = state.userTeamId;
     const opp = state.teams[f.home === u ? f.away : f.home];
+    recordH2H(state, opp.id, res.winner);
     const us = f.home === u ? res.homeScore : res.awayScore;
     const them = f.home === u ? res.awayScore : res.homeScore;
     const label = comp.kind === 'league' ? compDef(comp.key).short : `${compDef(comp.key).short} ${roundName(comp, f.round!)}`;
@@ -524,6 +528,7 @@ function newSeason(state: GameState, rng: Rng) {
     }
     t.prestige = clamp(Math.round(t.prestige * 0.9 + 45 * 0.1), 10, 95);
   }
+  seasonRivalUpdate(state);
   const joined = enrollNewPlayers(state, rng);
   userTeam(state).lineup = undefined;
   state.reputation = clamp(Math.round(state.reputation * 0.92 + 20 * 0.08), 0, 100);

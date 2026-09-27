@@ -20,7 +20,7 @@ static func generate_prospects(state: Dictionary, rng: Rng) -> void:
 		var alumni_bonus := 25 if not idol.is_empty() and idol.get("alumniOf") == team["id"] else 0
 		out.append({"id": player["id"], "player": player,
 			"interest": clampi(roundi(5 + state["reputation"] * 0.3 + rng.irange(0, 20) - (quality - 50) * 0.3 + alumni_bonus), 0, 90),
-			"visits": 0, "revealed": 0, "rival": rng.pick(rivals)})
+			"visits": 0, "revealed": 0, "rival": state["teams"][state["rivalId"]]["name"] if state.get("rivalId") != null and rng.chance(0.35) else rng.pick(rivals)})
 	out.sort_custom(func(a, b): return a["player"]["talent"] > b["player"]["talent"])
 	state["prospects"] = out
 

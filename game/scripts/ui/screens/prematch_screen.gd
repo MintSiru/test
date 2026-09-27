@@ -36,9 +36,10 @@ func setup(_p := {}) -> void:
 	add_child(lp)
 	var lv := UI.vbox(2)
 	lp.add_child(lv)
-	lv.add_child(UI.label("선발 투수 선택 (투구수 규정: 31~45구 1일, 46~60구 2일, 61~75구 3일, 76구 이상 4일 휴식 · 1경기 최대 105구)", UI.DIM, true))
+	lv.add_child(UI.label("선발 투수 선택", UI.ACCENT, true))
+	lv.add_child(UI.wrap_label("투구수 휴식 규정: 31~45구 1일, 46~60구 2일, 61~75구 3일, 76구 이상 4일 · 1경기 최대 105구", 368, UI.DIM, true))
 	plist = UI.vbox(1)
-	lv.add_child(UI.scroll(plist, Vector2(368, 220)))
+	lv.add_child(UI.scroll(plist, Vector2(368, 196)))
 	_fill_pitchers()
 
 	var rp := UI.panel()
@@ -50,6 +51,12 @@ func setup(_p := {}) -> void:
 	var theirs := WorldGen.team_players(s, opp["id"])
 	var r := opp["seasonRecord"] as Dictionary
 	rv.add_child(UI.label("%s · 전통 %d · 시즌 %d승 %d패" % [opp["province"], opp["prestige"], r["w"], r["l"]], UI.TEXT, true))
+	var hh := Rival.h2h_of(s, opp["id"])
+	var tst := Rival.team_stats(s, opp["id"])
+	rv.add_child(UI.label("상대 전적 %d승 %d패 %d무" % [hh["w"], hh["l"], hh["d"]], UI.TEXT, true))
+	rv.add_child(UI.label("팀 타율 %s · 홈런 %d · 도루 %d · ERA %.2f" % [("%.3f" % tst["avg"]).trim_prefix("0"), tst["hr"], tst["sb"], tst["era"]], UI.TEXT, true))
+	if Rival.is_rival_game(s, fixture):
+		rv.add_child(UI.label("★ 라이벌전! 선수들의 투지가 불탄다 (컨디션 +1)", UI.BAD, true))
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))
@@ -62,7 +69,7 @@ func setup(_p := {}) -> void:
 			names.append("%s %dkm%s" % [p["given"], p["r"]["velo"], "" if Lineup.can_pitch_on(p, fixture["date"]) else "(휴식)"])
 		rv.add_child(UI.wrap_label("[분석실] 투수진: " + ", ".join(names), 236, UI.DIM, true))
 	if an < 1:
-		rv.add_child(UI.label("(전력 분석실을 지으면 더 자세히 볼 수 있다)", UI.DIM, true))
+		rv.add_child(UI.wrap_label("(전력 분석실을 지으면 더 자세히 볼 수 있다)", 236, UI.DIM, true))
 	rv.add_child(UI.label("주요 타자", UI.ACCENT, true))
 	var hitters := theirs.filter(func(p): return p["pos"] != "P")
 	hitters.sort_custom(func(a, b): return PlayerUtil.bat_value(a["r"]) > PlayerUtil.bat_value(b["r"]))

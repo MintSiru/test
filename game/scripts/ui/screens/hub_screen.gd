@@ -107,7 +107,11 @@ func _fill_left() -> void:
 		left_box.add_child(UI.label(Cal.pretty(f["date"]), UI.TEXT, true))
 		left_box.add_child(UI.label(Season.fixture_label(nx["comp"], f), UI.TEXT, true))
 		left_box.add_child(UI.label("vs %s (%s)" % [opp["name"], opp["province"]], UI.GOOD, true))
-	left_box.add_child(UI.spacer(0, 4))
+	var rid = s.get("rivalId")
+	if rid != null:
+		var hh := Rival.h2h_of(s, rid)
+		left_box.add_child(UI.label("라이벌: %s (%d승 %d패)" % [s["teams"][rid]["name"], hh["w"], hh["l"]], UI.BAD, true))
+	left_box.add_child(UI.spacer(0, 2))
 	left_box.add_child(UI.label("연간 일정", UI.ACCENT, true))
 	var shown := 0
 	for e in Season.year_schedule(s):
@@ -117,7 +121,7 @@ func _fill_left() -> void:
 		var txt := "%s %s" % [Cal.short(e["date"]), e["label"]]
 		left_box.add_child(UI.label(txt, UI.GOOD if active else UI.TEXT, true))
 		shown += 1
-		if shown >= 9:
+		if shown >= 8:
 			break
 
 

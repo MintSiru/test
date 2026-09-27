@@ -17,6 +17,16 @@ func setup(_p := {}) -> void:
 		av.add_child(UI.label("%d 시즌" % y["year"], UI.ACCENT, true))
 		for r in y["results"]:
 			av.add_child(UI.label("  %s: %s" % [r["comp"], r["result"]], UI.TEXT, true))
+	var h2h = s.get("h2h")
+	if h2h != null and not h2h.is_empty():
+		av.add_child(UI.title_label("상대 전적 (많이 만난 순)"))
+		var ids: Array = h2h.keys()
+		ids.sort_custom(func(a, b2): return (h2h[a]["w"] + h2h[a]["l"]) > (h2h[b2]["w"] + h2h[b2]["l"]))
+		for id in ids.slice(0, 8):
+			if not s["teams"].has(id):
+				continue
+			var rec: Dictionary = h2h[id]
+			av.add_child(UI.label("  %s%s  %d승 %d패 %d무" % [s["teams"][id]["name"], " (라이벌)" if id == s.get("rivalId") else "", rec["w"], rec["l"], rec["d"]], UI.BAD if id == s.get("rivalId") else UI.TEXT, true))
 	var b := UI.panel()
 	UI.place(b, 4, 186, 314, 170)
 	add_child(b)

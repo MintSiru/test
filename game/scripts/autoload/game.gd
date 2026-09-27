@@ -55,6 +55,8 @@ func load_game() -> bool:
 		state["budget"] = int(Facilities.data()["startBudget"])
 	if state.get("facilities") == null:
 		state["facilities"] = {}
+	if not state.has("rivalId"):
+		Rival.init_rival(state)
 	current_match = null
 	return true
 
