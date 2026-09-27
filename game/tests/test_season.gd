@@ -85,6 +85,41 @@ func _init() -> void:
 	var roster := WorldGen.team_players(state, "user")
 	if roster.size() < 12:
 		fails.append("로스터 부족 %d" % roster.size())
+	# 포인트 · 장터
+	if Shop.points(state) <= 100 and state["history"][0]["results"].is_empty():
+		fails.append("포인트 획득 없음")
+	print("1년 후 포인트: ", Shop.points(state), " 프로 명단 예: ", Idol.pro_name(state["pros"][0]))
+	if Idol.pro_name(state["pros"][0]) != "김도영":
+		fails.append("실명 프로 명단 아님")
+	state["points"] = 5000
+	state["shop"] = {"openUntil": state["date"], "stock": [{"key": "protein", "qty": 1}, {"key": "bk_k", "qty": 1}]}
+	var bat: Dictionary = {}
+	var pit: Dictionary = {}
+	for p in WorldGen.team_players(state, "user"):
+		if p["pos"] != "P" and bat.is_empty():
+			bat = p
+		if p["pos"] == "P" and pit.is_empty() and not "strikeout" in p["abilities"]:
+			pit = p
+	var pw: int = bat["r"]["power"]
+	if Shop.buy_item(state, "protein") != "" or Shop.buy_item(state, "bk_k") != "":
+		fails.append("구매 실패")
+	if Shop.buy_item(state, "protein") != "품절이다.":
+		fails.append("품절 처리 실패")
+	if not Shop.use_item(state, "protein", bat["id"], Rng.new(1))["ok"] or int(bat["r"]["power"]) != mini(99, pw + 3):
+		fails.append("능력치 아이템 실패")
+	if Shop.use_item(state, "bk_k", bat["id"], Rng.new(1))["ok"]:
+		fails.append("투수 전용 책을 타자가 사용함")
+	if not Shop.use_item(state, "bk_k", pit["id"], Rng.new(1))["ok"] or not "strikeout" in pit["abilities"]:
+		fails.append("특수능력 책 실패")
+	# 3월은 시설 설치 불가, 7월은 가능
+	if Shop.buy_facility(state, "weight") == "":
+		fails.append("시설 설치 시기 제한 실패")
+	var saved_date: String = state["date"]
+	state["date"] = "2027-07-02"
+	state["shop"]["openUntil"] = "2027-07-07"
+	if Shop.buy_facility(state, "weight") != "" or Shop.level(state, "weight") != 1:
+		fails.append("7월 시설 설치 실패")
+	state["date"] = saved_date
 	# 세이브/로드 왕복
 	var json := JSON.stringify(state)
 	var back = JSON.parse_string(json)

@@ -60,7 +60,7 @@ func setup(_p := {}) -> void:
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))
-	var an := Facilities.level(s, "analysis")
+	var an := Shop.level(s, "analysis")
 	if an >= 1:
 		var staff := theirs.filter(func(p): return p["pos"] == "P")
 		staff.sort_custom(func(a, b): return Lineup.starter_score(a) > Lineup.starter_score(b))

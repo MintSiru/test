@@ -55,7 +55,7 @@ func _shot(name: String) -> void:
 
 
 func _visit_screens() -> void:
-	for scr in ["roster", "lineup", "schedule", "scout", "facilities", "records"]:
+	for scr in ["roster", "lineup", "schedule", "scout", "shop", "bag", "records"]:
 		Game.goto(scr)
 		await _wait(3)
 	Game.goto("hub")
@@ -91,16 +91,31 @@ func _run() -> void:
 		var hub := _cur()
 		if hub.advancing:
 			continue
-		# 시설 증축 (가장 싼 것)
-		var best := ""
-		var bc := 1 << 30
-		for f in Facilities.defs():
-			var c := Facilities.upgrade_cost(s, f["key"])
-			if c >= 0 and c < bc and int(s["budget"]) >= c:
-				bc = c
-				best = f["key"]
-		if best != "" and Facilities.upgrade(s, best):
-			stats["upgrades"] += 1
+		# 장터: 시설 기물(가능한 달) → 능력치 아이템 → 가방의 아이템 사용
+		if Shop.market_open(s):
+			if Shop.facility_month(s):
+				var best := ""
+				var bc := 1 << 30
+				for f in Shop.facilities():
+					var c := Shop.facility_cost(s, f["key"])
+					if c >= 0 and c < bc:
+						bc = c
+						best = f["key"]
+				if best != "" and Shop.buy_facility(s, best) == "":
+					stats["upgrades"] += 1
+			for sl in s["shop"]["stock"]:
+				var d := Shop.item_def(sl["key"])
+				if d["type"] == "stat" and int(sl["qty"]) > 0 and Shop.points(s) >= int(d["price"]) + 200:
+					if Shop.buy_item(s, sl["key"]) == "":
+						stats["bought"] = int(stats.get("bought", 0)) + 1
+			var inv: Dictionary = s["inventory"]
+			for k in inv.keys():
+				var d2 := Shop.item_def(k)
+				for p in WorldGen.team_players(s, s["userTeamId"]):
+					if Shop.cannot_use(d2, p) == "" and inv.has(k):
+						Shop.use_item(s, k, p["id"], Season.rng_of(s))
+						stats["used"] = int(stats.get("used", 0)) + 1
+						break
 		# 스카우트 방문
 		while int(s["scoutPoints"]) > 0 and not s["prospects"].is_empty():
 			var target = null

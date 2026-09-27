@@ -10,7 +10,8 @@ const SCREENS := {
 	"schedule": "res://scripts/ui/screens/schedule_screen.gd",
 	"scout": "res://scripts/ui/screens/scout_screen.gd",
 	"records": "res://scripts/ui/screens/records_screen.gd",
-	"facilities": "res://scripts/ui/screens/facilities_screen.gd",
+	"shop": "res://scripts/ui/screens/shop_screen.gd",
+	"bag": "res://scripts/ui/screens/bag_screen.gd",
 	"prematch": "res://scripts/ui/screens/prematch_screen.gd",
 	"match": "res://scripts/ui/screens/match_screen.gd",
 }

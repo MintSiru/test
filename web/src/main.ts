@@ -5,7 +5,8 @@ import { roundName, standings } from './core/competition';
 import { LEAGUE_GROUPS } from './core/data';
 import { COND_KO, POS_KO, PITCH_KO, avg, era, grade, letter, name, overall, statValue } from './core/player';
 import { visitProspect } from './core/scouting';
-import { FACILITIES, facLevel, upgradeCost, upgradeFacility } from './core/facilities';
+import { FACILITIES, ITEMS, buyFacility, buyItem, cannotUse, facLevel, facilityCost, facilityMonth, itemDef, marketOpen, needsPlayer, useItem } from './core/shop';
+import { FAN_MADE_NOTICE } from './core/data';
 import {
   advance, autoPlayUserMatch, createMatch, finishUserMatch, findFixture, idolLabel, rngOf, startNewGame, upcomingSchedule, useCard, userFixtures,
 } from './core/season';
@@ -50,10 +51,12 @@ function renderTitle() {
   app.innerHTML = h(`
     <h1>⚾ 청춘나인 — 한국 고교야구부 육성 시뮬레이션</h1>
     <p class="dim">웹 기반 시스템 확인용 화면입니다. 본 게임은 Godot 프로젝트(game/)에서 개발합니다.</p>
+    <p class="dim">${FAN_MADE_NOTICE}</p>
     <div class="panel">
       <div class="row">학교 이름 <input id="school" value="한빛고" maxlength="8"></div>
       <div class="row">감독 이름 <input id="mgr" value="김감독" maxlength="8"></div>
       <div class="row">주말리그 권역 <select id="grp">${opts}</select></div>
+      <div class="row">프로 선수 <select id="pros"><option value="real">실명 (비공식 팬메이드)</option><option value="fictional">가상</option></select></div>
       <div class="row"><button id="new">새 게임</button> <button id="cont" ${load() ? '' : 'disabled'}>이어하기</button></div>
     </div>`);
   app.querySelector<HTMLButtonElement>('#new')!.onclick = () => {
@@ -61,6 +64,7 @@ function renderTitle() {
       schoolName: (app.querySelector('#school') as HTMLInputElement).value,
       managerName: (app.querySelector('#mgr') as HTMLInputElement).value,
       groupId: (app.querySelector('#grp') as HTMLSelectElement).value,
+      prosMode: (app.querySelector('#pros') as HTMLSelectElement).value as 'real' | 'fictional',
     });
     save();
     render();
@@ -74,7 +78,7 @@ function render() {
   if (!S) return renderTitle();
   const s = S;
   const t = userTeam(s);
-  const tabs: [string, string][] = [['home', '홈'], ['roster', '선수단'], ['schedule', '일정'], ['standings', '순위'], ['scout', '스카우트'], ['facilities', '시설'], ['records', '기록']];
+  const tabs: [string, string][] = [['home', '홈'], ['roster', '선수단'], ['schedule', '일정'], ['standings', '순위'], ['scout', '스카우트'], ['shop', '장터'], ['records', '기록']];
   if (s.pendingFixture || M) tabs.unshift(['match', '▶ 경기']);
   app.innerHTML = h(`
     <div class="bar">
@@ -83,6 +87,7 @@ function render() {
       <span>명성 ${s.reputation}</span>
       <span>시즌 ${t.seasonRecord.w}승 ${t.seasonRecord.l}패 ${t.seasonRecord.d}무</span>
       <span>스카우트 행동력 ${s.scoutPoints}</span>
+      <span>${s.points ?? 0}P${marketOpen(s) ? ' <span class="good">장터 영업 중</span>' : ''}</span>
       <button id="saveBtn">저장</button> <button id="exportBtn">내보내기</button> <button id="titleBtn">타이틀</button>
     </div>
     <div class="tabs">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
@@ -103,7 +108,7 @@ function render() {
   if (pop) pop.onclick = () => { s.popups.shift(); save(); render(); };
   const body = app.querySelector<HTMLDivElement>('#body')!;
   if (tab === 'match' && !s.pendingFixture && !M) tab = 'home';
-  ({ home: renderHome, roster: renderRoster, schedule: renderSchedule, standings: renderStandings, scout: renderScout, facilities: renderFacilities, records: renderRecords, match: renderMatch } as Record<string, (b: HTMLElement, s: GameState) => void>)[tab](body, s);
+  ({ home: renderHome, roster: renderRoster, schedule: renderSchedule, standings: renderStandings, scout: renderScout, shop: renderShop, records: renderRecords, match: renderMatch } as Record<string, (b: HTMLElement, s: GameState) => void>)[tab](body, s);
 }
 
 function renderHome(body: HTMLElement, s: GameState) {
@@ -199,14 +204,25 @@ function renderScout(body: HTMLElement, s: GameState) {
   }));
 }
 
-function renderFacilities(body: HTMLElement, s: GameState) {
-  body.innerHTML = `<div class="panel">예산 <b>${s.budget ?? 0}만원</b> — 매월 1일 후원금, 대회 격려금, 프로 지명 기부금으로 늘어납니다.</div>
-    <div class="panel"><table>${FACILITIES.map((f) => {
-      const lv = facLevel(s.facilities, f.key);
-      const cost = upgradeCost(s, f.key);
-      return `<tr><td>${esc(f.name)}</td><td>Lv${lv}</td><td class="dim">${esc(f.desc)}</td><td><button data-fac="${f.key}" ${cost === null || (s.budget ?? 0) < cost ? 'disabled' : ''}>${cost === null ? '최고' : `증축 ${cost}만원`}</button></td></tr>`;
-    }).join('')}</table></div>`;
-  body.querySelectorAll<HTMLButtonElement>('[data-fac]').forEach((b) => (b.onclick = () => { upgradeFacility(s, b.dataset.fac!); save(); render(); }));
+function renderShop(body: HTMLElement, s: GameState) {
+  const open = marketOpen(s);
+  const players = teamPlayers(s, s.userTeamId);
+  const inv = Object.entries(s.inventory ?? {});
+  body.innerHTML = `<div class="panel">포인트 <b>${s.points ?? 0}P</b> — 경기 결과로 얻는다. 장터는 매월 1~7일, 시설 기물은 1·2·7·8·12월 장터에서만. ${open ? '<span class="good">장터 영업 중</span>' : '<span class="dim">장터 닫힘</span>'}</div>
+    <div class="panel"><h2>이번 장터</h2><table>${(s.shop?.stock ?? []).map((st) => { const d = itemDef(st.key)!; return `<tr><td>${esc(d.name)}</td><td class="dim">${esc(d.desc)}</td><td>${d.price}P</td><td>남은 ${st.qty}</td><td><button data-buy="${st.key}" ${!open || st.qty <= 0 || (s.points ?? 0) < d.price ? 'disabled' : ''}>구매</button></td></tr>`; }).join('') || '<tr><td class="dim">없음</td></tr>'}</table></div>
+    <div class="panel"><h2>시설 기물</h2><table>${FACILITIES.map((f) => { const c = facilityCost(s, f.key); return `<tr><td>${esc(f.name)}</td><td>Lv${facLevel(s.facilities, f.key)}</td><td class="dim">${esc(f.desc)}</td><td><button data-fac="${f.key}" ${c === null || !open || !facilityMonth(s) || (s.points ?? 0) < c ? 'disabled' : ''}>${c === null ? '최고' : `설치 ${c}P`}</button></td></tr>`; }).join('')}</table></div>
+    <div class="panel"><h2>가방</h2><table>${inv.map(([k, n]) => { const d = itemDef(k)!; const opts = needsPlayer(d) ? players.map((p) => `<option value="${p.id}" ${cannotUse(d, p) ? 'disabled' : ''}>${esc(name(p))}${cannotUse(d, p) ? ' (' + cannotUse(d, p) + ')' : ''}</option>`).join('') : d.type === 'prospect' ? s.prospects.map((x) => `<option value="${x.id}">${esc(name(x.player))} ${x.interest}%</option>`).join('') : ''; return `<tr><td>${esc(d.name)} ×${n}</td><td class="dim">${esc(d.desc)}</td><td>${opts ? `<select id="t-${k}">${opts}</select>` : ''}</td><td><button data-use="${k}">사용</button></td></tr>`; }).join('') || '<tr><td class="dim">비어 있음</td></tr>'}</table></div>
+    <div class="panel dim">아이템 ${ITEMS.length}종 · 시설 ${FACILITIES.length}종</div>`;
+  const rng = rngOf(s);
+  const done = (msg: string | null) => { if (msg) alert(msg); s.rngState = rng.state; save(); render(); };
+  body.querySelectorAll<HTMLButtonElement>('[data-buy]').forEach((b) => (b.onclick = () => done(buyItem(s, b.dataset.buy!))));
+  body.querySelectorAll<HTMLButtonElement>('[data-fac]').forEach((b) => (b.onclick = () => done(buyFacility(s, b.dataset.fac!))));
+  body.querySelectorAll<HTMLButtonElement>('[data-use]').forEach((b) => (b.onclick = () => {
+    const k = b.dataset.use!;
+    const sel = body.querySelector<HTMLSelectElement>(`#t-${k}`);
+    const r = useItem(s, k, sel?.value ?? null, rng);
+    done(r.ok ? null : r.msg);
+  }));
 }
 
 function renderRecords(body: HTMLElement, s: GameState) {

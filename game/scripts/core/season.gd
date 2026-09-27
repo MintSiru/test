@@ -194,7 +194,7 @@ static func _sim_cpu_games(state: Dictionary, todo: Array, rng: Rng) -> void:
 static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 	var d: String = state["date"]
 	if d.ends_with("-01"):
-		Facilities.monthly_income(state)
+		Shop.open_market(state, rng)
 	for ev in Cal.year_events(state["year"]):
 		if ev["date"] != d:
 			continue
@@ -245,7 +245,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)
-	var dorm := Facilities.level(state, "dorm")
+	var dorm := Shop.level(state, "dorm")
 	if dorm > 0:
 		for p in roster:
 			p["fatigue"] = maxf(0.0, p["fatigue"] - 5 * dorm)
@@ -448,8 +448,10 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 		var us: int = res["homeScore"] if f["home"] == u else res["awayScore"]
 		var them: int = res["awayScore"] if f["home"] == u else res["homeScore"]
 		var outcome := "승리" if res["winner"] == u else ("패배" if res["winner"] != null else "무승부")
+		var pts := Shop.match_points(not official, res["winner"] == u, res["winner"] == null, us, res["called"])
+		state["points"] = Shop.points(state) + pts
 		state["news"].append({"date": f["date"], "kind": "good" if res["winner"] == u else ("bad" if res["winner"] != null else "info"),
-			"text": "[%s] vs %s %d:%d %s%s" % [fixture_label(comp, f), opp["name"], us, them, outcome, " (콜드)" if res["called"] else ""]})
+			"text": "[%s] vs %s %d:%d %s%s  +%dP" % [fixture_label(comp, f), opp["name"], us, them, outcome, " (콜드)" if res["called"] else "", pts]})
 		if comp["kind"] == "tournament":
 			if res["winner"] == u:
 				state["reputation"] = clampi(state["reputation"] + 1, 0, 100)
@@ -457,7 +459,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			if r != "" and (comp.get("champion") != null or res["winner"] != u):
 				comp["userResult"] = r
 				var def := Cal.comp_def(comp["key"])
-				Facilities.add_prize(state, r, def["short"])
+				Shop.earn(state, Shop.placing_points(r), "%s %s" % [def["short"], r])
 				if r == "우승":
 					state["reputation"] = clampi(state["reputation"] + int(def["repWin"]), 0, 100)
 					state["popups"].append({"kind": "good", "title": "%s 우승!" % def["short"], "body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
@@ -524,6 +526,7 @@ static func _finish_league(state: Dictionary, c: Dictionary, rng: Rng) -> void:
 				c["userResult"] = "%s %d위 (%d승 %d패%s)" % [g["name"], rank, row["w"], row["l"], (" %d무" % row["d"]) if row["d"] else ""]
 				if rank == 1:
 					state["reputation"] = clampi(state["reputation"] + 3, 0, 100)
+					Shop.earn(state, int(Shop.data()["earn"]["leagueFirst"]), "%s 권역 1위" % g["name"])
 	if c["key"] == "league1":
 		state["competitions"].append(Competition.create_tournament(state, "hwanggeum", hw, rng))
 		state["competitions"].append(Competition.create_tournament(state, "cheongryong", cr, rng))
@@ -590,7 +593,7 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 				line += "\n   ★ 동경하던 %s 같은 유니폼을 입게 됐다! \"%s 선배, 이제 동료예요!\"" % [Text.josa(Idol.pro_name(idol), "과/와"), idol["given"]]
 			lines.append(line)
 			state["reputation"] = clampi(state["reputation"] + (6 if rnd == 1 else (4 if rnd <= 3 else 2)), 0, 100)
-			state["budget"] = int(state.get("budget", 0)) + int(Facilities.data()["draftDonation"])
+			state["points"] = Shop.points(state) + int(Shop.data()["earn"]["draftRound1"] if rnd == 1 else Shop.data()["earn"]["draftOther"])
 			state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": p["sur"], "given": p["given"], "teamId": team["id"], "pos": p["pos"],
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다

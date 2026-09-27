@@ -73,8 +73,14 @@ func load_game() -> bool:
 		return false
 	state = normalize(d)
 	# 이전 버전 세이브 호환: 새로 생긴 항목 기본값
-	if not state.has("budget"):
-		state["budget"] = int(Facilities.data()["startBudget"])
+	# v0.2 예산(만원) → 포인트, 이전 세이브의 프로 명단은 가상 명단
+	if not state.has("points"):
+		state["points"] = int(state.get("budget", 0)) / 10 + int(Shop.data()["startPoints"])
+		state.erase("budget")
+	if state.get("inventory") == null:
+		state["inventory"] = {}
+	if not state.has("prosMode"):
+		state["prosMode"] = "fictional"
 	if state.get("facilities") == null:
 		state["facilities"] = {}
 	if not state.has("rivalId"):
@@ -83,8 +89,8 @@ func load_game() -> bool:
 	return true
 
 
-func new_game(school: String, manager: String, group_id: String) -> void:
-	state = Season.start_new_game({"schoolName": school, "managerName": manager, "groupId": group_id})
+func new_game(school: String, manager: String, group_id: String, pros_mode := "real") -> void:
+	state = Season.start_new_game({"schoolName": school, "managerName": manager, "groupId": group_id, "prosMode": pros_mode})
 	current_match = null
 	save_game()
 

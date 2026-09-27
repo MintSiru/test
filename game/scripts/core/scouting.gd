@@ -36,8 +36,8 @@ static func visit(state: Dictionary, id: String, rng: Rng) -> String:
 		return "스카우트 행동력이 부족하다."
 	state["scoutPoints"] -= 1
 	pr["visits"] += 1
-	pr["revealed"] = mini(3, int(pr["revealed"]) + 1 + (1 if pr["visits"] == 1 and Facilities.level(state, "analysis") > 0 else 0))
-	var gain := roundi(10 + state["reputation"] * 0.15 + rng.irange(0, 8) - pr["visits"] * 1.5 + 3 * Facilities.level(state, "dorm"))
+	pr["revealed"] = mini(3, int(pr["revealed"]) + 1 + (1 if pr["visits"] == 1 and Shop.level(state, "analysis") > 0 else 0))
+	var gain := roundi(10 + state["reputation"] * 0.15 + rng.irange(0, 8) - pr["visits"] * 1.5 + 3 * Shop.level(state, "dorm"))
 	pr["interest"] = clampi(pr["interest"] + maxi(3, gain), 0, 100)
 	return "%s 만나고 왔다. 입학 의향 %d%%" % [Text.josa(PlayerUtil.full_name(pr["player"]), "을/를"), pr["interest"]]
 

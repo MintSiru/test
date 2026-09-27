@@ -128,7 +128,7 @@ func _run() -> void:
 		elif not hub2.advancing and Game.state.get("pendingFixture") == null:
 			hub2._start_advance()
 	_check(Game.state["date"] > before and Game.state.get("pendingFixture") != null, "다음 경기일까지 진행 (%s → %s)" % [before, Game.state["date"]])
-	for scr in ["roster", "lineup", "schedule", "scout", "records"]:
+	for scr in ["roster", "lineup", "schedule", "scout", "shop", "bag", "records"]:
 		Game.goto(scr)
 		await _wait(5)
 		_check(Game.main.current_name == scr, "화면 열기: " + scr)

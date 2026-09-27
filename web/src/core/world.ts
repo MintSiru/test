@@ -1,8 +1,8 @@
 import { seasonStart } from './calendar';
-import { LEAGUE_GROUPS, PRO_PLAYER_DEFS, PRO_TEAM_DEFS, TEAM_COLORS } from './data';
+import { LEAGUE_GROUPS, PRO_PLAYER_DEFS, PRO_PLAYER_DEFS_FICTIONAL, PRO_TEAM_DEFS, TEAM_COLORS } from './data';
 import { genPlayer } from './player';
 import { Rng } from './rng';
-import { FAC_DATA } from './facilities';
+import { SHOP } from './shop';
 import { drawCard } from './training';
 import type { GameState, Player, Pos, ProPlayer, Team } from './types';
 
@@ -26,10 +26,11 @@ export interface NewGameOpts {
   groupId: string;
   seed?: number;
   year?: number;
+  prosMode?: 'real' | 'fictional';
 }
 
-export function createPros(rng: Rng, year: number): ProPlayer[] {
-  return PRO_PLAYER_DEFS.map((d, i) => ({
+export function createPros(rng: Rng, year: number, mode: 'real' | 'fictional' = 'real'): ProPlayer[] {
+  return (mode === 'fictional' ? PRO_PLAYER_DEFS_FICTIONAL : PRO_PLAYER_DEFS).map((d, i) => ({
     id: `pro${i}`,
     sur: d.sur,
     given: d.given,
@@ -78,7 +79,7 @@ export function newGame(o: NewGameOpts): GameState {
     teams: {},
     players: {},
     proTeams: PRO_TEAM_DEFS.map((t) => ({ ...t })),
-    pros: createPros(rng, year),
+    pros: createPros(rng, year, o.prosMode ?? 'real'),
     competitions: [],
     hand: [],
     weekTrained: false,
@@ -90,7 +91,9 @@ export function newGame(o: NewGameOpts): GameState {
     alumni: [],
     settings: { speed: 2, pauseMode: 'pa', sound: true },
     nextId: 1,
-    budget: FAC_DATA.startBudget,
+    points: SHOP.startPoints,
+    inventory: {},
+    prosMode: o.prosMode ?? 'real',
     facilities: {},
   };
 

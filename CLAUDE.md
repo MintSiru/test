@@ -21,7 +21,7 @@
 | core/scouting.ts | core/scouting.gd |
 | core/events.ts | core/weekly_events.gd |
 | core/world.ts | core/world_gen.gd |
-| core/facilities.ts | core/facilities.gd |
+| core/shop.ts | core/shop.gd |
 | core/rival.ts | core/rival.gd |
 | core/weather.ts | core/weather.gd |
 | core/season.ts | core/season.gd |
@@ -62,6 +62,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - GDScript 스레드(WorkerThreadPool/Thread)는 이 프로젝트 측정에서 병렬 이득이 없었다 (릴리스 빌드 포함). 속도는 알고리즘으로 개선할 것.
 - 32비트 해시 곱셈은 64비트 정수에서 넘친다 → `Weather._imul` 처럼 16비트로 나눠 곱한다. 웹과 같은 값이 나와야 하는 계산은 테스트로 값 일치를 확인.
 - `Control` 에는 `rotation`, `scale`, `position` 같은 속성이 이미 있다 → 화면 스크립트 멤버 이름으로 쓰지 말 것.
+- 데이터 JSON 의 숫자는 float 다. `7 in [7.0]` 은 **false** → 숫자 목록 비교는 `int()` 로 바꿔서 (`Shop.facility_month` 참고).
 
 ## UI 규칙
 
@@ -73,7 +74,9 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 ## 데이터·내용 원칙
 
 - 대회 이름·일정은 실제를 따른다 (`schedule.json`, 출처는 docs/GDD.md). 다른 해는 같은 요일로 자동 이동.
-- 학교·선수·프로 선수·프로 구단은 **가상**. 실존 선수 이름을 넣지 않는다 (성명권).
+- 고교·고교 선수·프로 구단은 **가상**. 프로 선수는 사용자 결정에 따라 **실명**(`pros.json`)을 쓰고, 가상 명단(`pros_fictional.json`)을 선택지로 남긴다.
+  실명을 쓰는 한 「비상업적 비공식 팬메이드」 고지(`GameData.FAN_MADE_NOTICE`, 웹 `FAN_MADE_NOTICE`)를 타이틀·새 게임 화면에 유지할 것. 상업적 이용 금지.
+- 게임 재화는 **야구부 포인트**(경기 결과로만 획득)이고 장터는 매월 1~7일. 시설 기물은 1·2·7·8·12월에만.
 - 텍스트는 한국어. 조사는 `Text.josa(word, "은/는")` 사용.
 
 ## 작업 방식

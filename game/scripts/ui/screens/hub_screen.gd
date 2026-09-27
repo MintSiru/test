@@ -56,7 +56,16 @@ func _build() -> void:
 	var sp: int = st()["scoutPoints"]
 	menu.add_child(UI.button("스카우트 (행동력 %d)" % sp if not st()["prospects"].is_empty() else "스카우트", func(): Game.goto("scout")))
 	menu.add_child(UI.button("기록실", func(): Game.goto("records")))
-	menu.add_child(UI.button("시설 · 예산 (%d만원)" % int(st().get("budget", 0)), func(): Game.goto("facilities")))
+	var shop_b := UI.button(("장터 영업 중! (%dP)" if Shop.market_open(st()) else "장터 (%dP)") % Shop.points(st()), func(): Game.goto("shop"))
+	if Shop.market_open(st()):
+		shop_b.add_theme_color_override("font_color", UI.GOOD)
+	menu.add_child(shop_b)
+	var inv = st().get("inventory")
+	var cnt := 0
+	if inv != null:
+		for k in inv:
+			cnt += int(inv[k])
+	menu.add_child(UI.button("가방 (%d)" % cnt, func(): Game.goto("bag"), 0, true))
 	var snd: bool = st()["settings"].get("sound", true)
 	menu.add_child(UI.button("소리: 켜짐" if snd else "소리: 꺼짐", func():
 		st()["settings"]["sound"] = not st()["settings"].get("sound", true)

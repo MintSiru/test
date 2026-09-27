@@ -1,6 +1,6 @@
 import { STYLE_INFO } from './abilities';
 import { ABILITIES } from './abilities';
-import { facilityGrowth, facLevel, type FacLevels } from './facilities';
+import { facilityGrowth, facLevel, type FacLevels } from './shop';
 import { breakingScore, veloScore } from './player';
 import { clamp, type Rng } from './rng';
 import type { Card, CardKind, Focus, PitchType, Player, ProPlayer, StatKey } from './types';

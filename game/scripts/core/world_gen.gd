@@ -17,10 +17,11 @@ static func uid(state: Dictionary, prefix: String) -> String:
 	return prefix + String.num_int64(n, 36)
 
 
-static func create_pros(rng: Rng, year: int) -> Array:
+static func create_pros(rng: Rng, year: int, mode := "real") -> Array:
 	var out := []
 	var i := 0
-	for d in GameData.pros()["players"]:
+	var src: Dictionary = GameData.pros() if mode == "real" else GameData.load_json("pros_fictional")
+	for d in src["players"]:
 		out.append({"id": "pro%d" % i, "sur": d["sur"], "given": d["given"], "teamId": d["team"], "pos": d["pos"], "style": d["style"],
 			"number": rng.irange(1, 99), "birthYear": year - int(d["age"]), "line": ""})
 		i += 1
@@ -44,10 +45,10 @@ static func new_game(o: Dictionary) -> Dictionary:
 	var state := {
 		"version": SAVE_VERSION, "seed": seed_val, "rngState": "", "date": Cal.season_start(year), "year": year,
 		"userTeamId": "user", "managerName": o.get("managerName", "감독"), "reputation": 20,
-		"teams": {}, "players": {}, "proTeams": GameData.pros()["teams"].duplicate(true), "pros": create_pros(rng, year),
+		"teams": {}, "players": {}, "proTeams": GameData.pros()["teams"].duplicate(true), "pros": create_pros(rng, year, o.get("prosMode", "real")),
 		"competitions": [], "hand": [], "weekTrained": false, "scoutPoints": 0, "prospects": [], "news": [], "popups": [],
 		"history": [], "alumni": [], "settings": {"speed": 2, "pauseMode": "pa", "sound": true}, "nextId": 1,
-		"budget": int(Facilities.data()["startBudget"]), "facilities": {},
+		"points": int(Shop.data()["startPoints"]), "inventory": {}, "facilities": {}, "prosMode": o.get("prosMode", "real"),
 	}
 	var colors: Array = GameData.schools()["teamColors"]
 	var color_idx := 0

@@ -140,7 +140,7 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		p["fatigue"] = clampf(p["fatigue"] - 15, 0, 100)
 		return
 	for k in dist:
-		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, growth_mult(p, k, pros) * Facilities.growth(fac, k), rng)
+		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, growth_mult(p, k, pros) * Shop.growth(fac, k), rng)
 		if g:
 			gains[k] = gains.get(k, 0) + g
 	var focus_mul := 1.0
@@ -150,14 +150,14 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		focus_mul = 0.2
 	var fs := focus_stats(p)
 	for k in fs:
-		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, growth_mult(p, k, pros) * Facilities.growth(fac, k), rng)
+		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, growth_mult(p, k, pros) * Shop.growth(fac, k), rng)
 		if g2:
 			gains[k] = gains.get(k, 0) + g2
 	var fat_mul: float = 1.0 if card["kind"] == "rest" else 0.6 + card["value"] * 0.12
 	p["fatigue"] = clampf(p["fatigue"] + info["fatigue"] * fat_mul, 0, 100)
 	if card["kind"] == "rest" and rng.chance(0.5 + card["value"] * 0.08):
 		p["cond"] = clampi(p["cond"] + 1, -2, 2)
-	var risk: float = (maxf(0.0, p["fatigue"] - 60) * 0.004 + (0.01 if card["kind"] == "special" else 0.0)) * (1.0 - 0.2 * Facilities.level_of(fac, "ground"))
+	var risk: float = (maxf(0.0, p["fatigue"] - 60) * 0.004 + (0.01 if card["kind"] == "special" else 0.0)) * (1.0 - 0.2 * Shop.level_of(fac, "ground"))
 	if not cpu and rng.chance(risk):
 		p["injury"] = rng.irange(5, 25)
 		if report != null:
@@ -168,7 +168,7 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 	elif card["kind"] == "meeting":
 		awaken_p = 0.03 + card["value"] * 0.006
 	if card["kind"] == "meeting":
-		awaken_p *= 1.0 + 0.25 * Facilities.level_of(fac, "analysis")
+		awaken_p *= 1.0 + 0.25 * Shop.level_of(fac, "analysis")
 	if awaken_p > 0 and rng.chance(awaken_p * (0.6 + p["talent"] * 0.15)):
 		var pool := GameData.abilities().filter(func(a): return a["good"] and a["forPitcher"] == is_p and not a["id"] in p["abilities"])
 		if not pool.is_empty():

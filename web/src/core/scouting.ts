@@ -1,5 +1,5 @@
 import { LEAGUE_GROUPS } from './data';
-import { facLevel } from './facilities';
+import { facLevel } from './shop';
 import { josa } from './names';
 import { genPlayer, name } from './player';
 import { clamp, type Rng } from './rng';

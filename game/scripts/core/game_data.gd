@@ -2,6 +2,8 @@ class_name GameData
 extends RefCounted
 ## 공용 데이터 로더 (res://data/*.json). 웹 기반 시스템(web/)도 같은 파일을 읽는다.
 
+const FAN_MADE_NOTICE := "본 게임은 비상업적 비공식 팬메이드 게임이며, 실존 선수·구단·KBO와 관련이 없습니다. 게임 속 성적과 사건은 모두 가상입니다."
+
 static var _cache := {}
 
 

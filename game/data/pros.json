@@ -1,4 +1,17 @@
 {
+ "note": "실존 KBO 선수 이름(2026 시즌 기준). 구단은 연고지 기준 가상 구단으로 대체했다. 게임 속 성적·사건은 모두 가상이다.",
+ "teamMap": {
+  "ravens": "두산",
+  "knights": "LG",
+  "seagulls": "SSG",
+  "storm": "KT",
+  "bolts": "한화",
+  "phoenix": "KIA",
+  "blaze": "삼성",
+  "oceans": "롯데",
+  "irons": "NC",
+  "warriors": "키움"
+ },
  "teams": [
   {
    "id": "ravens",
@@ -93,324 +106,548 @@
  ],
  "players": [
   {
-   "sur": "강",
-   "given": "도윤",
-   "team": "ravens",
+   "sur": "김",
+   "given": "도영",
+   "team": "phoenix",
    "pos": "3B",
    "style": "파워히터",
-   "age": 27
-  },
-  {
-   "sur": "한",
-   "given": "서준",
-   "team": "knights",
-   "pos": "SS",
-   "style": "준족",
-   "age": 25
-  },
-  {
-   "sur": "윤",
-   "given": "지호",
-   "team": "bolts",
-   "pos": "P",
-   "style": "파이어볼러",
    "age": 23
   },
   {
-   "sur": "백",
-   "given": "현우",
-   "team": "blaze",
-   "pos": "C",
-   "style": "강견",
-   "age": 30
+   "sur": "양",
+   "given": "현종",
+   "team": "phoenix",
+   "pos": "P",
+   "style": "철완",
+   "age": 38
   },
   {
-   "sur": "오",
-   "given": "승민",
-   "team": "oceans",
+   "sur": "나",
+   "given": "성범",
+   "team": "phoenix",
+   "pos": "RF",
+   "style": "파워히터",
+   "age": 37
+  },
+  {
+   "sur": "정",
+   "given": "해영",
+   "team": "phoenix",
    "pos": "P",
    "style": "제구파",
-   "age": 31
+   "age": 25
   },
   {
-   "sur": "신",
-   "given": "태윤",
+   "sur": "박",
+   "given": "재현",
    "team": "phoenix",
    "pos": "CF",
    "style": "준족",
-   "age": 24
+   "age": 20
   },
   {
-   "sur": "권",
-   "given": "민재",
-   "team": "storm",
-   "pos": "1B",
-   "style": "파워히터",
-   "age": 29
-  },
-  {
-   "sur": "차",
-   "given": "준서",
-   "team": "irons",
-   "pos": "P",
-   "style": "변화구",
-   "age": 26
-  },
-  {
-   "sur": "문",
-   "given": "지훈",
-   "team": "seagulls",
-   "pos": "LF",
-   "style": "교타자",
-   "age": 28
-  },
-  {
-   "sur": "배",
-   "given": "건우",
-   "team": "warriors",
-   "pos": "RF",
-   "style": "강견",
-   "age": 26
-  },
-  {
-   "sur": "송",
-   "given": "우진",
-   "team": "ravens",
-   "pos": "P",
-   "style": "철완",
-   "age": 32
-  },
-  {
-   "sur": "유",
-   "given": "현준",
-   "team": "knights",
-   "pos": "2B",
-   "style": "명수비",
-   "age": 27
-  },
-  {
-   "sur": "안",
-   "given": "시윤",
+   "sur": "성",
+   "given": "영탁",
    "team": "phoenix",
    "pos": "P",
-   "style": "파이어볼러",
+   "style": "변화구",
    "age": 22
   },
   {
-   "sur": "조",
-   "given": "민준",
+   "sur": "김",
+   "given": "선빈",
+   "team": "phoenix",
+   "pos": "2B",
+   "style": "교타자",
+   "age": 37
+  },
+  {
+   "sur": "구",
+   "given": "자욱",
    "team": "blaze",
-   "pos": "1B",
-   "style": "클러치",
+   "pos": "LF",
+   "style": "교타자",
    "age": 33
   },
   {
-   "sur": "임",
-   "given": "하준",
-   "team": "bolts",
-   "pos": "SS",
-   "style": "명수비",
-   "age": 28
-  },
-  {
-   "sur": "서",
-   "given": "은우",
-   "team": "oceans",
-   "pos": "CF",
-   "style": "교타자",
-   "age": 25
-  },
-  {
-   "sur": "전",
-   "given": "재원",
-   "team": "storm",
-   "pos": "P",
-   "style": "철완",
-   "age": 29
-  },
-  {
-   "sur": "홍",
-   "given": "정우",
-   "team": "irons",
-   "pos": "3B",
-   "style": "클러치",
-   "age": 30
-  },
-  {
-   "sur": "고",
-   "given": "시우",
-   "team": "seagulls",
+   "sur": "원",
+   "given": "태인",
+   "team": "blaze",
    "pos": "P",
    "style": "제구파",
-   "age": 27
+   "age": 26
   },
   {
-   "sur": "남",
-   "given": "유찬",
-   "team": "warriors",
-   "pos": "2B",
-   "style": "준족",
+   "sur": "김",
+   "given": "영웅",
+   "team": "blaze",
+   "pos": "3B",
+   "style": "파워히터",
    "age": 23
   },
   {
-   "sur": "류",
-   "given": "동현",
-   "team": "knights",
-   "pos": "RF",
-   "style": "파워히터",
-   "age": 28
-  },
-  {
-   "sur": "채",
-   "given": "지후",
-   "team": "ravens",
-   "pos": "C",
-   "style": "명수비",
-   "age": 31
-  },
-  {
-   "sur": "우",
-   "given": "태양",
+   "sur": "이",
+   "given": "재현",
    "team": "blaze",
-   "pos": "P",
-   "style": "파이어볼러",
-   "age": 24
+   "pos": "SS",
+   "style": "명수비",
+   "age": 23
   },
   {
-   "sur": "진",
-   "given": "승현",
-   "team": "phoenix",
-   "pos": "LF",
-   "style": "교타자",
-   "age": 29
+   "sur": "최",
+   "given": "형우",
+   "team": "blaze",
+   "pos": "1B",
+   "style": "클러치",
+   "age": 43
   },
   {
-   "sur": "노",
-   "given": "한결",
-   "team": "oceans",
+   "sur": "김",
+   "given": "지찬",
+   "team": "blaze",
+   "pos": "CF",
+   "style": "준족",
+   "age": 25
+  },
+  {
+   "sur": "이",
+   "given": "승민",
+   "team": "blaze",
    "pos": "P",
    "style": "변화구",
    "age": 26
   },
   {
-   "sur": "하",
-   "given": "재윤",
-   "team": "bolts",
-   "pos": "1B",
+   "sur": "박",
+   "given": "해민",
+   "team": "knights",
+   "pos": "CF",
+   "style": "명수비",
+   "age": 36
+  },
+  {
+   "sur": "홍",
+   "given": "창기",
+   "team": "knights",
+   "pos": "RF",
    "style": "교타자",
-   "age": 30
+   "age": 33
   },
   {
-   "sur": "곽",
-   "given": "선우",
-   "team": "storm",
-   "pos": "C",
+   "sur": "오",
+   "given": "지환",
+   "team": "knights",
+   "pos": "SS",
+   "style": "명수비",
+   "age": 36
+  },
+  {
+   "sur": "문",
+   "given": "보경",
+   "team": "knights",
+   "pos": "3B",
    "style": "클러치",
-   "age": 27
+   "age": 26
   },
   {
-   "sur": "표",
-   "given": "이준",
-   "team": "irons",
+   "sur": "임",
+   "given": "찬규",
+   "team": "knights",
    "pos": "P",
    "style": "제구파",
    "age": 34
   },
   {
-   "sur": "엄",
-   "given": "민혁",
-   "team": "seagulls",
-   "pos": "3B",
-   "style": "강견",
-   "age": 25
-  },
-  {
-   "sur": "구",
-   "given": "태민",
-   "team": "warriors",
-   "pos": "CF",
-   "style": "명수비",
+   "sur": "손",
+   "given": "주영",
+   "team": "knights",
+   "pos": "P",
+   "style": "파이어볼러",
    "age": 28
   },
   {
-   "sur": "성",
-   "given": "은호",
+   "sur": "박",
+   "given": "동원",
    "team": "knights",
+   "pos": "C",
+   "style": "강견",
+   "age": 36
+  },
+  {
+   "sur": "신",
+   "given": "민재",
+   "team": "knights",
+   "pos": "2B",
+   "style": "준족",
+   "age": 30
+  },
+  {
+   "sur": "양",
+   "given": "의지",
+   "team": "ravens",
+   "pos": "C",
+   "style": "클러치",
+   "age": 39
+  },
+  {
+   "sur": "곽",
+   "given": "빈",
+   "team": "ravens",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 27
+  },
+  {
+   "sur": "김",
+   "given": "택연",
+   "team": "ravens",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 21
+  },
+  {
+   "sur": "정",
+   "given": "수빈",
+   "team": "ravens",
+   "pos": "CF",
+   "style": "명수비",
+   "age": 36
+  },
+  {
+   "sur": "박",
+   "given": "찬호",
+   "team": "ravens",
+   "pos": "SS",
+   "style": "준족",
+   "age": 31
+  },
+  {
+   "sur": "박",
+   "given": "준순",
+   "team": "ravens",
+   "pos": "2B",
+   "style": "교타자",
+   "age": 20
+  },
+  {
+   "sur": "이",
+   "given": "영하",
+   "team": "ravens",
    "pos": "P",
    "style": "철완",
    "age": 29
   },
   {
-   "sur": "추",
-   "given": "지환",
+   "sur": "양",
+   "given": "석환",
    "team": "ravens",
-   "pos": "SS",
-   "style": "교타자",
+   "pos": "1B",
+   "style": "파워히터",
+   "age": 35
+  },
+  {
+   "sur": "류",
+   "given": "현진",
+   "team": "bolts",
+   "pos": "P",
+   "style": "제구파",
+   "age": 39
+  },
+  {
+   "sur": "문",
+   "given": "동주",
+   "team": "bolts",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 23
+  },
+  {
+   "sur": "노",
+   "given": "시환",
+   "team": "bolts",
+   "pos": "3B",
+   "style": "파워히터",
    "age": 26
   },
   {
-   "sur": "마",
-   "given": "승우",
-   "team": "phoenix",
-   "pos": "RF",
-   "style": "준족",
-   "age": 24
-  },
-  {
-   "sur": "석",
-   "given": "민규",
-   "team": "blaze",
-   "pos": "P",
-   "style": "변화구",
-   "age": 28
-  },
-  {
-   "sur": "방",
-   "given": "준혁",
-   "team": "oceans",
+   "sur": "강",
+   "given": "백호",
+   "team": "bolts",
    "pos": "1B",
-   "style": "파워히터",
+   "style": "클러치",
+   "age": 27
+  },
+  {
+   "sur": "문",
+   "given": "현빈",
+   "team": "bolts",
+   "pos": "LF",
+   "style": "교타자",
+   "age": 22
+  },
+  {
+   "sur": "허",
+   "given": "인서",
+   "team": "bolts",
+   "pos": "C",
+   "style": "강견",
+   "age": 23
+  },
+  {
+   "sur": "채",
+   "given": "은성",
+   "team": "bolts",
+   "pos": "1B",
+   "style": "클러치",
+   "age": 36
+  },
+  {
+   "sur": "정",
+   "given": "우주",
+   "team": "bolts",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 20
+  },
+  {
+   "sur": "김",
+   "given": "서현",
+   "team": "bolts",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 22
+  },
+  {
+   "sur": "심",
+   "given": "우준",
+   "team": "bolts",
+   "pos": "SS",
+   "style": "준족",
    "age": 31
   },
   {
-   "sur": "함",
-   "given": "서진",
-   "team": "bolts",
-   "pos": "2B",
+   "sur": "최",
+   "given": "정",
+   "team": "seagulls",
+   "pos": "3B",
+   "style": "파워히터",
+   "age": 39
+  },
+  {
+   "sur": "김",
+   "given": "광현",
+   "team": "seagulls",
+   "pos": "P",
+   "style": "변화구",
+   "age": 38
+  },
+  {
+   "sur": "박",
+   "given": "성한",
+   "team": "seagulls",
+   "pos": "SS",
    "style": "교타자",
+   "age": 28
+  },
+  {
+   "sur": "최",
+   "given": "지훈",
+   "team": "seagulls",
+   "pos": "CF",
+   "style": "준족",
+   "age": 29
+  },
+  {
+   "sur": "조",
+   "given": "병현",
+   "team": "seagulls",
+   "pos": "P",
+   "style": "파이어볼러",
+   "age": 24
+  },
+  {
+   "sur": "노",
+   "given": "경은",
+   "team": "seagulls",
+   "pos": "P",
+   "style": "철완",
+   "age": 42
+  },
+  {
+   "sur": "고",
+   "given": "영표",
+   "team": "storm",
+   "pos": "P",
+   "style": "제구파",
+   "age": 35
+  },
+  {
+   "sur": "소",
+   "given": "형준",
+   "team": "storm",
+   "pos": "P",
+   "style": "변화구",
    "age": 25
   },
   {
-   "sur": "편",
-   "given": "지우",
+   "sur": "박",
+   "given": "영현",
    "team": "storm",
    "pos": "P",
    "style": "파이어볼러",
    "age": 23
   },
   {
-   "sur": "탁",
-   "given": "연우",
-   "team": "irons",
+   "sur": "안",
+   "given": "현민",
+   "team": "storm",
    "pos": "LF",
    "style": "파워히터",
+   "age": 23
+  },
+  {
+   "sur": "허",
+   "given": "경민",
+   "team": "storm",
+   "pos": "3B",
+   "style": "명수비",
+   "age": 36
+  },
+  {
+   "sur": "장",
+   "given": "성우",
+   "team": "storm",
+   "pos": "C",
+   "style": "강견",
+   "age": 36
+  },
+  {
+   "sur": "최",
+   "given": "원준",
+   "team": "storm",
+   "pos": "RF",
+   "style": "준족",
+   "age": 29
+  },
+  {
+   "sur": "전",
+   "given": "준우",
+   "team": "oceans",
+   "pos": "LF",
+   "style": "클러치",
+   "age": 40
+  },
+  {
+   "sur": "윤",
+   "given": "동희",
+   "team": "oceans",
+   "pos": "RF",
+   "style": "교타자",
+   "age": 23
+  },
+  {
+   "sur": "황",
+   "given": "성빈",
+   "team": "oceans",
+   "pos": "CF",
+   "style": "준족",
+   "age": 29
+  },
+  {
+   "sur": "박",
+   "given": "세웅",
+   "team": "oceans",
+   "pos": "P",
+   "style": "철완",
+   "age": 31
+  },
+  {
+   "sur": "김",
+   "given": "원중",
+   "team": "oceans",
+   "pos": "P",
+   "style": "제구파",
+   "age": 33
+  },
+  {
+   "sur": "손",
+   "given": "호영",
+   "team": "oceans",
+   "pos": "3B",
+   "style": "파워히터",
+   "age": 32
+  },
+  {
+   "sur": "박",
+   "given": "민우",
+   "team": "irons",
+   "pos": "2B",
+   "style": "교타자",
+   "age": 33
+  },
+  {
+   "sur": "김",
+   "given": "주원",
+   "team": "irons",
+   "pos": "SS",
+   "style": "준족",
+   "age": 24
+  },
+  {
+   "sur": "김",
+   "given": "형준",
+   "team": "irons",
+   "pos": "C",
+   "style": "강견",
    "age": 27
   },
   {
-   "sur": "민",
-   "given": "주원",
-   "team": "seagulls",
-   "pos": "P",
-   "style": "제구파",
-   "age": 30
+   "sur": "박",
+   "given": "건우",
+   "team": "irons",
+   "pos": "RF",
+   "style": "교타자",
+   "age": 36
   },
   {
-   "sur": "변",
-   "given": "진우",
-   "team": "warriors",
-   "pos": "C",
-   "style": "강견",
+   "sur": "구",
+   "given": "창모",
+   "team": "irons",
+   "pos": "P",
+   "style": "변화구",
    "age": 29
+  },
+  {
+   "sur": "김",
+   "given": "영규",
+   "team": "irons",
+   "pos": "P",
+   "style": "제구파",
+   "age": 26
+  },
+  {
+   "sur": "이",
+   "given": "주형",
+   "team": "warriors",
+   "pos": "CF",
+   "style": "교타자",
+   "age": 25
+  },
+  {
+   "sur": "하",
+   "given": "영민",
+   "team": "warriors",
+   "pos": "P",
+   "style": "제구파",
+   "age": 31
+  },
+  {
+   "sur": "최",
+   "given": "주환",
+   "team": "warriors",
+   "pos": "1B",
+   "style": "클러치",
+   "age": 38
   }
  ]
 }

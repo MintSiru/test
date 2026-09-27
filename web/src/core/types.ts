@@ -329,8 +329,14 @@ export interface GameState {
   dayEventsDone?: string;
   /** 동계 훈련 등 다음 훈련에 적용할 보너스 배율 */
   trainingBonus?: number;
-  /** 예산 (만원) */
-  budget?: number;
+  /** 야구부 포인트 (경기 결과로 획득, 장터에서 사용) */
+  points?: number;
+  /** 가방: 아이템 key → 개수 */
+  inventory?: Record<string, number>;
+  /** 이번 달 장터 */
+  shop?: { openUntil: string; stock: { key: string; qty: number }[] };
+  /** 프로 선수 명단: 실명(real) / 가상(fictional) */
+  prosMode?: 'real' | 'fictional';
   /** 시설 레벨 */
   facilities?: Record<string, number>;
   /** 라이벌 학교 */

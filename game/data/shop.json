@@ -1,0 +1,431 @@
+{
+ "note": "야구부 포인트(P)와 장터. 포인트는 경기 결과로만 얻는다. 장터는 매월 1일부터 7일간 열리고, 시설 기물은 방학·비시즌 달(facilityMonths)의 장터에서만 설치할 수 있다.",
+ "startPoints": 100,
+ "earn": {
+  "win": 25,
+  "draw": 10,
+  "loss": 5,
+  "perRun": 2,
+  "coldWin": 10,
+  "friendlyWin": 10,
+  "friendlyPlay": 4,
+  "placing": {
+   "우승": 400,
+   "준우승": 200,
+   "4강": 120,
+   "8강": 60,
+   "16강": 25
+  },
+  "leagueFirst": 60,
+  "draftRound1": 100,
+  "draftOther": 40
+ },
+ "market": {
+  "days": 7,
+  "stockSize": 7,
+  "facilityMonths": [
+   1,
+   2,
+   7,
+   8,
+   12
+  ]
+ },
+ "facilities": [
+  {
+   "key": "weight",
+   "name": "웨이트 기구 세트",
+   "desc": "파워·스태미나 성장",
+   "stats": [
+    "power",
+    "stamina"
+   ],
+   "growth": 0.2,
+   "costs": [
+    100,
+    200,
+    350
+   ]
+  },
+  {
+   "key": "cage",
+   "name": "실내 타격 케이지",
+   "desc": "컨택·선구안 성장",
+   "stats": [
+    "contact",
+    "eye"
+   ],
+   "growth": 0.2,
+   "costs": [
+    100,
+    200,
+    350
+   ]
+  },
+  {
+   "key": "bullpen",
+   "name": "불펜 · 투구 분석기",
+   "desc": "구속·제구·변화구 성장",
+   "stats": [
+    "velo",
+    "control",
+    "breaking"
+   ],
+   "growth": 0.2,
+   "costs": [
+    120,
+    240,
+    400
+   ]
+  },
+  {
+   "key": "ground",
+   "name": "그라운드 정비 장비",
+   "desc": "수비·어깨·주력 성장, 부상 위험 감소",
+   "stats": [
+    "fielding",
+    "arm",
+    "speed"
+   ],
+   "growth": 0.2,
+   "costs": [
+    90,
+    180,
+    320
+   ]
+  },
+  {
+   "key": "dorm",
+   "name": "합숙소 비품",
+   "desc": "스카우트 방문 효과 증가, 피로 회복",
+   "stats": [],
+   "growth": 0,
+   "costs": [
+    120,
+    240,
+    400
+   ]
+  },
+  {
+   "key": "analysis",
+   "name": "전력 분석 장비",
+   "desc": "상대 전력·유망주 정보 공개, 작전 미팅 효과",
+   "stats": [],
+   "growth": 0,
+   "costs": [
+    80,
+    160,
+    300
+   ]
+  }
+ ],
+ "items": [
+  {
+   "key": "protein",
+   "name": "프로틴",
+   "type": "stat",
+   "stat": "power",
+   "amount": 3,
+   "price": 45,
+   "weight": 10,
+   "desc": "선수 한 명의 파워 +3"
+  },
+  {
+   "key": "spike",
+   "name": "경량 스파이크",
+   "type": "stat",
+   "stat": "speed",
+   "amount": 3,
+   "price": 45,
+   "weight": 10,
+   "desc": "선수 한 명의 주력 +3"
+  },
+  {
+   "key": "batglove",
+   "name": "배팅 장갑",
+   "type": "stat",
+   "stat": "contact",
+   "amount": 3,
+   "price": 50,
+   "weight": 10,
+   "desc": "선수 한 명의 컨택 +3"
+  },
+  {
+   "key": "eyeglass",
+   "name": "선구안 훈련 고글",
+   "type": "stat",
+   "stat": "eye",
+   "amount": 3,
+   "price": 40,
+   "weight": 8,
+   "desc": "선수 한 명의 선구안 +3"
+  },
+  {
+   "key": "glove",
+   "name": "명품 글러브",
+   "type": "stat",
+   "stat": "fielding",
+   "amount": 3,
+   "price": 45,
+   "weight": 9,
+   "desc": "선수 한 명의 수비 +3"
+  },
+  {
+   "key": "tubing",
+   "name": "어깨 튜빙 밴드",
+   "type": "stat",
+   "stat": "arm",
+   "amount": 3,
+   "price": 40,
+   "weight": 8,
+   "desc": "선수 한 명의 어깨 +3"
+  },
+  {
+   "key": "video",
+   "name": "투구 분석 영상",
+   "type": "stat",
+   "stat": "control",
+   "amount": 3,
+   "price": 55,
+   "weight": 9,
+   "pitcher": true,
+   "desc": "투수 한 명의 제구 +3"
+  },
+  {
+   "key": "speedgun",
+   "name": "스피드건 트레이닝",
+   "type": "stat",
+   "stat": "velo",
+   "amount": 2,
+   "price": 60,
+   "weight": 7,
+   "pitcher": true,
+   "desc": "투수 한 명의 구속 +2km"
+  },
+  {
+   "key": "treadmill",
+   "name": "러닝머신 이용권",
+   "type": "stat",
+   "stat": "stamina",
+   "amount": 4,
+   "price": 45,
+   "weight": 8,
+   "pitcher": true,
+   "desc": "투수 한 명의 스태미나 +4"
+  },
+  {
+   "key": "grip",
+   "name": "변화구 그립 교본",
+   "type": "stat",
+   "stat": "breaking",
+   "amount": 1,
+   "price": 65,
+   "weight": 6,
+   "pitcher": true,
+   "desc": "투수 한 명의 변화구 한 단계 상승 (없으면 새 구종)"
+  },
+  {
+   "key": "bk_chance",
+   "name": "찬스의 비법서",
+   "type": "ability",
+   "ability": "chance",
+   "price": 120,
+   "weight": 3,
+   "desc": "특수능력 「찬스◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_power",
+   "name": "파워히터 교본",
+   "type": "ability",
+   "ability": "powerHitter",
+   "price": 150,
+   "weight": 2,
+   "desc": "특수능력 「파워히터」 습득 (타자)"
+  },
+  {
+   "key": "bk_hit",
+   "name": "안타제조기의 비결",
+   "type": "ability",
+   "ability": "hitMachine",
+   "price": 150,
+   "weight": 2,
+   "desc": "특수능력 「안타제조기」 습득 (타자)"
+  },
+  {
+   "key": "bk_steal",
+   "name": "도루 교본",
+   "type": "ability",
+   "ability": "stealer",
+   "price": 100,
+   "weight": 3,
+   "desc": "특수능력 「도루 달인」 습득 (타자)"
+  },
+  {
+   "key": "bk_bunt",
+   "name": "번트 교본",
+   "type": "ability",
+   "ability": "bunter",
+   "price": 70,
+   "weight": 4,
+   "desc": "특수능력 「번트 달인」 습득 (타자)"
+  },
+  {
+   "key": "bk_laser",
+   "name": "레이저빔 교본",
+   "type": "ability",
+   "ability": "laser",
+   "price": 100,
+   "weight": 3,
+   "desc": "특수능력 「레이저빔」 습득 (타자)"
+  },
+  {
+   "key": "bk_glove",
+   "name": "수비 달인의 책",
+   "type": "ability",
+   "ability": "glove",
+   "price": 110,
+   "weight": 3,
+   "desc": "특수능력 「수비 달인」 습득 (타자)"
+  },
+  {
+   "key": "bk_lefty",
+   "name": "좌완 공략집",
+   "type": "ability",
+   "ability": "lefty",
+   "price": 90,
+   "weight": 3,
+   "desc": "특수능력 「좌완킬러」 습득 (타자)"
+  },
+  {
+   "key": "bk_tenacious",
+   "name": "끈기의 책",
+   "type": "ability",
+   "ability": "tenacious",
+   "price": 90,
+   "weight": 3,
+   "desc": "특수능력 「끈질김」 습득 (타자)"
+  },
+  {
+   "key": "bk_pinch",
+   "name": "핀치 극복서",
+   "type": "ability",
+   "ability": "pinch",
+   "price": 120,
+   "weight": 3,
+   "desc": "특수능력 「핀치◎」 습득 (투수)"
+  },
+  {
+   "key": "bk_heavy",
+   "name": "묵직한 공 교본",
+   "type": "ability",
+   "ability": "heavyBall",
+   "price": 140,
+   "weight": 2,
+   "desc": "특수능력 「묵직한 공」 습득 (투수)"
+  },
+  {
+   "key": "bk_pinpoint",
+   "name": "핀포인트 교본",
+   "type": "ability",
+   "ability": "pinpoint",
+   "price": 140,
+   "weight": 2,
+   "desc": "특수능력 「핀포인트」 습득 (투수)"
+  },
+  {
+   "key": "bk_k",
+   "name": "탈삼진 교본",
+   "type": "ability",
+   "ability": "strikeout",
+   "price": 140,
+   "weight": 2,
+   "desc": "특수능력 「탈삼진」 습득 (투수)"
+  },
+  {
+   "key": "bk_iron",
+   "name": "철완 트레이닝",
+   "type": "ability",
+   "ability": "ironArm",
+   "price": 110,
+   "weight": 3,
+   "desc": "특수능력 「철완」 습득 (투수)"
+  },
+  {
+   "key": "bk_heart",
+   "name": "강심장 명상록",
+   "type": "ability",
+   "ability": "bigHeart",
+   "price": 110,
+   "weight": 3,
+   "desc": "특수능력 「강심장」 습득 (투수)"
+  },
+  {
+   "key": "fixer",
+   "name": "나쁜 버릇 교정서",
+   "type": "fix",
+   "price": 80,
+   "weight": 4,
+   "desc": "선수 한 명의 부정적 특수능력(찬스×·핀치×·난조) 제거"
+  },
+  {
+   "key": "charm",
+   "name": "행운의 부적",
+   "type": "cond",
+   "price": 20,
+   "weight": 10,
+   "desc": "선수 한 명을 절호조로"
+  },
+  {
+   "key": "firstaid",
+   "name": "구급 상자",
+   "type": "heal",
+   "amount": 10,
+   "price": 35,
+   "weight": 7,
+   "desc": "선수 한 명의 부상 기간 -10일"
+  },
+  {
+   "key": "signball",
+   "name": "프로 선수 사인볼",
+   "type": "idol",
+   "amount": 20,
+   "price": 40,
+   "weight": 6,
+   "desc": "동경하는 프로 선수가 있는 선수의 동경도 +20"
+  },
+  {
+   "key": "drinks",
+   "name": "에너지 드링크 한 박스",
+   "type": "teamFatigue",
+   "amount": 25,
+   "price": 30,
+   "weight": 8,
+   "desc": "선수단 전원 피로 -25"
+  },
+  {
+   "key": "feast",
+   "name": "단체 보양식",
+   "type": "teamCond",
+   "price": 50,
+   "weight": 6,
+   "desc": "선수단 전원 컨디션 한 단계 상승"
+  },
+  {
+   "key": "letter",
+   "name": "감독 추천서",
+   "type": "prospect",
+   "amount": 25,
+   "price": 50,
+   "weight": 5,
+   "desc": "중학 유망주 한 명의 입학 의향 +25"
+  },
+  {
+   "key": "cards",
+   "name": "훈련 카드 세트",
+   "type": "cards",
+   "price": 60,
+   "weight": 5,
+   "desc": "훈련 손패 5장을 모두 숫자 3 이상 카드로 교체"
+  }
+ ]
+}

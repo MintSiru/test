@@ -7,7 +7,7 @@ import { LEAGUE_GROUPS } from './data';
 import { weeklyEvent } from './events';
 import { initRival, isRivalGame, recordH2H, seasonRivalUpdate } from './rival';
 import { postponeRain } from './weather';
-import { addPrize, FAC_DATA, facLevel, monthlyIncome } from './facilities';
+import { SHOP, earn, facLevel, matchPoints, openMarket, placingPoints } from './shop';
 import { checkIdolMilestones, idolOf, proName, proSeasonEnd, proTeamName, weeklyProNews } from './idol';
 import { josa } from './names';
 import { addBat, addPit, emptyBat, emptyPit, grade, name, overall, statValue } from './player';
@@ -143,7 +143,7 @@ function processDay(state: GameState, rng: Rng): 'match' | 'next' {
 
 function dayStartEvents(state: GameState, rng: Rng) {
   const d = state.date;
-  if (d.endsWith('-01')) monthlyIncome(state);
+  if (d.endsWith('-01')) openMarket(state, rng);
   for (const ev of yearEvents(state.year)) {
     if (ev.date !== d) continue;
     switch (ev.key) {
@@ -379,14 +379,16 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
     const them = f.home === u ? res.awayScore : res.homeScore;
     const label = comp.kind === 'friendly' ? '연습 경기' : comp.kind === 'league' ? compDef(comp.key).short : `${compDef(comp.key).short} ${roundName(comp, f.round!)}`;
     const outcome = res.winner === u ? '승리' : res.winner ? '패배' : '무승부';
-    state.news.push({ date: f.date, kind: res.winner === u ? 'good' : res.winner ? 'bad' : 'info', text: `[${label}] vs ${opp.name} ${us}:${them} ${outcome}${res.called ? ' (콜드)' : ''}` });
+    const pts = matchPoints(!official, res.winner === u, !res.winner, us, !!res.called);
+    state.points = (state.points ?? 0) + pts;
+    state.news.push({ date: f.date, kind: res.winner === u ? 'good' : res.winner ? 'bad' : 'info', text: `[${label}] vs ${opp.name} ${us}:${them} ${outcome}${res.called ? ' (콜드)' : ''}  +${pts}P` });
     if (comp.kind === 'tournament') {
       if (res.winner === u) state.reputation = clamp(state.reputation + 1, 0, 100);
       const r = tournamentResultFor(comp, u);
       if (r && (comp.champion || res.winner !== u)) {
         comp.userResult = r;
         const def = compDef(comp.key);
-        addPrize(state, r, def.short);
+        earn(state, placingPoints(r), `${def.short} ${r}`);
         if (r === '우승') {
           state.reputation = clamp(state.reputation + def.repWin, 0, 100);
           state.popups.push({ kind: 'good', title: `${def.short} 우승!`, body: `${userTeam(state).name}, ${def.name} 우승!!\n전국에 이름을 떨쳤다. (명성 +${def.repWin})` });
@@ -445,7 +447,10 @@ function finishLeague(state: GameState, c: Competition, rng: Rng) {
       if (rank <= 4) pres.push(row.teamId);
       if (row.teamId === u) {
         c.userResult = `${g.name} ${rank}위 (${row.w}승 ${row.l}패${row.d ? ` ${row.d}무` : ''})`;
-        if (rank === 1) state.reputation = clamp(state.reputation + 3, 0, 100);
+        if (rank === 1) {
+          state.reputation = clamp(state.reputation + 3, 0, 100);
+          earn(state, SHOP.earn.leagueFirst, `${g.name} 권역 1위`);
+        }
       }
     });
   }
@@ -509,7 +514,7 @@ export function runDraft(state: GameState, rng: Rng) {
       if (idol && idol.teamId === team.id && !idol.retired) line += `\n   ★ 동경하던 ${josa(proName(idol), '과/와')} 같은 유니폼을 입게 됐다! "${idol.given} 선배, 이제 동료예요!"`;
       lines.push(line);
       state.reputation = clamp(state.reputation + (round === 1 ? 6 : round <= 3 ? 4 : 2), 0, 100);
-      state.budget = (state.budget ?? 0) + FAC_DATA.draftDonation;
+      state.points = (state.points ?? 0) + (round === 1 ? SHOP.earn.draftRound1 : SHOP.earn.draftOther);
       state.pros.push({
         id: `pro${uid(state, 'x')}`,
         sur: p.sur,

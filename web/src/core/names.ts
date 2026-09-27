@@ -29,7 +29,8 @@ export function fullName(p: { sur: string; given: string }): string {
 }
 
 /** 한국어 조사 자동 선택: josa('민준', '은/는') → '민준은' */
-export function josa(word: string, pair: '은/는' | '이/가' | '을/를' | '과/와' | '이/' | '으로/로'): string {
+export function josa(word: string, pair: '은/는' | '이/가' | '을/를' | '과/와' | '이/' | '으로/로' | '에게'): string {
+  if (pair === '에게') return word + '에게';
   const code = word.charCodeAt(word.length - 1) - 0xac00;
   const has = code >= 0 && code <= 11171 && code % 28 !== 0;
   const [a, b] = pair.split('/');

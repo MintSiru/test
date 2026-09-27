@@ -44,6 +44,7 @@ func add_top_bar(title := "", back := true) -> void:
 	h.add_child(UI.label(t["name"], UI.ACCENT, true))
 	h.add_child(UI.label(Cal.pretty(s["date"], true), UI.TEXT, true))
 	h.add_child(UI.label("명성 %d" % s["reputation"], UI.DIM, true))
+	h.add_child(UI.label("%dP" % Shop.points(s), UI.GOOD, true))
 	var rec: Dictionary = t["seasonRecord"]
 	h.add_child(UI.label("%d승 %d패 %d무" % [rec["w"], rec["l"], rec["d"]], UI.DIM, true))
 
