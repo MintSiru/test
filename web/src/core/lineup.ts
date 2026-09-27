@@ -45,8 +45,9 @@ export function autoLineup(players: Player[], date: string, excludeIds: string[]
     }
     if (best) { chosen.set(pos, best); used.add(best.id); }
   }
-  // 지명타자: 남은 선수 중 타격 최고
-  const dh = pool.filter((p) => !used.has(p.id)).sort((a, b) => batValue(b) - batValue(a))[0];
+  // 지명타자: 남은 야수 중 타격 최고 (야수가 없을 때만 투수)
+  const restDh = pool.filter((p) => !used.has(p.id)).sort((a, b) => batValue(b) - batValue(a));
+  const dh = restDh.find((p) => p.pos !== 'P') ?? restDh[0];
   const nine: { p: Player; pos: Pos | 'DH' }[] = [...chosen.entries()].map(([pos, p]) => ({ p, pos }));
   if (dh) nine.push({ p: dh, pos: 'DH' });
   return battingOrder(nine).map((x) => ({ playerId: x.p.id, pos: x.pos }));
