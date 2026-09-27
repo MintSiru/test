@@ -2,14 +2,10 @@ class_name MatchAI
 extends RefCounted
 ## CPU 감독 AI (web/src/sim/ai.ts 이식). 사용자 팀 '위임' 시에도 사용.
 
-static var _cache := {}
-
-
-static func _pa_key(m: MatchEngine) -> String:
-	var bs := ""
-	for b in m.bases:
-		bs += "1" if b != null else "0"
-	return "%d%s%d%d%s%d" % [m.inning, m.top, m.off().batter_idx, m.outs, bs, m.get_instance_id()]
+## 같은 타석 동안 작전을 유지하기 위한 키 (정수)
+static func _pa_key(m: MatchEngine) -> int:
+	var bs := (1 if m.bases[0] != null else 0) | (2 if m.bases[1] != null else 0) | (4 if m.bases[2] != null else 0)
+	return ((((m.inning * 2 + (1 if m.top else 0)) * 10 + m.off().batter_idx) * 4 + m.outs) * 8 + bs)
 
 
 static func _hitter(p: SimPlayer) -> float:
@@ -17,10 +13,14 @@ static func _hitter(p: SimPlayer) -> float:
 
 
 static func _decide_pa(m: MatchEngine) -> Dictionary:
-	var key := _pa_key(m)
-	var cached = _cache.get(m.get_instance_id())
-	if cached != null and cached["key"] == key:
+	var key: int = _pa_key(m)
+	var cached := m.ai_cache
+	if not cached.is_empty() and cached["key"] == key:
 		return cached
+	return _decide_new(m, key)
+
+
+static func _decide_new(m: MatchEngine, key: int) -> Dictionary:
 	var rng := m.rng
 	var b := m.batter()
 	var o := m.off()
@@ -55,7 +55,7 @@ static func _decide_pa(m: MatchEngine) -> Dictionary:
 	elif _hitter(b) > 150 and rng.chance(0.3):
 		shift = "deep"
 	var res := {"key": key, "off": off_order, "pitch": pitch, "shift": shift}
-	_cache[m.get_instance_id()] = res
+	m.ai_cache = res
 	return res
 
 
@@ -77,8 +77,16 @@ static func defense(m: MatchEngine) -> Dictionary:
 
 
 static func orders(m: MatchEngine) -> Dictionary:
-	var d := defense(m)
-	return {"off": offense(m), "pitch": d["pitch"], "shift": d["shift"]}
+	var d := _decide_pa(m)
+	var off: String = d["off"]
+	if m.balls == 3 and m.strikes == 0 and off == "normal":
+		off = "wait"
+	elif (off == "bunt" or off == "squeeze") and m.strikes == 2:
+		off = "normal"
+	var pitch: String = d["pitch"]
+	if pitch == "ibb" and not (m.balls == 0 and m.strikes == 0):
+		pitch = "normal"
+	return {"off": off, "pitch": pitch, "shift": d["shift"]}
 
 
 static func reliever_score(p: SimPlayer) -> float:
@@ -125,8 +133,7 @@ static func play_out(m: MatchEngine) -> void:
 		guard += 1
 		pitching_change(m, m.def())
 		m.step(orders(m))
-	_cache.erase(m.get_instance_id())
 
 
 static func forget(m: MatchEngine) -> void:
-	_cache.erase(m.get_instance_id())
+	m.ai_cache = {}

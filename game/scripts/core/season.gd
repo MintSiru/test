@@ -160,16 +160,13 @@ static func _process_day(state: Dictionary, rng: Rng, budget := -1) -> String:
 		if x["f"]["home"] == u or x["f"]["away"] == u:
 			state["pendingFixture"] = x["f"]["id"]
 			return "match"
-	var played := 0
-	for x in today:
-		if x["f"].get("result") != null:
-			continue
-		if budget > 0 and played >= budget:
-			return "partial"
-		var m := create_match(state, x["f"], rng)
-		MatchAI.play_out(m)
-		apply_result(state, x["comp"], x["f"], m, rng)
-		played += 1
+	var todo := today.filter(func(x): return x["f"].get("result") == null)
+	var partial := budget > 0 and todo.size() > budget
+	if partial:
+		todo = todo.slice(0, budget)
+	_sim_cpu_games(state, todo, rng)
+	if partial:
+		return "partial"
 	_end_of_day(state, rng)
 	state["date"] = Cal.add_days(d, 1)
 	if Cal.season_year_of(state["date"]) > state["year"]:
@@ -177,6 +174,16 @@ static func _process_day(state: Dictionary, rng: Rng, budget := -1) -> String:
 	if Cal.weekday(state["date"]) == 1:
 		_week_start(state, rng)
 	return "next"
+
+
+## CPU끼리 경기를 시뮬레이션 (실황 문구 생략 모드).
+## 참고: GDScript 스레드 병렬화(WorkerThreadPool)는 측정 결과 빨라지지 않아 쓰지 않는다.
+static func _sim_cpu_games(state: Dictionary, todo: Array, rng: Rng) -> void:
+	for x in todo:
+		var m := create_match(state, x["f"], rng)
+		m.quiet = true
+		MatchAI.play_out(m)
+		apply_result(state, x["comp"], x["f"], m, rng)
 
 
 static func _day_start_events(state: Dictionary, rng: Rng) -> void:

@@ -72,6 +72,10 @@ var over := false
 var winner = null
 var called := false
 var game_log: Array = []
+## true 면 실황 문구·로그를 만들지 않는다 (CPU끼리 경기 고속 처리)
+var quiet := false
+## CPU 감독 AI 의 타석별 작전 캐시
+var ai_cache := {}
 var pitch_no := 0
 var _pW = null
 var _pL = null
@@ -255,12 +259,12 @@ func step(orders: Dictionary = {}) -> Dictionary:
 	d.box[p.id]["pit"]["np"] += 1
 
 	var eff := pitcher_eff(p, d)
-	var breaking := p.pitches.filter(func(x): return x["type"] != "FB")
+	var breaking := p.breaking
 	var pt := "FB"
 	var lv := 0
 	var fb_rate := clampf(0.64 - breaking.size() * 0.06 + (0.15 if balls >= 3 else 0.0), 0.35, 0.95)
 	if not breaking.is_empty() and not rng.chance(fb_rate):
-		var c: Dictionary = rng.weighted(breaking, breaking.map(func(x): return x["lv"] + 1))
+		var c: Dictionary = rng.weighted(breaking, p.breaking_w)
 		pt = c["type"]
 		lv = int(c["lv"])
 	var is_breaking := pt != "FB"
@@ -433,6 +437,8 @@ const CALL_KO := {"ball": "볼", "called": "스트라이크", "swinging": "헛�
 
 
 func _pitch_text(ev: Dictionary) -> String:
+	if quiet:
+		return ""
 	return "%dkm %s %s" % [ev["kmh"], PlayerUtil.PITCH_KO[ev["pitchType"]], CALL_KO[ev["call"]]]
 
 
@@ -1008,7 +1014,7 @@ func _finish(ev: Dictionary, pa_ended := true) -> Dictionary:
 		strikes = 0
 		var o := off()
 		o.batter_idx = (o.batter_idx + 1) % 9
-		if ev["paResult"] != "":
+		if ev["paResult"] != "" and not quiet:
 			game_log.append("%d회%s %s: %s%s" % [inning, "초" if top else "말", o.by_id[ev["batterId"]].name, ev["paResult"], (" (+%d점)" % ev["runs"]) if ev["runs"] else ""])
 
 	if not top and inning >= rules["innings"] and home.score > away.score:

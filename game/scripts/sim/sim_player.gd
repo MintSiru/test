@@ -19,6 +19,9 @@ var ctl: float
 var sta: float
 var stuff: float
 var pitches: Array = []
+## 변화구 목록과 선택 가중치 (매 투구 계산하지 않도록 미리 준비)
+var breaking: Array = []
+var breaking_w: Array = []
 var abil: Array = []
 var can_pitch: bool = true
 var face_seed: int = 0
@@ -50,6 +53,10 @@ static func from_player(p: Dictionary, date: String) -> SimPlayer:
 	s.sta = clampf(r["stamina"] * m, 1, 110)
 	s.stuff = PlayerUtil.breaking_score(r["pitches"])
 	s.pitches = r["pitches"]
+	for x in s.pitches:
+		if x["type"] != "FB":
+			s.breaking.append(x)
+			s.breaking_w.append(x["lv"] + 1)
 	s.abil = p["abilities"]
 	s.can_pitch = Lineup.can_pitch_on(p, date)
 	s.face_seed = int(p.get("faceSeed", 0))
