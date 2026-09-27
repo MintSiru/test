@@ -109,6 +109,7 @@ static func button(text: String, cb: Callable, min_w := 0, small := false) -> Bu
 	if small:
 		b.add_theme_font_override("font", font_small)
 		b.add_theme_font_size_override("font_size", 10)
+	b.pressed.connect(func(): Game.sfx("click", -8.0))
 	b.pressed.connect(cb)
 	return b
 

@@ -150,6 +150,7 @@ func _run(move: Dictionary, dur_per_base: float) -> void:
 		add_text("OUT", r["pos"] + Vector2(-8, -18), Color("#ef6f6c"), false, 0.8)
 	elif to == 4:
 		add_text("+1", r["pos"] + Vector2(-6, -18), Color("#f4d35e"), false, 0.8)
+		Game.sfx("cheer", -6.0)
 
 
 func play(ev: Dictionary, speed: float) -> void:
@@ -169,6 +170,10 @@ func play(ev: Dictionary, speed: float) -> void:
 	# 투구
 	await _tween_ball(p_from, plate + Vector2(ev["loc"].x * 3, 0), 0.42 * k, 3.0)
 	var call: String = ev["call"]
+	if call in ["ball", "called", "swinging", "buntMiss"]:
+		Game.sfx("mitt", -4.0)
+	elif call in ["foul", "buntFoul", "inplay"]:
+		Game.sfx("hit", -2.0)
 	match call:
 		"ball":
 			add_text("볼", HOME + Vector2(-8, -30), Color("#7fd0ff"), false, 0.7 * k + 0.2)
@@ -219,6 +224,7 @@ func _animate_batted(ev: Dictionary, k: float) -> void:
 	match b["result"]:
 		"HR":
 			add_text("홈런!!", Vector2(160, 70), Color("#f4d35e"), true, 1.6)
+			Game.sfx("cheer")
 		"1B", "2B", "3B":
 			add_text({"1B": "안타!", "2B": "2루타!", "3B": "3루타!"}[b["result"]], land + Vector2(-16, -24), Color("#6fd08c"))
 			# 굴러가는 공 → 야수 송구

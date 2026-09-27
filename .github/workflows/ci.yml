@@ -42,6 +42,12 @@ jobs:
           unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
       - name: 테스트 (밸런스 + 1년 시즌)
         run: GODOT=godot game/tests/run_tests.sh
+      - name: UI 통합 테스트 (가상 디스플레이)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri > /dev/null
+          cd game
+          timeout 600 xvfb-run -a -s "-screen 0 1280x720x24" godot --path . --rendering-driver opengl3 -- --uitest 2>&1 | tee uitest.log | grep -E "  ok|FAIL|UITEST"
+          grep -q "UITEST OK" uitest.log
 
   pages:
     name: 웹 빌드 · GitHub Pages 배포
@@ -84,5 +90,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
+      # Pages 가 아직 꺼져 있으면(Settings → Pages → Source: GitHub Actions) 배포만 건너뛴다
       - id: deploy
         uses: actions/deploy-pages@v4
+        continue-on-error: true

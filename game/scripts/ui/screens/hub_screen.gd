@@ -54,7 +54,10 @@ func _build() -> void:
 	var sp: int = st()["scoutPoints"]
 	menu.add_child(UI.button("스카우트 (행동력 %d)" % sp if not st()["prospects"].is_empty() else "스카우트", func(): Game.goto("scout")))
 	menu.add_child(UI.button("기록실", func(): Game.goto("records")))
-	menu.add_child(UI.spacer(0, 6))
+	var snd: bool = st()["settings"].get("sound", true)
+	menu.add_child(UI.button("소리: 켜짐" if snd else "소리: 꺼짐", func():
+		st()["settings"]["sound"] = not st()["settings"].get("sound", true)
+		_build(), 0, true))
 	menu.add_child(UI.button("저장", func():
 		Game.save_game()
 		Game.main.show_modal("저장", "저장했습니다.")))
@@ -217,9 +220,10 @@ func _process(delta: float) -> void:
 	if not advancing:
 		return
 	var s := st()
-	# 한 프레임에 최대 3일까지 (경기 많은 날은 한 번에 하루)
-	for i in 3:
-		var r := Season.step_day(s)
+	# 한 프레임에 경기 몇 개 또는 조용한 날 며칠까지만 처리 (웹 빌드에서도 끊기지 않게)
+	var start_ms := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start_ms < 30:
+		var r := Season.step_day(s, 3)
 		if r != "":
 			advancing = false
 			Game.save_game()
@@ -227,8 +231,6 @@ func _process(delta: float) -> void:
 			if r == "popup":
 				Game.main.drain_popups(_after_popups)
 			return
-		if Season.fixtures_on(s, s["date"]).size() > 5:
-			break
 	if status_label:
 		status_label.text = "진행 중... %s" % Cal.pretty(s["date"])
 

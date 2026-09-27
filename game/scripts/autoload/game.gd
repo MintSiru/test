@@ -8,6 +8,26 @@ var state: Dictionary = {}
 var current_match: MatchEngine = null
 ## 메인 씬 (화면 전환 담당)
 var main: Node = null
+var _players: Array[AudioStreamPlayer] = []
+
+
+func _ready() -> void:
+	for i in 4:
+		var ap := AudioStreamPlayer.new()
+		add_child(ap)
+		_players.append(ap)
+
+
+## 효과음 재생 (설정에서 끌 수 있음)
+func sfx(name: String, volume_db := 0.0) -> void:
+	if not state.is_empty() and not state["settings"].get("sound", true):
+		return
+	for ap in _players:
+		if not ap.playing:
+			ap.stream = Sfx.get_stream(name)
+			ap.volume_db = volume_db
+			ap.play()
+			return
 
 
 func has_save() -> bool:

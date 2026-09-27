@@ -100,6 +100,21 @@ func _run() -> void:
 	_check(Game.main.current_name == "hub", "경기 후 홈 복귀")
 	var played := Season.user_fixtures(Game.state).filter(func(x): return x["f"].get("result") != null)
 	_check(played.size() >= 1, "경기 결과 저장 (%d경기)" % played.size())
+	# 다음 경기일까지 다시 진행 (주말 CPU 경기가 여러 프레임에 나눠 처리되는지)
+	var before: String = Game.state["date"]
+	for i in 900:
+		await _wait(1)
+		await _close_modals()
+		var hub2 := _cur()
+		if Game.main.current_name != "hub":
+			break
+		if Game.state.get("pendingFixture") != null and not hub2.advancing:
+			break
+		if not Game.state["weekTrained"] and not hub2.advancing:
+			hub2._use_card(Game.state["hand"][0]["id"])
+		elif not hub2.advancing and Game.state.get("pendingFixture") == null:
+			hub2._start_advance()
+	_check(Game.state["date"] > before and Game.state.get("pendingFixture") != null, "다음 경기일까지 진행 (%s → %s)" % [before, Game.state["date"]])
 	for scr in ["roster", "lineup", "schedule", "scout", "records"]:
 		Game.goto(scr)
 		await _wait(5)

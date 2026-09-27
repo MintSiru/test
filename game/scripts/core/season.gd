@@ -122,8 +122,9 @@ static func advance(state: Dictionary, max_days := 800) -> String:
 	return result
 
 
-## 하루만 진행 (UI 에서 진행 애니메이션용). 멈춰야 하면 이유를, 아니면 "" 반환
-static func step_day(state: Dictionary) -> String:
+## 조금씩 진행 (UI 용). 한 번에 CPU 경기를 최대 budget 개까지만 처리해 화면이 멈추지 않게 한다.
+## 멈춰야 하면 이유("training"/"match"/"popup")를, 계속 진행하면 "" 반환
+static func step_day(state: Dictionary, budget := 8) -> String:
 	if not state["popups"].is_empty():
 		return "popup"
 	if not state["weekTrained"]:
@@ -131,7 +132,7 @@ static func step_day(state: Dictionary) -> String:
 	if state.get("pendingFixture") != null:
 		return "match"
 	var rng := rng_of(state)
-	var r := _process_day(state, rng)
+	var r := _process_day(state, rng, budget)
 	save_rng(state, rng)
 	if r == "match":
 		return "match"
@@ -142,7 +143,8 @@ static func step_day(state: Dictionary) -> String:
 	return ""
 
 
-static func _process_day(state: Dictionary, rng: Rng) -> String:
+## budget > 0 이면 CPU 경기를 그 수만큼만 처리하고 "partial" 을 돌려준다 (날짜는 그대로)
+static func _process_day(state: Dictionary, rng: Rng, budget := -1) -> String:
 	var d: String = state["date"]
 	if state.get("dayEventsDone") != d:
 		state["dayEventsDone"] = d
@@ -158,12 +160,16 @@ static func _process_day(state: Dictionary, rng: Rng) -> String:
 		if x["f"]["home"] == u or x["f"]["away"] == u:
 			state["pendingFixture"] = x["f"]["id"]
 			return "match"
+	var played := 0
 	for x in today:
 		if x["f"].get("result") != null:
 			continue
+		if budget > 0 and played >= budget:
+			return "partial"
 		var m := create_match(state, x["f"], rng)
 		MatchAI.play_out(m)
 		apply_result(state, x["comp"], x["f"], m, rng)
+		played += 1
 	_end_of_day(state, rng)
 	state["date"] = Cal.add_days(d, 1)
 	if Cal.season_year_of(state["date"]) > state["year"]:
