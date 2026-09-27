@@ -5,6 +5,7 @@ import { roundName, standings } from './core/competition';
 import { LEAGUE_GROUPS } from './core/data';
 import { COND_KO, POS_KO, PITCH_KO, avg, era, grade, letter, name, overall, statValue } from './core/player';
 import { visitProspect } from './core/scouting';
+import { FACILITIES, facLevel, upgradeCost, upgradeFacility } from './core/facilities';
 import {
   advance, autoPlayUserMatch, createMatch, finishUserMatch, findFixture, idolLabel, rngOf, startNewGame, upcomingSchedule, useCard, userFixtures,
 } from './core/season';
@@ -73,7 +74,7 @@ function render() {
   if (!S) return renderTitle();
   const s = S;
   const t = userTeam(s);
-  const tabs: [string, string][] = [['home', '홈'], ['roster', '선수단'], ['schedule', '일정'], ['standings', '순위'], ['scout', '스카우트'], ['records', '기록']];
+  const tabs: [string, string][] = [['home', '홈'], ['roster', '선수단'], ['schedule', '일정'], ['standings', '순위'], ['scout', '스카우트'], ['facilities', '시설'], ['records', '기록']];
   if (s.pendingFixture || M) tabs.unshift(['match', '▶ 경기']);
   app.innerHTML = h(`
     <div class="bar">
@@ -102,7 +103,7 @@ function render() {
   if (pop) pop.onclick = () => { s.popups.shift(); save(); render(); };
   const body = app.querySelector<HTMLDivElement>('#body')!;
   if (tab === 'match' && !s.pendingFixture && !M) tab = 'home';
-  ({ home: renderHome, roster: renderRoster, schedule: renderSchedule, standings: renderStandings, scout: renderScout, records: renderRecords, match: renderMatch } as Record<string, (b: HTMLElement, s: GameState) => void>)[tab](body, s);
+  ({ home: renderHome, roster: renderRoster, schedule: renderSchedule, standings: renderStandings, scout: renderScout, facilities: renderFacilities, records: renderRecords, match: renderMatch } as Record<string, (b: HTMLElement, s: GameState) => void>)[tab](body, s);
 }
 
 function renderHome(body: HTMLElement, s: GameState) {
@@ -196,6 +197,16 @@ function renderScout(body: HTMLElement, s: GameState) {
     save();
     render();
   }));
+}
+
+function renderFacilities(body: HTMLElement, s: GameState) {
+  body.innerHTML = `<div class="panel">예산 <b>${s.budget ?? 0}만원</b> — 매월 1일 후원금, 대회 격려금, 프로 지명 기부금으로 늘어납니다.</div>
+    <div class="panel"><table>${FACILITIES.map((f) => {
+      const lv = facLevel(s.facilities, f.key);
+      const cost = upgradeCost(s, f.key);
+      return `<tr><td>${esc(f.name)}</td><td>Lv${lv}</td><td class="dim">${esc(f.desc)}</td><td><button data-fac="${f.key}" ${cost === null || (s.budget ?? 0) < cost ? 'disabled' : ''}>${cost === null ? '최고' : `증축 ${cost}만원`}</button></td></tr>`;
+    }).join('')}</table></div>`;
+  body.querySelectorAll<HTMLButtonElement>('[data-fac]').forEach((b) => (b.onclick = () => { upgradeFacility(s, b.dataset.fac!); save(); render(); }));
 }
 
 function renderRecords(body: HTMLElement, s: GameState) {

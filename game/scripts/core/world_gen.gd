@@ -47,6 +47,7 @@ static func new_game(o: Dictionary) -> Dictionary:
 		"teams": {}, "players": {}, "proTeams": GameData.pros()["teams"].duplicate(true), "pros": create_pros(rng, year),
 		"competitions": [], "hand": [], "weekTrained": false, "scoutPoints": 0, "prospects": [], "news": [], "popups": [],
 		"history": [], "alumni": [], "settings": {"speed": 2, "pauseMode": "pa", "sound": true}, "nextId": 1,
+		"budget": int(Facilities.data()["startBudget"]), "facilities": {},
 	}
 	var colors: Array = GameData.schools()["teamColors"]
 	var color_idx := 0

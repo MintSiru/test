@@ -188,6 +188,8 @@ static func _sim_cpu_games(state: Dictionary, todo: Array, rng: Rng) -> void:
 
 static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 	var d: String = state["date"]
+	if d.ends_with("-01"):
+		Facilities.monthly_income(state)
 	for ev in Cal.year_events(state["year"]):
 		if ev["date"] != d:
 			continue
@@ -238,6 +240,10 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)
+	var dorm := Facilities.level(state, "dorm")
+	if dorm > 0:
+		for p in roster:
+			p["fatigue"] = maxf(0.0, p["fatigue"] - 5 * dorm)
 	var ev := WeeklyEvents.roll(state, roster, rng)
 	if ev.has("news"):
 		state["news"].append(ev["news"])
@@ -271,7 +277,7 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	var eff := card.duplicate()
 	eff["value"] = card["value"] * bonus
 	for p in WorldGen.team_players(state, state["userTeamId"]):
-		Training.train_player(p, eff, state["pros"], rng, report)
+		Training.train_player(p, eff, state["pros"], rng, report, false, state.get("facilities"))
 	state.erase("trainingBonus")
 	if card["kind"] == "scout":
 		state["scoutPoints"] = mini(8, int(state["scoutPoints"]) + 2)
@@ -383,6 +389,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			if r != "" and (comp.get("champion") != null or res["winner"] != u):
 				comp["userResult"] = r
 				var def := Cal.comp_def(comp["key"])
+				Facilities.add_prize(state, r, def["short"])
 				if r == "우승":
 					state["reputation"] = clampi(state["reputation"] + int(def["repWin"]), 0, 100)
 					state["popups"].append({"kind": "good", "title": "%s 우승!" % def["short"], "body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
@@ -515,6 +522,7 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 				line += "\n   ★ 동경하던 %s 같은 유니폼을 입게 됐다! \"%s 선배, 이제 동료예요!\"" % [Text.josa(Idol.pro_name(idol), "과/와"), idol["given"]]
 			lines.append(line)
 			state["reputation"] = clampi(state["reputation"] + (6 if rnd == 1 else (4 if rnd <= 3 else 2)), 0, 100)
+			state["budget"] = int(state.get("budget", 0)) + int(Facilities.data()["draftDonation"])
 			state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": p["sur"], "given": p["given"], "teamId": team["id"], "pos": p["pos"],
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 	if not picks.is_empty():

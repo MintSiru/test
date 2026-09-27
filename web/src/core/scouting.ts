@@ -1,4 +1,5 @@
 import { LEAGUE_GROUPS } from './data';
+import { facLevel } from './facilities';
 import { josa } from './names';
 import { genPlayer, name } from './player';
 import { clamp, type Rng } from './rng';
@@ -49,8 +50,8 @@ export function visitProspect(state: GameState, id: string, rng: Rng): string {
   if (state.scoutPoints <= 0) return '스카우트 행동력이 부족하다.';
   state.scoutPoints--;
   pr.visits++;
-  pr.revealed = Math.min(3, pr.revealed + 1);
-  const gain = Math.round(10 + state.reputation * 0.15 + rng.int(0, 8) - pr.visits * 1.5);
+  pr.revealed = Math.min(3, pr.revealed + 1 + (pr.visits === 1 && facLevel(state.facilities, 'analysis') > 0 ? 1 : 0));
+  const gain = Math.round(10 + state.reputation * 0.15 + rng.int(0, 8) - pr.visits * 1.5 + 3 * facLevel(state.facilities, 'dorm'));
   pr.interest = clamp(pr.interest + Math.max(3, gain), 0, 100);
   return `${josa(name(pr.player), '을/를')} 만나고 왔다. 입학 의향 ${pr.interest}%`;
 }

@@ -5,6 +5,7 @@ import {
 } from './competition';
 import { LEAGUE_GROUPS } from './data';
 import { weeklyEvent } from './events';
+import { addPrize, FAC_DATA, facLevel, monthlyIncome } from './facilities';
 import { checkIdolMilestones, idolOf, proName, proSeasonEnd, proTeamName, weeklyProNews } from './idol';
 import { josa } from './names';
 import { addBat, addPit, emptyBat, emptyPit, grade, name, overall, statValue } from './player';
@@ -138,6 +139,7 @@ function processDay(state: GameState, rng: Rng): 'match' | 'next' {
 
 function dayStartEvents(state: GameState, rng: Rng) {
   const d = state.date;
+  if (d.endsWith('-01')) monthlyIncome(state);
   for (const ev of yearEvents(state.year)) {
     if (ev.date !== d) continue;
     switch (ev.key) {
@@ -190,6 +192,8 @@ function weekStart(state: GameState, rng: Rng) {
   weeklyProNews(state, rng);
   const roster = teamPlayers(state, state.userTeamId);
   for (const p of Object.values(state.players)) weeklyCondition(p, rng);
+  const dorm = facLevel(state.facilities, 'dorm');
+  if (dorm) for (const p of roster) p.fatigue = Math.max(0, p.fatigue - 5 * dorm);
   const ev = weeklyEvent(state, roster, rng);
   if (ev?.news) state.news.push(ev.news);
   if (ev?.popup) state.popups.push(ev.popup);
@@ -219,7 +223,7 @@ export function useCard(state: GameState, cardId: string): TrainingReport {
   const report: TrainingReport = { gains: {}, injuries: [], awakenings: [] };
   const bonus = state.trainingBonus ?? 1;
   const effCard = { ...card, value: card.value * bonus };
-  for (const p of teamPlayers(state, state.userTeamId)) trainPlayer(p, effCard, state.pros, rng, report);
+  for (const p of teamPlayers(state, state.userTeamId)) trainPlayer(p, effCard, state.pros, rng, report, false, state.facilities);
   state.trainingBonus = undefined;
   if (card.kind === 'scout') state.scoutPoints = Math.min(8, state.scoutPoints + 2);
   state.hand.splice(state.hand.indexOf(card), 1);
@@ -327,6 +331,7 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
       if (r && (comp.champion || res.winner !== u)) {
         comp.userResult = r;
         const def = compDef(comp.key);
+        addPrize(state, r, def.short);
         if (r === '우승') {
           state.reputation = clamp(state.reputation + def.repWin, 0, 100);
           state.popups.push({ kind: 'good', title: `${def.short} 우승!`, body: `${userTeam(state).name}, ${def.name} 우승!!\n전국에 이름을 떨쳤다. (명성 +${def.repWin})` });
@@ -449,6 +454,7 @@ export function runDraft(state: GameState, rng: Rng) {
       if (idol && idol.teamId === team.id && !idol.retired) line += `\n   ★ 동경하던 ${josa(proName(idol), '과/와')} 같은 유니폼을 입게 됐다! "${idol.given} 선배, 이제 동료예요!"`;
       lines.push(line);
       state.reputation = clamp(state.reputation + (round === 1 ? 6 : round <= 3 ? 4 : 2), 0, 100);
+      state.budget = (state.budget ?? 0) + FAC_DATA.draftDonation;
       state.pros.push({
         id: `pro${uid(state, 'x')}`,
         sur: p.sur,

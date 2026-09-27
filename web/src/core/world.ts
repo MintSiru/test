@@ -2,6 +2,7 @@ import { seasonStart } from './calendar';
 import { LEAGUE_GROUPS, PRO_PLAYER_DEFS, PRO_TEAM_DEFS, TEAM_COLORS } from './data';
 import { genPlayer } from './player';
 import { Rng } from './rng';
+import { FAC_DATA } from './facilities';
 import { drawCard } from './training';
 import type { GameState, Player, Pos, ProPlayer, Team } from './types';
 
@@ -89,6 +90,8 @@ export function newGame(o: NewGameOpts): GameState {
     alumni: [],
     settings: { speed: 2, pauseMode: 'pa', sound: true },
     nextId: 1,
+    budget: FAC_DATA.startBudget,
+    facilities: {},
   };
 
   let colorIdx = 0;

@@ -325,4 +325,8 @@ export interface GameState {
   dayEventsDone?: string;
   /** 동계 훈련 등 다음 훈련에 적용할 보너스 배율 */
   trainingBonus?: number;
+  /** 예산 (만원) */
+  budget?: number;
+  /** 시설 레벨 */
+  facilities?: Record<string, number>;
 }

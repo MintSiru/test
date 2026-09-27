@@ -50,6 +50,11 @@ func load_game() -> bool:
 	if typeof(d) != TYPE_DICTIONARY:
 		return false
 	state = normalize(d)
+	# 이전 버전 세이브 호환: 새로 생긴 항목 기본값
+	if not state.has("budget"):
+		state["budget"] = int(Facilities.data()["startBudget"])
+	if state.get("facilities") == null:
+		state["facilities"] = {}
 	current_match = null
 	return true
 

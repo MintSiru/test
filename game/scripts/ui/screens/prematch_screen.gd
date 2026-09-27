@@ -53,6 +53,16 @@ func setup(_p := {}) -> void:
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))
+	var an := Facilities.level(s, "analysis")
+	if an >= 1:
+		var staff := theirs.filter(func(p): return p["pos"] == "P")
+		staff.sort_custom(func(a, b): return Lineup.starter_score(a) > Lineup.starter_score(b))
+		var names := []
+		for p in staff.slice(0, 4):
+			names.append("%s %dkm%s" % [p["given"], p["r"]["velo"], "" if Lineup.can_pitch_on(p, fixture["date"]) else "(휴식)"])
+		rv.add_child(UI.wrap_label("[분석실] 투수진: " + ", ".join(names), 236, UI.DIM, true))
+	if an < 1:
+		rv.add_child(UI.label("(전력 분석실을 지으면 더 자세히 볼 수 있다)", UI.DIM, true))
 	rv.add_child(UI.label("주요 타자", UI.ACCENT, true))
 	var hitters := theirs.filter(func(p): return p["pos"] != "P")
 	hitters.sort_custom(func(a, b): return PlayerUtil.bat_value(a["r"]) > PlayerUtil.bat_value(b["r"]))
@@ -61,6 +71,8 @@ func setup(_p := {}) -> void:
 		var idol := Idol.idol_of(s, p)
 		rv.add_child(UI.label("%s %s 컨%s 파%s 주%s%s" % [PlayerUtil.POS_SHORT[p["pos"]], PlayerUtil.full_name(p), PlayerUtil.letter(pr["contact"]), PlayerUtil.letter(pr["power"]), PlayerUtil.letter(pr["speed"]),
 			(" ♥" + idol["given"]) if not idol.is_empty() else ""], UI.TEXT, true))
+		if an >= 2 and not p["abilities"].is_empty():
+			rv.add_child(UI.label("    " + ", ".join(p["abilities"].map(func(a): return GameData.ability_name(a))), UI.GOOD, true))
 
 	var row := UI.hbox(8)
 	UI.place(row, 4, 334, 632, 20)

@@ -1,0 +1,16 @@
+{
+ "note": "금액 단위: 만원. 레벨 0~3. growth 는 레벨당 해당 능력치 주간 훈련 성장 배율 증가분",
+ "startBudget": 500,
+ "monthlyBase": 100,
+ "monthlyPerReputation": 4,
+ "prizes": {"우승": 1000, "준우승": 500, "4강": 300, "8강": 150},
+ "draftDonation": 200,
+ "facilities": [
+  {"key": "weight", "name": "웨이트 트레이닝장", "desc": "파워·스태미나 성장", "stats": ["power", "stamina"], "growth": 0.2, "costs": [800, 1600, 3000]},
+  {"key": "cage", "name": "실내 타격 연습장", "desc": "컨택·선구안 성장", "stats": ["contact", "eye"], "growth": 0.2, "costs": [800, 1600, 3000]},
+  {"key": "bullpen", "name": "불펜 · 투구 분석기", "desc": "구속·제구·변화구 성장", "stats": ["velo", "control", "breaking"], "growth": 0.2, "costs": [900, 1800, 3200]},
+  {"key": "ground", "name": "그라운드 정비", "desc": "수비·어깨·주력 성장, 부상 위험 감소", "stats": ["fielding", "arm", "speed"], "growth": 0.2, "costs": [700, 1400, 2600]},
+  {"key": "dorm", "name": "야구부 기숙사", "desc": "스카우트 방문 효과 증가, 피로 회복", "stats": [], "growth": 0, "costs": [1000, 2000, 3500]},
+  {"key": "analysis", "name": "전력 분석실", "desc": "상대 전력·유망주 정보 공개, 작전 미팅 효과", "stats": [], "growth": 0, "costs": [600, 1200, 2400]}
+ ]
+}

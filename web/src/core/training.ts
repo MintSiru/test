@@ -1,5 +1,6 @@
 import { STYLE_INFO } from './abilities';
 import { ABILITIES } from './abilities';
+import { facilityGrowth, facLevel, type FacLevels } from './facilities';
 import { breakingScore, veloScore } from './player';
 import { clamp, type Rng } from './rng';
 import type { Card, CardKind, Focus, PitchType, Player, ProPlayer, StatKey } from './types';
@@ -67,7 +68,7 @@ export function autoFocus(p: Player): Focus {
 }
 
 export function growthMult(p: Player, k: StatKey, pros: ProPlayer[]): number {
-  let m = 0.6 + p.talent * 0.18;
+  let m = (0.6 + p.talent * 0.18) * 0.9;
   if (p.personality === '노력파') m *= 1.15;
   else if (p.personality === '천재') m *= 1.08;
   else if (p.personality === '소심') m *= 0.95;
@@ -133,13 +134,13 @@ export interface TrainingReport {
 }
 
 /** 한 주 훈련 적용 */
-export function trainPlayer(p: Player, card: Card, pros: ProPlayer[], rng: Rng, report?: TrainingReport, cpu = false) {
+export function trainPlayer(p: Player, card: Card, pros: ProPlayer[], rng: Rng, report?: TrainingReport, cpu = false, fac?: FacLevels) {
   const info = CARD_INFO[card.kind];
   const isP = p.pos === 'P';
   const dist = isP ? info.pitcher : info.batter;
   const gains: Partial<Record<StatKey, number>> = {};
   const give = (k: StatKey, pts: number) => {
-    const g = applyExp(p, k, pts, growthMult(p, k, pros), rng);
+    const g = applyExp(p, k, pts, growthMult(p, k, pros) * facilityGrowth(fac, k), rng);
     if (g) gains[k] = (gains[k] ?? 0) + g;
   };
   if (p.injury > 0) {
@@ -155,14 +156,14 @@ export function trainPlayer(p: Player, card: Card, pros: ProPlayer[], rng: Rng, 
   if (card.kind === 'rest' && rng.chance(0.5 + card.value * 0.08)) p.cond = clamp(p.cond + 1, -2, 2);
 
   // 부상
-  const risk = Math.max(0, p.fatigue - 60) * 0.004 + (card.kind === 'special' ? 0.01 : 0);
+  const risk = (Math.max(0, p.fatigue - 60) * 0.004 + (card.kind === 'special' ? 0.01 : 0)) * (1 - 0.2 * facLevel(fac, 'ground'));
   if (!cpu && rng.chance(risk)) {
     p.injury = rng.int(5, 25);
     report?.injuries.push(p.id);
   }
   // 특수능력 각성
   const awakenP = card.kind === 'practiceGame' ? 0.02 + card.value * 0.004 : card.kind === 'meeting' ? 0.03 + card.value * 0.006 : 0;
-  if (awakenP && rng.chance(awakenP * (0.6 + p.talent * 0.15))) {
+  if (awakenP && rng.chance(awakenP * (0.6 + p.talent * 0.15) * (card.kind === 'meeting' ? 1 + 0.25 * facLevel(fac, 'analysis') : 1))) {
     const pool = ABILITIES.filter((a) => a.good && a.forPitcher === isP && !p.abilities.includes(a.id));
     if (pool.length) {
       const a = rng.pick(pool);
