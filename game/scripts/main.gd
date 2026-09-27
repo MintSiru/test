@@ -63,6 +63,11 @@ func _ready() -> void:
 	if pitches >= 0:
 		_debug_match(pitches)
 	show_screen(start)
+	if "--boxscore" in OS.get_cmdline_user_args() and Game.current_match != null:
+		MatchAI.play_out(Game.current_match)
+		show_panel("박스스코어", BoxScore.build(Game.current_match))
+	if "--usecard" in OS.get_cmdline_user_args() and current.has_method("_use_card"):
+		current._use_card(Game.state["hand"][0]["id"])
 	if shot != "":
 		_take_shot(shot)
 	if "--uitest" in OS.get_cmdline_user_args():
@@ -160,6 +165,42 @@ func show_modal(title: String, body: String, kind := "info", on_close: Callable 
 	await get_tree().process_frame
 	if is_instance_valid(p):
 		p.position = ((Vector2(640, 360) - p.size) / 2).floor()
+
+
+## 임의의 컨트롤을 담는 모달 (스크롤)
+func show_panel(title: String, content: Control, on_close: Callable = Callable()) -> void:
+	var shade := ColorRect.new()
+	shade.color = Color(0, 0, 0, 0.6)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	modal_layer.add_child(shade)
+	var p := UI.panel(UI.PANEL, UI.ACCENT, 6)
+	UI.place(p, 40, 16, 560, 328)
+	shade.add_child(p)
+	var v := UI.vbox(4)
+	p.add_child(v)
+	v.add_child(UI.title_label(title))
+	v.add_child(UI.scroll(content, Vector2(546, 270)))
+	var row := UI.hbox(6)
+	row.alignment = BoxContainer.ALIGNMENT_END
+	v.add_child(row)
+	row.add_child(UI.button("확인", func():
+		modal_layer.remove_child(shade)
+		shade.queue_free()
+		if on_close.is_valid():
+			on_close.call(), 60))
+
+
+## 경기 결과 → (박스스코어) → 쌓인 팝업 → done
+func show_match_result(m: MatchEngine, done: Callable) -> void:
+	var u := m.user_side()
+	if m.winner == u.team_id:
+		Game.sfx("fanfare")
+	var after := func(): drain_popups(done)
+	show_modal("경기 종료", BoxScore.summary(m), "good" if m.winner == u.team_id else "info", Callable(), [
+		["박스스코어", func(): show_panel("박스스코어", BoxScore.build(m), after)],
+		["확인", after],
+	])
 
 
 ## state.popups 를 차례로 보여 주고 끝나면 done 호출

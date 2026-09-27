@@ -422,23 +422,7 @@ func _show_result() -> void:
 	var s := st()
 	Season.finish_user_match(s, m)
 	Game.save_game()
-	var u := _user()
-	var o := m.away if u == m.home else m.home
-	var res := "승리!" if m.winner == u.team_id else ("패배..." if m.winner != null else "무승부")
-	var best := ""
-	var best_v := -1.0
-	for id in u.box:
-		var bl: Dictionary = u.box[id]["bat"]
-		var pt: Dictionary = u.box[id]["pit"]
-		var v: float = bl["h"] * 2 + bl["hr"] * 4 + bl["rbi"] * 1.5 + pt["outs"] * 0.35 - pt["er"] * 1.5 + pt["so"] * 0.5
-		if v > best_v:
-			best_v = v
-			best = "%s (%s)" % [u.by_id[id].name, ("%d타수 %d안타 %d타점" % [bl["ab"], bl["h"], bl["rbi"]]) if bl["pa"] > 0 else ("%s이닝 %d실점 %d탈삼진" % [PlayerUtil.ip_str(pt["outs"]), pt["r"], pt["so"]])]
-	if m.winner == u.team_id:
-		Game.sfx("fanfare")
-	var body := "%s %d : %d %s  %s%s\n\n안타 %d · 실책 %d\n수훈 선수: %s" % [u.name, u.score, o.score, o.name, res, " (콜드)" if m.called else "", u.hits, u.errors, best]
-	Game.main.show_modal("경기 종료", body, "good" if m.winner == u.team_id else "info", func():
-		Game.main.drain_popups(func(): Game.goto("hub")))
+	Game.main.show_match_result(m, func(): Game.goto("hub"))
 
 
 # ───────────── 전광판 ─────────────

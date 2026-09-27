@@ -14,6 +14,8 @@ var left_box: VBoxContainer
 var scene: Control
 var anim_t := 0.0
 var status_label: Label
+## 직전 훈련 성과 (진행 중 표시)
+var train_lines: Array = []
 
 
 func setup(_p := {}) -> void:
@@ -124,7 +126,7 @@ func _fill_action() -> void:
 	status_label = null
 	if advancing:
 		var l := UI.label("진행 중... %s" % Cal.pretty(s["date"]), UI.ACCENT)
-		UI.place(l, 60, 40, 200, 16)
+		UI.place(l, 4, 0, 270, 14)
 		action_box.add_child(l)
 		status_label = l
 		return
@@ -155,8 +157,14 @@ func _fill_action() -> void:
 		row.add_child(UI.button("경기 준비 (직접 지휘)", func(): Game.goto("prematch")))
 		row.add_child(UI.button("위임", _delegate))
 		return
+	if not train_lines.is_empty():
+		var v := UI.vbox(0)
+		UI.place(v, 4, 0, 272, 92)
+		action_box.add_child(v)
+		for i in train_lines.size():
+			v.add_child(UI.label(train_lines[i], UI.GOOD if i == 0 else (UI.BAD if train_lines[i].begins_with("부상") else UI.TEXT), true))
 	var b := UI.button("▶ 다음으로 진행", _start_advance, 200)
-	UI.place(b, 40, 40, 200, 22)
+	UI.place(b, 40, 96 if not train_lines.is_empty() else 40, 200, 20)
 	action_box.add_child(b)
 
 
@@ -190,26 +198,44 @@ func _card_widget(c: Dictionary, pos: Vector2) -> Control:
 
 
 func _use_card(id: String) -> void:
+	var card_kind := ""
+	for c in st()["hand"]:
+		if c["id"] == id:
+			card_kind = Training.CARD_INFO[c["kind"]]["name"]
 	var report := Season.use_card(st(), id)
+	var rows := []
 	var ups := 0
 	for pid in report["gains"]:
+		var p = st()["players"].get(pid)
+		if p == null:
+			continue
+		var parts := []
+		var total := 0
 		for k in report["gains"][pid]:
-			ups += int(report["gains"][pid][k])
-	st()["news"].append({"date": st()["date"], "kind": "good", "text": "훈련 성과: 능력치 총 +%d" % ups})
-	_start_advance()
+			var g := int(report["gains"][pid][k])
+			total += g
+			parts.append("%s+%d" % [PlayerUtil.STAT_KO[k], g] if k != "velo" else "구속+%dkm" % g)
+		ups += total
+		rows.append({"t": total, "s": "%s %s" % [PlayerUtil.full_name(p), " ".join(parts)]})
+	rows.sort_custom(func(a, b): return a["t"] > b["t"])
+	train_lines = ["%s 성과: 능력치 총 +%d" % [card_kind, ups]]
+	for r in rows.slice(0, 6):
+		train_lines.append(r["s"])
+	for pid in report["injuries"]:
+		train_lines.append("부상: %s" % PlayerUtil.full_name(st()["players"][pid]))
+	st()["news"].append({"date": st()["date"], "kind": "good", "text": train_lines[0]})
+	_refresh()
 
 
 func _delegate() -> void:
 	var m := Season.auto_play_user_match(st())
+	Game.save_game()
 	if m != null:
-		var u := m.user_side()
-		var o := m.away if u == m.home else m.home
-		var res := "승리" if m.winner == u.team_id else ("패배" if m.winner != null else "무승부")
-		Game.main.show_modal("경기 결과", "%s %d : %d %s\n\n%s" % [u.name, u.score, o.score, o.name, res], "good" if m.winner == u.team_id else "info", func():
-			Game.main.drain_popups(_start_advance))
+		Game.main.show_match_result(m, _after_popups)
 
 
 func _start_advance() -> void:
+	train_lines = []
 	advancing = true
 	_fill_action()
 

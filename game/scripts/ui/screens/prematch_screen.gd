@@ -108,7 +108,4 @@ func _delegate() -> void:
 	if m == null:
 		Game.goto("hub")
 		return
-	var u := m.user_side()
-	var o := m.away if u == m.home else m.home
-	Game.main.show_modal("경기 결과", "%s %d : %d %s\n%s" % [u.name, u.score, o.score, o.name, "승리!" if m.winner == u.team_id else ("패배" if m.winner != null else "무승부")],
-		"good" if m.winner == u.team_id else "info", func(): Game.goto("hub"))
+	Game.main.show_match_result(m, func(): Game.goto("hub"))
