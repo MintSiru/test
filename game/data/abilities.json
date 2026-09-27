@@ -1,0 +1,214 @@
+{
+ "abilities": [
+  {
+   "id": "chance",
+   "name": "찬스◎",
+   "desc": "득점권에서 타격 능력이 오른다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "powerHitter",
+   "name": "파워히터",
+   "desc": "타구가 더 멀리 날아간다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "hitMachine",
+   "name": "안타제조기",
+   "desc": "컨택 능력이 오른다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "stealer",
+   "name": "도루 달인",
+   "desc": "도루 성공률이 크게 오른다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "bunter",
+   "name": "번트 달인",
+   "desc": "번트를 확실하게 성공시킨다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "laser",
+   "name": "레이저빔",
+   "desc": "송구가 빨라 주자의 진루를 막는다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "glove",
+   "name": "수비 달인",
+   "desc": "실책이 줄고 어려운 타구도 잡아낸다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "lefty",
+   "name": "좌완킬러",
+   "desc": "좌투수 상대로 강하다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "tenacious",
+   "name": "끈질김",
+   "desc": "투 스트라이크 이후 삼진을 잘 당하지 않는다",
+   "good": true,
+   "forPitcher": false
+  },
+  {
+   "id": "chanceX",
+   "name": "찬스×",
+   "desc": "득점권에서 긴장해 버린다",
+   "good": false,
+   "forPitcher": false
+  },
+  {
+   "id": "pinch",
+   "name": "핀치◎",
+   "desc": "득점권에 주자가 있을 때 공이 좋아진다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "heavyBall",
+   "name": "묵직한 공",
+   "desc": "직구의 위력이 오른다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "pinpoint",
+   "name": "핀포인트",
+   "desc": "제구가 흔들리지 않는다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "strikeout",
+   "name": "탈삼진",
+   "desc": "투 스트라이크 이후 삼진을 잘 잡는다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "ironArm",
+   "name": "철완",
+   "desc": "많이 던져도 지치지 않는다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "bigHeart",
+   "name": "강심장",
+   "desc": "경기 후반, 접전에서 강하다",
+   "good": true,
+   "forPitcher": true
+  },
+  {
+   "id": "pinchX",
+   "name": "핀치×",
+   "desc": "위기 상황에서 제구가 흔들린다",
+   "good": false,
+   "forPitcher": true
+  },
+  {
+   "id": "wild",
+   "name": "난조",
+   "desc": "가끔 제구가 크게 흔들린다",
+   "good": false,
+   "forPitcher": true
+  }
+ ],
+ "styles": {
+  "파워히터": {
+   "stats": [
+    "power"
+   ],
+   "ability": "powerHitter",
+   "pitcher": false,
+   "desc": "장타력이 무기인 거포"
+  },
+  "교타자": {
+   "stats": [
+    "contact",
+    "eye"
+   ],
+   "ability": "hitMachine",
+   "pitcher": false,
+   "desc": "정교한 타격의 안타 기계"
+  },
+  "준족": {
+   "stats": [
+    "speed"
+   ],
+   "ability": "stealer",
+   "pitcher": false,
+   "desc": "누상을 휘젓는 대도"
+  },
+  "강견": {
+   "stats": [
+    "arm"
+   ],
+   "ability": "laser",
+   "pitcher": false,
+   "desc": "강한 어깨의 소유자"
+  },
+  "명수비": {
+   "stats": [
+    "fielding"
+   ],
+   "ability": "glove",
+   "pitcher": false,
+   "desc": "철벽 수비의 달인"
+  },
+  "클러치": {
+   "stats": [
+    "contact",
+    "power"
+   ],
+   "ability": "chance",
+   "pitcher": false,
+   "desc": "결정적인 순간에 강한 해결사"
+  },
+  "파이어볼러": {
+   "stats": [
+    "velo"
+   ],
+   "ability": "heavyBall",
+   "pitcher": true,
+   "desc": "강속구로 윽박지르는 파이어볼러"
+  },
+  "제구파": {
+   "stats": [
+    "control"
+   ],
+   "ability": "pinpoint",
+   "pitcher": true,
+   "desc": "칼날 제구의 기교파"
+  },
+  "변화구": {
+   "stats": [
+    "breaking"
+   ],
+   "ability": "strikeout",
+   "pitcher": true,
+   "desc": "마구 같은 변화구의 탈삼진왕"
+  },
+  "철완": {
+   "stats": [
+    "stamina"
+   ],
+   "ability": "ironArm",
+   "pitcher": true,
+   "desc": "완투를 밥 먹듯 하는 철완"
+  }
+ }
+}

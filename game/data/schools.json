@@ -1,0 +1,591 @@
+{
+ "provinces": [
+  "서울",
+  "부산",
+  "대구",
+  "인천",
+  "광주",
+  "대전",
+  "울산",
+  "세종",
+  "경기",
+  "강원",
+  "충북",
+  "충남",
+  "전북",
+  "전남",
+  "경북",
+  "경남",
+  "제주"
+ ],
+ "teamColors": [
+  [
+   "#1d3b8f",
+   "#ffffff"
+  ],
+  [
+   "#b3202a",
+   "#ffffff"
+  ],
+  [
+   "#0f6b3a",
+   "#f2e6c9"
+  ],
+  [
+   "#1b1b1b",
+   "#e8c33a"
+  ],
+  [
+   "#5a2a82",
+   "#ffffff"
+  ],
+  [
+   "#0a7fa8",
+   "#ffffff"
+  ],
+  [
+   "#d4661c",
+   "#1b1b1b"
+  ],
+  [
+   "#7a1f1f",
+   "#e8d7b0"
+  ],
+  [
+   "#2d5f2e",
+   "#ffffff"
+  ],
+  [
+   "#223355",
+   "#e04545"
+  ],
+  [
+   "#8a6d1d",
+   "#1b1b1b"
+  ],
+  [
+   "#374f6b",
+   "#f4f4f4"
+  ],
+  [
+   "#146356",
+   "#f3c623"
+  ],
+  [
+   "#8c1c53",
+   "#ffffff"
+  ],
+  [
+   "#3b3b98",
+   "#fbc531"
+  ],
+  [
+   "#556270",
+   "#ff6b6b"
+  ]
+ ],
+ "groups": [
+  {
+   "id": "seoulA",
+   "name": "서울A",
+   "schools": [
+    {
+     "name": "한강고",
+     "province": "서울"
+    },
+    {
+     "name": "남산고",
+     "province": "서울"
+    },
+    {
+     "name": "북악고",
+     "province": "서울"
+    },
+    {
+     "name": "인왕고",
+     "province": "서울"
+    },
+    {
+     "name": "낙산공고",
+     "province": "서울"
+    },
+    {
+     "name": "청계고",
+     "province": "서울"
+    },
+    {
+     "name": "수락고",
+     "province": "서울"
+    }
+   ]
+  },
+  {
+   "id": "seoulB",
+   "name": "서울B",
+   "schools": [
+    {
+     "name": "관악고",
+     "province": "서울"
+    },
+    {
+     "name": "도봉고",
+     "province": "서울"
+    },
+    {
+     "name": "아차산고",
+     "province": "서울"
+    },
+    {
+     "name": "망우고",
+     "province": "서울"
+    },
+    {
+     "name": "우면고",
+     "province": "서울"
+    },
+    {
+     "name": "대모고",
+     "province": "서울"
+    },
+    {
+     "name": "봉화산고",
+     "province": "서울"
+    }
+   ]
+  },
+  {
+   "id": "seoulC",
+   "name": "서울C",
+   "schools": [
+    {
+     "name": "백련고",
+     "province": "서울"
+    },
+    {
+     "name": "개운고",
+     "province": "서울"
+    },
+    {
+     "name": "매봉고",
+     "province": "서울"
+    },
+    {
+     "name": "응봉정보고",
+     "province": "서울"
+    },
+    {
+     "name": "와우고",
+     "province": "서울"
+    },
+    {
+     "name": "궁동고",
+     "province": "서울"
+    },
+    {
+     "name": "구룡고",
+     "province": "서울"
+    },
+    {
+     "name": "일자산고",
+     "province": "서울"
+    }
+   ]
+  },
+  {
+   "id": "gyeonggiA",
+   "name": "경기A",
+   "schools": [
+    {
+     "name": "수원성고",
+     "province": "경기"
+    },
+    {
+     "name": "광교고",
+     "province": "경기"
+    },
+    {
+     "name": "팔달공고",
+     "province": "경기"
+    },
+    {
+     "name": "석성고",
+     "province": "경기"
+    },
+    {
+     "name": "탄천상고",
+     "province": "경기"
+    },
+    {
+     "name": "불곡고",
+     "province": "경기"
+    },
+    {
+     "name": "청계산고",
+     "province": "경기"
+    }
+   ]
+  },
+  {
+   "id": "gyeonggiB",
+   "name": "경기B",
+   "schools": [
+    {
+     "name": "소요산고",
+     "province": "경기"
+    },
+    {
+     "name": "감악고",
+     "province": "경기"
+    },
+    {
+     "name": "한탄고",
+     "province": "경기"
+    },
+    {
+     "name": "임진고",
+     "province": "경기"
+    },
+    {
+     "name": "고령산고",
+     "province": "경기"
+    },
+    {
+     "name": "천마고",
+     "province": "경기"
+    }
+   ]
+  },
+  {
+   "id": "gyeonggiC",
+   "name": "경기C",
+   "schools": [
+    {
+     "name": "서해고",
+     "province": "경기"
+    },
+    {
+     "name": "대부고",
+     "province": "경기"
+    },
+    {
+     "name": "수리산고",
+     "province": "경기"
+    },
+    {
+     "name": "서운고",
+     "province": "경기"
+    },
+    {
+     "name": "칠장고",
+     "province": "경기"
+    },
+    {
+     "name": "무봉고",
+     "province": "경기"
+    }
+   ]
+  },
+  {
+   "id": "incheon",
+   "name": "인천",
+   "schools": [
+    {
+     "name": "인천항고",
+     "province": "인천"
+    },
+    {
+     "name": "월미고",
+     "province": "인천"
+    },
+    {
+     "name": "문학고",
+     "province": "인천"
+    },
+    {
+     "name": "계양고",
+     "province": "인천"
+    },
+    {
+     "name": "소래고",
+     "province": "인천"
+    },
+    {
+     "name": "마니산고",
+     "province": "인천"
+    }
+   ]
+  },
+  {
+   "id": "gangwon",
+   "name": "강원",
+   "schools": [
+    {
+     "name": "설악고",
+     "province": "강원"
+    },
+    {
+     "name": "오대산고",
+     "province": "강원"
+    },
+    {
+     "name": "치악고",
+     "province": "강원"
+    },
+    {
+     "name": "소양고",
+     "province": "강원"
+    },
+    {
+     "name": "경포고",
+     "province": "강원"
+    },
+    {
+     "name": "태백고",
+     "province": "강원"
+    }
+   ]
+  },
+  {
+   "id": "chungA",
+   "name": "충청A",
+   "schools": [
+    {
+     "name": "보문고",
+     "province": "대전"
+    },
+    {
+     "name": "계족고",
+     "province": "대전"
+    },
+    {
+     "name": "식장고",
+     "province": "대전"
+    },
+    {
+     "name": "갑천고",
+     "province": "대전"
+    },
+    {
+     "name": "미호고",
+     "province": "세종"
+    },
+    {
+     "name": "계룡산고",
+     "province": "충남"
+    },
+    {
+     "name": "백제고",
+     "province": "충남"
+    }
+   ]
+  },
+  {
+   "id": "chungB",
+   "name": "충청B",
+   "schools": [
+    {
+     "name": "금강고",
+     "province": "충남"
+    },
+    {
+     "name": "가야산고",
+     "province": "충남"
+    },
+    {
+     "name": "상당고",
+     "province": "충북"
+    },
+    {
+     "name": "우암고",
+     "province": "충북"
+    },
+    {
+     "name": "월악고",
+     "province": "충북"
+    },
+    {
+     "name": "속리고",
+     "province": "충북"
+    }
+   ]
+  },
+  {
+   "id": "honamA",
+   "name": "호남A",
+   "schools": [
+    {
+     "name": "무등고",
+     "province": "광주"
+    },
+    {
+     "name": "빛고을고",
+     "province": "광주"
+    },
+    {
+     "name": "영산고",
+     "province": "광주"
+    },
+    {
+     "name": "서석고",
+     "province": "광주"
+    },
+    {
+     "name": "월출고",
+     "province": "전남"
+    },
+    {
+     "name": "목포항고",
+     "province": "전남"
+    },
+    {
+     "name": "백운고",
+     "province": "전남"
+    }
+   ]
+  },
+  {
+   "id": "honamB",
+   "name": "호남B",
+   "schools": [
+    {
+     "name": "모악고",
+     "province": "전북"
+    },
+    {
+     "name": "덕진고",
+     "province": "전북"
+    },
+    {
+     "name": "만경고",
+     "province": "전북"
+    },
+    {
+     "name": "새만금고",
+     "province": "전북"
+    },
+    {
+     "name": "변산고",
+     "province": "전북"
+    },
+    {
+     "name": "한라고",
+     "province": "제주"
+    },
+    {
+     "name": "탐라고",
+     "province": "제주"
+    }
+   ]
+  },
+  {
+   "id": "daegu",
+   "name": "대구·경북",
+   "schools": [
+    {
+     "name": "팔공고",
+     "province": "대구"
+    },
+    {
+     "name": "달구벌고",
+     "province": "대구"
+    },
+    {
+     "name": "앞산고",
+     "province": "대구"
+    },
+    {
+     "name": "신천고",
+     "province": "대구"
+    },
+    {
+     "name": "영일고",
+     "province": "경북"
+    },
+    {
+     "name": "형산고",
+     "province": "경북"
+    },
+    {
+     "name": "금오고",
+     "province": "경북"
+    },
+    {
+     "name": "소백고",
+     "province": "경북"
+    },
+    {
+     "name": "하회고",
+     "province": "경북"
+    }
+   ]
+  },
+  {
+   "id": "busan",
+   "name": "부산·울산",
+   "schools": [
+    {
+     "name": "해운대고",
+     "province": "부산"
+    },
+    {
+     "name": "광안고",
+     "province": "부산"
+    },
+    {
+     "name": "금정고",
+     "province": "부산"
+    },
+    {
+     "name": "영도고",
+     "province": "부산"
+    },
+    {
+     "name": "황령고",
+     "province": "부산"
+    },
+    {
+     "name": "다대고",
+     "province": "부산"
+    },
+    {
+     "name": "태화강고",
+     "province": "울산"
+    },
+    {
+     "name": "문수고",
+     "province": "울산"
+    }
+   ]
+  },
+  {
+   "id": "gyeongnam",
+   "name": "경남",
+   "schools": [
+    {
+     "name": "무학고",
+     "province": "경남"
+    },
+    {
+     "name": "가야고",
+     "province": "경남"
+    },
+    {
+     "name": "남강고",
+     "province": "경남"
+    },
+    {
+     "name": "미륵고",
+     "province": "경남"
+    },
+    {
+     "name": "한려고",
+     "province": "경남"
+    },
+    {
+     "name": "불모산고",
+     "province": "경남"
+    }
+   ]
+  }
+ ]
+}

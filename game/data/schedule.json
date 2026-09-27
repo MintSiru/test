@@ -1,0 +1,136 @@
+{
+ "baseYear": 2026,
+ "source": "대한야구소프트볼협회 2026 고교야구 대회 일정 (뉴스그라운드·더리더스 보도 기준)",
+ "competitions": [
+  {
+   "key": "league1",
+   "name": "고교야구 주말리그 전반기",
+   "short": "주말리그 전반기",
+   "kind": "league",
+   "start": "03-07",
+   "end": "04-26",
+   "entry": "전 팀 (권역별 리그전) — 권역 1위는 황금사자기·청룡기 동시 출전, 짝수 순위는 황금사자기, 홀수 순위는 청룡기 출전",
+   "prestige": 1,
+   "repWin": 3
+  },
+  {
+   "key": "emart",
+   "name": "신세계 이마트배 전국고교야구대회",
+   "short": "이마트배",
+   "kind": "tournament",
+   "start": "03-25",
+   "end": "04-13",
+   "entry": "전 팀 참가 (토너먼트)",
+   "prestige": 3,
+   "repWin": 10
+  },
+  {
+   "key": "hwanggeum",
+   "name": "황금사자기 전국고교야구대회",
+   "short": "황금사자기",
+   "kind": "tournament",
+   "start": "05-02",
+   "end": "05-16",
+   "entry": "주말리그 전반기 권역 1위 + 짝수 순위 팀",
+   "prestige": 4,
+   "repWin": 14
+  },
+  {
+   "key": "league2",
+   "name": "고교야구 주말리그 후반기",
+   "short": "주말리그 후반기",
+   "kind": "league",
+   "start": "05-23",
+   "end": "06-21",
+   "entry": "전 팀 (권역별 리그전) — 권역 상위 4팀 대통령배 출전",
+   "prestige": 1,
+   "repWin": 3
+  },
+  {
+   "key": "cheongryong",
+   "name": "청룡기 전국고교야구선수권대회",
+   "short": "청룡기",
+   "kind": "tournament",
+   "start": "06-27",
+   "end": "07-11",
+   "entry": "주말리그 전반기 권역 1위 + 홀수 순위 팀",
+   "prestige": 4,
+   "repWin": 14
+  },
+  {
+   "key": "president",
+   "name": "대통령배 전국고교야구대회",
+   "short": "대통령배",
+   "kind": "tournament",
+   "start": "07-18",
+   "end": "07-30",
+   "entry": "주말리그 후반기 권역 상위 4팀",
+   "prestige": 4,
+   "repWin": 14
+  },
+  {
+   "key": "bonghwang",
+   "name": "봉황대기 전국고교야구대회",
+   "short": "봉황대기",
+   "kind": "tournament",
+   "start": "08-06",
+   "end": "08-29",
+   "entry": "전 팀 참가 (토너먼트)",
+   "prestige": 4,
+   "repWin": 14
+  },
+  {
+   "key": "sports",
+   "name": "전국체육대회 야구 고등부",
+   "short": "전국체전",
+   "kind": "tournament",
+   "start": "10-16",
+   "end": "10-22",
+   "entry": "시·도 대표 1팀 (시즌 성적 1위)",
+   "prestige": 3,
+   "repWin": 10
+  }
+ ],
+ "events": [
+  {
+   "key": "enroll",
+   "label": "신입생 입학 · 새 시즌 개막",
+   "date": "03-02"
+  },
+  {
+   "key": "allstar",
+   "label": "고교-대학 올스타전",
+   "date": "06-08"
+  },
+  {
+   "key": "sportsSelect",
+   "label": "전국체전 시·도 대표 선발",
+   "date": "09-01"
+  },
+  {
+   "key": "draft",
+   "label": "KBO 신인 드래프트",
+   "date": "09-21"
+  },
+  {
+   "key": "retire",
+   "label": "3학년 은퇴식",
+   "date": "10-26"
+  },
+  {
+   "key": "proSeason",
+   "label": "프로야구 시즌 결산",
+   "date": "11-02"
+  },
+  {
+   "key": "camp",
+   "label": "동계 전지훈련",
+   "date": "01-12"
+  },
+  {
+   "key": "graduate",
+   "label": "졸업식 · 시즌 종료",
+   "date": "02-23"
+  }
+ ]
+}
