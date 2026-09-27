@@ -14,7 +14,15 @@ func _init() -> void:
 	var popups := []
 	var user_games := 0
 	var guard := 0
+	var checked := false
 	while state["date"] < "2027-03-03" and guard < 20000:
+		if not checked and state["date"] >= "2026-11-01":
+			checked = true
+			for c in state["competitions"]:
+				if c["status"] != "done" or (c["kind"] == "tournament" and c.get("champion") == null):
+					fails.append("미완료 대회: " + c["name"])
+			var rain: int = state["news"].filter(func(n): return "연기" in n["text"]).size()
+			print("우천 연기 소식: ", rain)
 		guard += 1
 		var r := Season.advance(state)
 		if r == "training":

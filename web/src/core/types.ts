@@ -170,6 +170,8 @@ export interface Fixture {
   round?: number;
   slot?: number;
   result?: MatchResult;
+  /** 우천 연기 횟수 */
+  postponed?: number;
 }
 
 export type CompKind = 'league' | 'tournament';

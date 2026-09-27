@@ -60,6 +60,7 @@ func _build() -> void:
 	var snd: bool = st()["settings"].get("sound", true)
 	menu.add_child(UI.button("소리: 켜짐" if snd else "소리: 꺼짐", func():
 		st()["settings"]["sound"] = not st()["settings"].get("sound", true)
+		Game.bgm("title")
 		_build(), 0, true))
 	menu.add_child(UI.button("저장", func():
 		Game.save_game()

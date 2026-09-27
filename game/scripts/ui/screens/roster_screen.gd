@@ -175,10 +175,11 @@ func _fill_detail() -> void:
 		ab.add_child(UI.label("없음", UI.DIM, true))
 	for a in p["abilities"]:
 		var d := GameData.ability_def(a)
-		var l := UI.label(d.get("name", a), UI.GOOD if d.get("good", true) else UI.BAD, true)
-		l.tooltip_text = d.get("desc", "")
-		l.mouse_filter = Control.MOUSE_FILTER_PASS
-		ab.add_child(l)
+		# 터치 환경에서도 볼 수 있도록 눌러서 설명 보기
+		var b := UI.button(d.get("name", a), func(): Game.main.show_modal(d.get("name", a), d.get("desc", "")), 0, true)
+		b.add_theme_color_override("font_color", UI.GOOD if d.get("good", true) else UI.BAD)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		ab.add_child(b)
 
 	# 동경 선수
 	var idol := Idol.idol_of(s, p)

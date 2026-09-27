@@ -6,6 +6,7 @@ import {
 import { LEAGUE_GROUPS } from './data';
 import { weeklyEvent } from './events';
 import { initRival, isRivalGame, recordH2H, seasonRivalUpdate } from './rival';
+import { postponeRain } from './weather';
 import { addPrize, FAC_DATA, facLevel, monthlyIncome } from './facilities';
 import { checkIdolMilestones, idolOf, proName, proSeasonEnd, proTeamName, weeklyProNews } from './idol';
 import { josa } from './names';
@@ -120,7 +121,8 @@ function processDay(state: GameState, rng: Rng): 'match' | 'next' {
   }
   for (const c of state.competitions) if (c.status === 'upcoming' && c.start <= d) c.status = 'active';
 
-  const today = fixturesOn(state, d).filter((x) => !x.f.result);
+  let today = fixturesOn(state, d).filter((x) => !x.f.result);
+  if (postponeRain(state, today)) today = fixturesOn(state, d).filter((x) => !x.f.result);
   const mine = today.find((x) => x.f.home === state.userTeamId || x.f.away === state.userTeamId);
   if (mine) {
     state.pendingFixture = mine.f.id;

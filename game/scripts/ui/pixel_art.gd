@@ -103,6 +103,27 @@ static func portrait(seed_val: int, cap: Color, accent: Color) -> Texture2D:
 			_px(img, 13, my - 1, Color("#9a4a42"))
 		_:
 			_rect(img, 11, my, 2, 2, Color("#7a2f2a"))
+	# 턱 모양 (각진 턱 / 둥근 턱)
+	if r.randf() < 0.35:
+		_rect(img, fx, 16, 1, 2, shade)
+		_rect(img, fx + face_w - 1, 16, 1, 2, shade)
+	else:
+		_px(img, fx, 17, Color(0, 0, 0, 0))
+		_px(img, fx + face_w - 1, 17, Color(0, 0, 0, 0))
+	# 안경 (가끔)
+	if r.randf() < 0.08:
+		var gc := Color("#2a2a3a")
+		for gx in [lx - 1, rx - 1]:
+			_rect(img, gx, eye_y - 1, 4, 1, gc)
+			_rect(img, gx, eye_y + 2, 4, 1, gc)
+			_px(img, gx, eye_y, gc)
+			_px(img, gx, eye_y + 1, gc)
+			_px(img, gx + 3, eye_y, gc)
+			_px(img, gx + 3, eye_y + 1, gc)
+		_rect(img, lx + 3, eye_y, rx - lx - 3, 1, gc)
+	# 점
+	if r.randf() < 0.1:
+		_px(img, rx + 2 if r.randf() < 0.5 else lx - 1, eye_y + 3, shade.darkened(0.4))
 	# 볼 홍조 / 반창고
 	if r.randf() < 0.3:
 		_px(img, lx - 1, eye_y + 2, Color("#e89a8a"))

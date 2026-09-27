@@ -28,6 +28,20 @@ describe('calendar', () => {
   });
 });
 
+describe('weather', () => {
+  it('rain postponements never leave a competition unfinished', () => {
+    const state = startNewGame({ schoolName: '한빛고', managerName: '테스트', groupId: 'seoulB', seed: 77 });
+    playUntil(state, '2026-11-01');
+    const rain = state.news.filter((n) => n.text.includes('연기')).length;
+    console.log('우천 연기 소식', rain);
+    expect(rain).toBeGreaterThan(0);
+    for (const c of state.competitions) {
+      expect(c.status, c.name).toBe('done');
+      if (c.kind === 'tournament') expect(c.champion, c.name).toBeTruthy();
+    }
+  }, 120000);
+});
+
 describe('full season simulation', () => {
   it('runs two seasons without errors', () => {
     const t0 = Date.now();

@@ -9,6 +9,8 @@ var current_match: MatchEngine = null
 ## 메인 씬 (화면 전환 담당)
 var main: Node = null
 var _players: Array[AudioStreamPlayer] = []
+var _bgm: AudioStreamPlayer
+var _bgm_name := ""
 
 
 func _ready() -> void:
@@ -16,6 +18,26 @@ func _ready() -> void:
 		var ap := AudioStreamPlayer.new()
 		add_child(ap)
 		_players.append(ap)
+	_bgm = AudioStreamPlayer.new()
+	_bgm.volume_db = -13.0
+	add_child(_bgm)
+
+
+func sound_on() -> bool:
+	return state.is_empty() or state["settings"].get("sound", true)
+
+
+## 배경음악 ("title", "match", "" = 정지)
+func bgm(name: String) -> void:
+	if not sound_on() or DisplayServer.get_name() == "headless":
+		name = ""
+	if name == _bgm_name:
+		return
+	_bgm_name = name
+	_bgm.stop()
+	if name != "":
+		_bgm.stream = Music.get_stream(name)
+		_bgm.play()
 
 
 ## 효과음 재생 (설정에서 끌 수 있음)

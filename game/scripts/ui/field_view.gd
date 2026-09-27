@@ -29,6 +29,10 @@ var anim_frame := 0
 var off_colors := [Color.WHITE, Color.RED, Color.WHITE]
 var def_colors := [Color.WHITE, Color.BLUE, Color.WHITE]
 var crowd_seed := 1
+## 야간 경기 / 날씨 ("맑음", "흐림", "가랑비", "비")
+var night := false
+var weather := "맑음"
+var drops: Array = []
 var _t := 0.0
 static var _bg: ImageTexture
 
@@ -90,6 +94,15 @@ func sync(match_: MatchEngine, shift := "normal") -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	if weather in ["가랑비", "비"]:
+		var want := 50 if weather == "가랑비" else 130
+		while drops.size() < want:
+			drops.append(Vector2(randf() * W, randf() * H))
+		for i in drops.size():
+			var d: Vector2 = drops[i] + Vector2(-40, 220) * delta
+			if d.y > H or d.x < 0:
+				d = Vector2(randf() * (W + 60), -4)
+			drops[i] = d
 	anim_frame = int(_t * 8) % 2
 	for t in texts:
 		t["ttl"] -= delta
@@ -351,6 +364,17 @@ func _render_background() -> ImageTexture:
 func _draw() -> void:
 	if _bg:
 		draw_texture(_bg, Vector2.ZERO)
+	# 조명 · 날씨 분위기
+	if night:
+		draw_rect(Rect2(0, 0, W, H), Color(0.02, 0.03, 0.12, 0.5))
+		for lx in [18, 382]:
+			draw_rect(Rect2(lx - 1, 4, 3, 40), Color("#3a3f5c"))
+			draw_rect(Rect2(lx - 8, 0, 17, 6), Color("#fff6c8"))
+			for rr in [40, 28, 16]:
+				draw_circle(Vector2(lx, 3), rr, Color(1, 0.97, 0.8, 0.05))
+		draw_circle(HOME + Vector2(0, -90), 150, Color(1, 1, 0.9, 0.06))
+	elif weather != "맑음":
+		draw_rect(Rect2(0, 0, W, H), Color(0.25, 0.27, 0.32, 0.22 if weather == "흐림" else 0.32))
 	if m == null:
 		return
 	# 수비수
@@ -373,6 +397,9 @@ func _draw() -> void:
 	if ball_visible:
 		draw_rect(Rect2(ball_pos + Vector2(-1, 0), Vector2(3, 1)), Color(0, 0, 0, 0.4))
 		draw_rect(Rect2(ball_pos + Vector2(-1, -1 - ball_h), Vector2(2, 2)), Color.WHITE)
+	# 빗줄기
+	for d in drops:
+		draw_line(d, d + Vector2(-2, 5), Color(0.75, 0.85, 1.0, 0.55), 1.0)
 	# 스트라이크존 인셋
 	var zr := Rect2(360, 6, 30, 36)
 	draw_rect(zr.grow(3), Color(0, 0, 0, 0.55))

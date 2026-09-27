@@ -133,7 +133,7 @@ static func create_tournament(state: Dictionary, key: String, entrants: Array, r
 	return comp
 
 
-static func schedule_round(comp: Dictionary, r: int) -> void:
+static func schedule_round(comp: Dictionary, r: int, min_date := "") -> void:
 	var br: Array = comp["bracket"]
 	var slots: Array = br[r]
 	var dates: Array = comp["roundDates"][r]
@@ -142,13 +142,17 @@ static func schedule_round(comp: Dictionary, r: int) -> void:
 		var a = slots[2 * i]
 		var b = slots[2 * i + 1]
 		if a != null and b != null:
-			comp["fixtures"].append({"id": "%s-r%d-%d" % [comp["id"], r, i], "compId": comp["id"], "date": dates[gi % dates.size()],
+			var date: String = dates[gi % dates.size()]
+			# 우천 연기 등으로 앞 라운드가 늦게 끝났으면 다음 날 이후로
+			if min_date != "" and date <= min_date:
+				date = Cal.add_days(min_date, 1)
+			comp["fixtures"].append({"id": "%s-r%d-%d" % [comp["id"], r, i], "compId": comp["id"], "date": date,
 				"home": a, "away": b, "round": r, "slot": i})
 			gi += 1
 		else:
 			br[r + 1][i] = a if a != null else b
 	if gi == 0 and r + 1 < br.size() - 1:
-		schedule_round(comp, r + 1)
+		schedule_round(comp, r + 1, min_date)
 
 
 static func round_name(comp: Dictionary, r: int) -> String:
@@ -176,7 +180,7 @@ static func advance_tournament(comp: Dictionary, f: Dictionary) -> void:
 		comp["runnerUp"] = f["away"] if f["result"]["winner"] == f["home"] else f["home"]
 		comp["status"] = "done"
 	else:
-		schedule_round(comp, r + 1)
+		schedule_round(comp, r + 1, f["date"])
 
 
 static func tournament_result_for(comp: Dictionary, team_id: String) -> String:

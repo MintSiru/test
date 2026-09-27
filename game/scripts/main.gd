@@ -67,6 +67,9 @@ func _ready() -> void:
 	if "--boxscore" in OS.get_cmdline_user_args() and Game.current_match != null:
 		MatchAI.play_out(Game.current_match)
 		show_panel("박스스코어", BoxScore.build(Game.current_match))
+	if "--night" in OS.get_cmdline_user_args() and current.get("field") != null:
+		current.field.night = true
+		current.field.weather = "가랑비"
 	if "--usecard" in OS.get_cmdline_user_args() and current.has_method("_use_card"):
 		current._use_card(Game.state["hand"][0]["id"])
 	if shot != "":
@@ -126,6 +129,7 @@ func show_screen(screen: String, params := {}) -> void:
 	host.add_child(s)
 	if s.has_method("setup"):
 		s.setup(params)
+	Game.bgm("match" if screen == "match" else "title")
 
 
 ## 모달 대화상자. on_close 는 닫힐 때 호출

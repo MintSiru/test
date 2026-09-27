@@ -132,7 +132,7 @@ export function createTournament(state: GameState, key: string, entrants: string
 }
 
 /** r 라운드 대진을 확정해 fixture 생성 (부전승은 즉시 진출) */
-export function scheduleRound(comp: Competition, r: number) {
+export function scheduleRound(comp: Competition, r: number, minDate?: string) {
   const br = comp.bracket!;
   const slots = br[r];
   const dates = comp.roundDates![r];
@@ -141,7 +141,9 @@ export function scheduleRound(comp: Competition, r: number) {
     const a = slots[2 * i];
     const b = slots[2 * i + 1];
     if (a && b) {
-      const date = dates[gi % dates.length];
+      let date = dates[gi % dates.length];
+      // 우천 연기 등으로 앞 라운드가 늦게 끝났으면 다음 날 이후로 미룬다
+      if (minDate && date <= minDate) date = addDays(minDate, 1);
       gi++;
       comp.fixtures.push({ id: `${comp.id}-r${r}-${i}`, compId: comp.id, date, home: a, away: b, round: r, slot: i });
     } else {
@@ -149,7 +151,7 @@ export function scheduleRound(comp: Competition, r: number) {
     }
   }
   // 한 라운드가 모두 부전승이면 다음 라운드로
-  if (gi === 0 && r + 1 < br.length - 1) scheduleRound(comp, r + 1);
+  if (gi === 0 && r + 1 < br.length - 1) scheduleRound(comp, r + 1, minDate);
 }
 
 export function roundName(comp: Competition, r: number): string {
@@ -174,7 +176,7 @@ export function advanceTournament(comp: Competition, f: Fixture) {
       comp.runnerUp = f.result.winner === f.home ? f.away : f.home;
       comp.status = 'done';
     } else {
-      scheduleRound(comp, f.round + 1);
+      scheduleRound(comp, f.round + 1, f.date);
     }
   }
 }

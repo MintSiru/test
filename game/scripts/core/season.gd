@@ -156,6 +156,8 @@ static func _process_day(state: Dictionary, rng: Rng, budget := -1) -> String:
 		if c["status"] == "upcoming" and c["start"] <= d:
 			c["status"] = "active"
 	var today := fixtures_on(state, d).filter(func(x): return x["f"].get("result") == null)
+	if Weather.postpone_rain(state, today):
+		today = fixtures_on(state, d).filter(func(x): return x["f"].get("result") == null)
 	var u: String = state["userTeamId"]
 	for x in today:
 		if x["f"]["home"] == u or x["f"]["away"] == u:

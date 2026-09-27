@@ -72,8 +72,18 @@ func setup(_p := {}) -> void:
 	row.add_child(pause_btn)
 	row.add_child(UI.expand(UI.spacer()))
 	row.add_child(UI.button("위임 (끝까지 자동)", _delegate_all, 0, true))
+	var fx := Season.find_fixture(st(), st().get("pendingFixture", ""))
+	var cond_txt := ""
+	if not fx.is_empty():
+		field.weather = Weather.on(int(st()["seed"]), fx["f"]["date"])
+		if fx["comp"]["kind"] == "tournament":
+			var rn := Competition.round_name(fx["comp"], int(fx["f"]["round"]))
+			field.night = rn in ["8강", "준결승", "결승"]
+		cond_txt = "  날씨: %s%s" % [field.weather, " · 야간 경기" if field.night else ""]
+		if Rival.is_rival_game(st(), fx["f"]):
+			cond_txt += " · [color=#ef6f6c]라이벌전![/color]"
 	field.sync(m)
-	_add_line("[color=#f4d35e]%s vs %s — 플레이 볼![/color]" % [m.away.name, m.home.name])
+	_add_line("[color=#f4d35e]%s vs %s — 플레이 볼![/color]%s" % [m.away.name, m.home.name, cond_txt])
 	_refresh()
 	if _pause_mode() == "watch":
 		_toggle_play()
