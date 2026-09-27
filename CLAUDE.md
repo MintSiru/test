@@ -21,6 +21,9 @@
 | core/scouting.ts | core/scouting.gd |
 | core/events.ts | core/weekly_events.gd |
 | core/world.ts | core/world_gen.gd |
+| core/facilities.ts | core/facilities.gd |
+| core/rival.ts | core/rival.gd |
+| core/weather.ts | core/weather.gd |
 | core/season.ts | core/season.gd |
 | sim/engine.ts | sim/match_engine.gd |
 | sim/ai.ts | sim/match_ai.gd |
@@ -36,8 +39,13 @@ cd web && npm test                                   # vitest: 밸런스 + 2시�
 GODOT=/path/to/godot game/tests/run_tests.sh         # Godot 헤드리스: 밸런스 + 1년 시즌
 # UI 통합 테스트 (화면 필요: xvfb)
 xvfb-run -a godot --path game --rendering-driver opengl3 -- --uitest
+# 1시즌 전체를 실제 화면으로 자동 플레이 (약 80초, 스크린샷 저장)
+xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/tmp/shots
 # 스크린샷: -- --newgame --days=40 --screen=roster --shot=/tmp/a.png  (main.gd 개발용 인자)
 #   --pitches=N : 경기일에 경기를 만들고 N구 진행 / --watch : 자동 관전 / --delay=초
+#   --usecard : 훈련 카드 사용 직후 / --boxscore : 경기 후 박스스코어 / --night : 야간·가랑비 연출
+# 성능: godot --headless --path game -s tests/bench.gd
+# 파스 검사만: godot --headless --path game --check-only --script 파일.gd
 ```
 
 Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` 에서 받는다.
@@ -51,6 +59,9 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - JSON 은 숫자를 float 로 읽는다 → 로드 시 `Game.normalize()` 로 정수화. 배열 인덱스에는 `int()`.
 - 코루틴을 `await` 없이 부르면 반환값을 나중에 `await` 할 수 없다 (field_view 의 `_start_moves` 방식 참고).
 - `null` 을 돌려줄 수 있는 함수 결과는 분석기가 `null` 타입으로 보고 오류를 낸다 → 빈 Dictionary 를 반환 (`Idol.idol_of`).
+- GDScript 스레드(WorkerThreadPool/Thread)는 이 프로젝트 측정에서 병렬 이득이 없었다 (릴리스 빌드 포함). 속도는 알고리즘으로 개선할 것.
+- 32비트 해시 곱셈은 64비트 정수에서 넘친다 → `Weather._imul` 처럼 16비트로 나눠 곱한다. 웹과 같은 값이 나와야 하는 계산은 테스트로 값 일치를 확인.
+- `Control` 에는 `rotation`, `scale`, `position` 같은 속성이 이미 있다 → 화면 스크립트 멤버 이름으로 쓰지 말 것.
 
 ## UI 규칙
 
@@ -64,6 +75,12 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 대회 이름·일정은 실제를 따른다 (`schedule.json`, 출처는 docs/GDD.md). 다른 해는 같은 요일로 자동 이동.
 - 학교·선수·프로 선수·프로 구단은 **가상**. 실존 선수 이름을 넣지 않는다 (성명권).
 - 텍스트는 한국어. 조사는 `Text.josa(word, "은/는")` 사용.
+
+## 작업 방식
+
+- 로드맵은 `docs/ROADMAP.md`. 항목마다 근거와 검증 기준을 적고, 끝나면 결과(측정값)를 남긴다.
+- 기능을 넣은 뒤에는 수치 검증(웹 vitest 의 다년 시뮬레이션 등)과 화면 검증(스크린샷, `--uiseason`)을 함께 한다.
+- 밸런스를 바꾸면 `tests/balance.test.ts`, `tests/test_balance.gd` 의 기준 범위를 확인한다.
 
 ## 배포
 
