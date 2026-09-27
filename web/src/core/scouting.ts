@@ -59,7 +59,11 @@ export function visitProspect(state: GameState, id: string, rng: Rng): string {
 export function enrollNewPlayers(state: GameState, rng: Rng): Player[] {
   const team = userTeam(state);
   const joined: Player[] = [];
-  for (const pr of state.prospects) {
+  // 선수단은 최대 40명 정도로 유지한다 (의향 높은 유망주부터)
+  const room = Math.max(0, 40 - team.playerIds.length);
+  const sorted = [...state.prospects].sort((a, b) => b.interest - a.interest);
+  for (const pr of sorted) {
+    if (joined.length >= room) break;
     if (rng.chance(pr.interest / 100) || pr.interest >= 90) {
       const p = pr.player;
       p.teamId = team.id;
@@ -68,7 +72,7 @@ export function enrollNewPlayers(state: GameState, rng: Rng): Player[] {
     }
   }
   state.prospects = [];
-  const walkOns = rng.int(3, 5);
+  const walkOns = Math.min(rng.int(3, 5), Math.max(0, 36 - team.playerIds.length - joined.length));
   joined.push(...intakeFor(state, rng, team, state.year, walkOns, 18 + state.reputation * 0.35));
   for (const p of joined) {
     state.players[p.id] = p;

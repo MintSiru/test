@@ -45,14 +45,21 @@ static func visit(state: Dictionary, id: String, rng: Rng) -> String:
 static func enroll(state: Dictionary, rng: Rng) -> Array:
 	var team: Dictionary = state["teams"][state["userTeamId"]]
 	var joined := []
-	for pr in state["prospects"]:
+	# 선수단은 최대 40명 정도로 유지한다 (의향 높은 유망주부터)
+	var room := maxi(0, 40 - team["playerIds"].size())
+	var sorted: Array = state["prospects"].duplicate()
+	sorted.sort_custom(func(a, b): return a["interest"] > b["interest"])
+	for pr in sorted:
+		if joined.size() >= room:
+			break
 		if rng.chance(pr["interest"] / 100.0) or pr["interest"] >= 90:
 			var p: Dictionary = pr["player"]
 			p["teamId"] = team["id"]
 			p["enrollYear"] = state["year"]
 			joined.append(p)
 	state["prospects"] = []
-	joined.append_array(WorldGen.intake_for(state, rng, team, state["year"], rng.irange(3, 5), 18 + state["reputation"] * 0.35))
+	var walk_ons := mini(rng.irange(3, 5), maxi(0, 36 - team["playerIds"].size() - joined.size()))
+	joined.append_array(WorldGen.intake_for(state, rng, team, state["year"], walk_ons, 18 + state["reputation"] * 0.35))
 	for p in joined:
 		state["players"][p["id"]] = p
 		team["playerIds"].append(p["id"])
