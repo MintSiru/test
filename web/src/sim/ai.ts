@@ -88,6 +88,14 @@ export function aiPitchingChange(m: Match, side: SideState): boolean {
   return true;
 }
 
+/** 위기 때 마운드 방문 (타석 시작 시) */
+export function aiMoundVisit(m: Match, side: SideState): boolean {
+  if (m.balls !== 0 || m.strikes !== 0 || side.visitPa > 0) return false;
+  if (!(m.bases[1] || m.bases[2]) || m.outs >= 2 || m.inning < 5) return false;
+  if (Math.abs(m.home.score - m.away.score) > 3 || !m.rng.chance(0.35)) return false;
+  return m.moundVisit(side);
+}
+
 /** 한 투구에 들어갈 CPU 지시 */
 export function aiOrders(m: Match): Orders {
   const d = aiDefense(m);
@@ -98,7 +106,7 @@ export function aiOrders(m: Match): Orders {
 export function playOut(m: Match): void {
   let guard = 0;
   while (!m.over && guard++ < 5000) {
-    aiPitchingChange(m, m.def);
+    if (!aiPitchingChange(m, m.def)) aiMoundVisit(m, m.def);
     m.step(aiOrders(m));
   }
 }

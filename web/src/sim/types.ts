@@ -125,4 +125,7 @@ export interface SideState {
   errors: number;
   line: number[];
   box: Record<string, BoxEntry>;
+  /** 마운드 방문 횟수 / 효과가 남은 타자 수 */
+  visits: number;
+  visitPa: number;
 }

@@ -109,7 +109,7 @@ func _loop() -> void:
 		guard += 1
 		var user := _user()
 		if m.def() != user or delegate:
-			if MatchAI.pitching_change(m, m.def()):
+			if MatchAI.pitching_change(m, m.def()) or MatchAI.mound_visit(m, m.def()):
 				_add_line("[color=#9aa0c0]%s[/color]" % m.game_log.back())
 		elif m.balls == 0 and m.strikes == 0 and m.def().pitch_count.get(m.def().pitcher_id, 0) >= m.rules["pitchLimit"]:
 			if MatchAI.pitching_change(m, m.def()):
@@ -337,7 +337,14 @@ func _refresh_tactics() -> void:
 				field.sync(m, shift_order)
 				_refresh_tactics()))
 		tactic_box.add_child(g2)
-		tactic_box.add_child(UI.button("투수 교체", _change_pitcher, 222, true))
+		var g3 := UI.grid(2, 2, 2)
+		g3.add_child(UI.button("투수 교체", _change_pitcher, 110, true))
+		var mv := UI.button("마운드 방문 %d/%d" % [user.visits, MatchEngine.MAX_VISITS], _mound_visit, 110, true)
+		mv.disabled = user.visits >= MatchEngine.MAX_VISITS or user.visit_pa > 0
+		mv.tooltip_text = "다음 두 타자 동안 제구 +8"
+		g3.add_child(mv)
+		g3.add_child(UI.button("수비 교체", _def_sub, 110, true))
+		tactic_box.add_child(g3)
 
 
 # ───────────── 교체 ─────────────
@@ -399,6 +406,33 @@ func _pinch_run() -> void:
 		_add_line("[color=#c792ea]%s[/color]" % m.game_log.back())
 		field.sync(m)
 		_refresh())
+
+
+func _mound_visit() -> void:
+	if m.mound_visit(_user()):
+		_add_line("[color=#c792ea]%s — 다음 두 타자 동안 제구 상승[/color]" % m.game_log.back())
+	_refresh()
+
+
+func _def_sub() -> void:
+	var u := _user()
+	var items := []
+	for id in u.order:
+		var pos: String = u.pos_of.get(id, "DH")
+		if pos == "DH":
+			continue
+		items.append(["%s %s  수비 %s" % [PlayerUtil.POS_KO[pos], u.by_id[id].name, PlayerUtil.letter(u.by_id[id].fld)], id])
+	_choose("수비 교체 — 교체할 선수", items, func(out_id):
+		var pos: String = u.pos_of.get(out_id, "")
+		var cands := []
+		for p in _bench(u, false):
+			var apt := 1.0 if p.pos == pos else (0.88 if pos in p.sub else 0.7)
+			cands.append(["%s %s  수비 %s 어깨 %s%s" % [PlayerUtil.POS_SHORT[p.pos], p.name, PlayerUtil.letter(p.fld * apt), PlayerUtil.letter(p.arm), "" if apt >= 0.88 else "  (적성↓)"], p.id])
+		_choose("%s 자리에 들어갈 선수" % PlayerUtil.POS_KO[pos], cands, func(in_id):
+			m.def_sub(u, out_id, in_id)
+			_add_line("[color=#c792ea]%s[/color]" % m.game_log.back())
+			field.sync(m, shift_order)
+			_refresh()))
 
 
 func _change_pitcher() -> void:

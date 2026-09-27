@@ -39,6 +39,8 @@ function makeSide(input: SideInput): SideState {
     errors: 0,
     line: [],
     box,
+    visits: 0,
+    visitPa: 0,
   };
 }
 
@@ -133,6 +135,7 @@ export class Match {
       if (p.abil.includes('pinchX')) ctl -= 12;
     }
     if (this.lateClose() && p.abil.includes('bigHeart')) { ctl += 5; velo += 1.5; }
+    if (side.visitPa > 0) ctl += 8;
     return { velo, ctl, stuff, tired: over };
   }
 
@@ -149,6 +152,17 @@ export class Match {
     side.box[id].pit.g = 1;
     this.log.push(`[투수 교체] ${side.input.name}: ${side.byId[id].name}`);
   }
+
+  /** 마운드 방문: 한 경기 3번까지, 다음 두 타자 동안 제구 +8 */
+  moundVisit(side: SideState): boolean {
+    if (side.visits >= Match.MAX_VISITS) return false;
+    side.visits++;
+    side.visitPa = 2;
+    this.log.push(`[마운드 방문] ${side.input.name} (${side.visits}/${Match.MAX_VISITS})`);
+    return true;
+  }
+
+  static readonly MAX_VISITS = 3;
 
   /** 대타: 현재 타자를 교체하고 수비 위치를 물려받는다 */
   pinchHit(side: SideState, id: string) {
@@ -929,6 +943,7 @@ export class Match {
     if (paEnded) {
       this.balls = 0;
       this.strikes = 0;
+      if (def.visitPa > 0) def.visitPa--;
       const off = this.off;
       off.batterIdx = (off.batterIdx + 1) % 9;
       if (ev.paResult) this.log.push(`${this.inning}회${this.top ? '초' : '말'} ${off.byId[ev.batterId].name}: ${ev.paResult}${ev.runs ? ` (+${ev.runs}점)` : ''}`);

@@ -127,11 +127,23 @@ static func pitching_change(m: MatchEngine, side: MatchEngine.TeamSide) -> bool:
 	return true
 
 
+## 위기 때 마운드 방문 (타석 시작 시)
+static func mound_visit(m: MatchEngine, side: MatchEngine.TeamSide) -> bool:
+	if m.balls != 0 or m.strikes != 0 or side.visit_pa > 0:
+		return false
+	if (m.bases[1] == null and m.bases[2] == null) or m.outs >= 2 or m.inning < 5:
+		return false
+	if absi(m.home.score - m.away.score) > 3 or not m.rng.chance(0.35):
+		return false
+	return m.mound_visit(side)
+
+
 static func play_out(m: MatchEngine) -> void:
 	var guard := 0
 	while not m.over and guard < 5000:
 		guard += 1
-		pitching_change(m, m.def())
+		if not pitching_change(m, m.def()):
+			mound_visit(m, m.def())
 		m.step(orders(m))
 
 

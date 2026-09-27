@@ -27,6 +27,8 @@ class TeamSide:
 	var errors := 0
 	var line: Array = []
 	var box := {} # id -> {bat, pit}
+	var visits := 0 # 마운드 방문 횟수
+	var visit_pa := 0 # 방문 효과가 남은 타자 수
 
 	func _init(input: Dictionary) -> void:
 		team_id = input["teamId"]
@@ -169,6 +171,8 @@ func pitcher_eff(p: SimPlayer, side: TeamSide) -> Dictionary:
 	if late_close() and p.has("bigHeart"):
 		ctl += 5
 		velo += 1.5
+	if side.visit_pa > 0:
+		ctl += 8
 	return {"velo": velo, "ctl": ctl, "stuff": stuff, "tired": over_}
 
 
@@ -184,6 +188,19 @@ func change_pitcher(side: TeamSide, id: String) -> void:
 	side.pos_of[id] = "P"
 	side.ensure_box(id)["pit"]["g"] = 1
 	game_log.append("[투수 교체] %s: %s" % [side.name, side.by_id[id].name])
+
+
+const MAX_VISITS := 3
+
+
+## 마운드 방문: 한 경기 3번까지, 다음 두 타자 동안 제구 +8
+func mound_visit(side: TeamSide) -> bool:
+	if side.visits >= MAX_VISITS:
+		return false
+	side.visits += 1
+	side.visit_pa = 2
+	game_log.append("[마운드 방문] %s (%d/%d)" % [side.name, side.visits, MAX_VISITS])
+	return true
 
 
 func pinch_hit(side: TeamSide, id: String) -> void:
@@ -1012,6 +1029,8 @@ func _finish(ev: Dictionary, pa_ended := true) -> Dictionary:
 	if pa_ended:
 		balls = 0
 		strikes = 0
+		if d.visit_pa > 0:
+			d.visit_pa -= 1
 		var o := off()
 		o.batter_idx = (o.batter_idx + 1) % 9
 		if ev["paResult"] != "" and not quiet:

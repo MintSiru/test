@@ -89,6 +89,19 @@ func _run() -> void:
 	_check(ms.overlay != null, "투수 교체 선택창")
 	ms.overlay.queue_free()
 	ms.overlay = null
+	var us: MatchEngine.TeamSide = Game.current_match.user_side()
+	var v0 := us.visits
+	ms._mound_visit()
+	_check(us.visits == v0 + 1 and us.visit_pa == 2, "마운드 방문")
+	var out_id := ""
+	for id in us.order:
+		if us.pos_of.get(id, "DH") != "DH":
+			out_id = id
+			break
+	var bench := us.players.filter(func(p): return not p.id in us.used and p.pos != "P")
+	if not bench.is_empty():
+		Game.current_match.def_sub(us, out_id, bench[0].id)
+		_check(bench[0].id in us.order and not out_id in us.order, "수비 교체")
 	ms._delegate_all()
 	for i in 600:
 		await _wait(1)
