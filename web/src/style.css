@@ -30,3 +30,9 @@ th { color: var(--dim); font-weight: normal; }
 .log { max-height: 320px; overflow-y: auto; font-size: 12px; }
 select, input { font: inherit; background: #29305a; color: var(--text); border: 2px solid var(--line); padding: 4px; }
 .diamond { font-size: 12px; line-height: 1.2; white-space: pre; }
+
+/* 특수능력 칩 */
+.ab { display: inline-block; padding: 0 4px; margin: 1px 0; border: 1px solid; border-radius: 3px; font-size: 12px; white-space: nowrap; }
+.ab-gold { color: #ffe27a; background: #5a4510; border-color: #f4c542; }
+.ab-good { color: #9cc9ff; background: #1b3350; border-color: #5fa8ff; }
+.ab-bad { color: #ffaaa8; background: #4d2020; border-color: #ef6f6c; }

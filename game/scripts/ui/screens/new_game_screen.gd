@@ -50,5 +50,17 @@ func _start() -> void:
 		name_ = "한빛고"
 	if not name_.ends_with("고"):
 		name_ += "고"
-	Game.new_game(name_, manager.text.strip_edges(), groups[group_idx]["id"], "real" if pros_idx == 0 else "fictional")
-	Game.goto("hub")
+	var start := func(n: int):
+		Game.main.modal_layer.get_children().map(func(c): c.queue_free())
+		Game.new_game(name_, manager.text.strip_edges(), groups[group_idx]["id"], "real" if pros_idx == 0 else "fictional", n)
+		Game.goto("hub")
+	# 빈 슬롯이 있으면 첫 빈 슬롯에 바로 시작, 모두 차 있으면 덮어쓸 슬롯을 고른다
+	for n in range(1, Game.SLOT_COUNT + 1):
+		if not Game.slot_used(n):
+			start.call(n)
+			return
+	var v := UI.vbox(6)
+	v.add_child(UI.label("저장 슬롯이 모두 차 있습니다. 덮어쓸 슬롯을 고르세요.", UI.BAD, true))
+	for n in range(1, Game.SLOT_COUNT + 1):
+		v.add_child(TitleScreen.slot_row(n, false, start))
+	Game.main.show_panel("저장 슬롯 선택", v)

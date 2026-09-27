@@ -22,6 +22,25 @@ func setup(_p := {}) -> void:
 	_build()
 	if not st()["popups"].is_empty():
 		Game.main.drain_popups(_refresh)
+	# 처음 한 번 안내 (새 게임 직후 등)
+	if not Help.once("welcome"):
+		var g := _guide_key()
+		if g != "":
+			Help.once(g)
+
+
+## 진행 중 처음 만나는 상황의 안내 (장터 개장, 스카우트 시작, 후원회 목표)
+func _guide_key() -> String:
+	var s := st()
+	if not Help.enabled():
+		return ""
+	if Shop.market_open(s) and not Help.seen("firstMarket"):
+		return "firstMarket"
+	if not s["prospects"].is_empty() and not Help.seen("firstScout"):
+		return "firstScout"
+	if s.get("goals") != null and not Help.seen("goals"):
+		return "goals"
+	return ""
 
 
 func _build() -> void:
@@ -66,17 +85,20 @@ func _build() -> void:
 		for k in inv:
 			cnt += int(inv[k])
 	menu.add_child(UI.button("가방 (%d)" % cnt, func(): Game.goto("bag"), 0, true))
+	# 소리 · 저장 · 타이틀 (한 줄에 작게)
 	var snd: bool = st()["settings"].get("sound", true)
-	menu.add_child(UI.button("소리: 켜짐" if snd else "소리: 꺼짐", func():
+	var sys_row := UI.hbox(2)
+	menu.add_child(sys_row)
+	sys_row.add_child(UI.expand(UI.button("소리 켬" if snd else "소리 끔", func():
 		st()["settings"]["sound"] = not st()["settings"].get("sound", true)
 		Game.bgm("title")
-		_build(), 0, true))
-	menu.add_child(UI.button("저장", func():
+		_build(), 0, true)))
+	sys_row.add_child(UI.expand(UI.button("저장", func():
 		Game.save_game()
-		Game.main.show_modal("저장", "저장했습니다.")))
-	menu.add_child(UI.button("타이틀로", func():
+		Game.main.show_modal("저장", "슬롯 %d에 저장했습니다." % Game.slot), 0, true)))
+	sys_row.add_child(UI.expand(UI.button("타이틀", func():
 		Game.save_game()
-		Game.goto("title")))
+		Game.goto("title"), 0, true)))
 	# 아래: 소식
 	var np := UI.panel()
 	UI.place(np, 4, 232, 632, 124)
@@ -121,6 +143,12 @@ func _fill_left() -> void:
 	if rid != null:
 		var hh := Rival.h2h_of(s, rid)
 		left_box.add_child(UI.label("라이벌: %s (%d승 %d패)" % [s["teams"][rid]["name"], hh["w"], hh["l"]], UI.BAD, true))
+	var gs = s.get("goals")
+	if gs != null:
+		left_box.add_child(UI.spacer(0, 2))
+		left_box.add_child(UI.label("후원회 목표 (%s)" % gs["tier"], UI.ACCENT, true))
+		for g in gs["list"]:
+			left_box.add_child(UI.label("%s  %s" % [Goals.text(g), Goals.progress_text(g)], UI.GOOD if g["done"] else UI.TEXT, true))
 	left_box.add_child(UI.spacer(0, 2))
 	left_box.add_child(UI.label("연간 일정", UI.ACCENT, true))
 	var shown := 0
@@ -131,7 +159,7 @@ func _fill_left() -> void:
 		var txt := "%s %s" % [Cal.short(e["date"]), e["label"]]
 		left_box.add_child(UI.label(txt, UI.GOOD if active else UI.TEXT, true))
 		shown += 1
-		if shown >= 8:
+		if shown >= (4 if gs != null else 8):
 			break
 
 
@@ -287,6 +315,14 @@ func _process(delta: float) -> void:
 	var start_ms := Time.get_ticks_msec()
 	while Time.get_ticks_msec() - start_ms < 30:
 		var r := Season.step_day(s, 3)
+		if r == "":
+			var g := _guide_key()
+			if g != "":
+				advancing = false
+				Game.save_game()
+				_refresh()
+				Help.once(g, _after_popups)
+				return
 		if r != "":
 			advancing = false
 			Game.save_game()

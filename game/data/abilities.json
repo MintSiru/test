@@ -1,130 +1,1279 @@
 {
+ "note": "특수능력. tier: gold(금특, 상위 능력)·good(파랑)·bad(빨강). for: bat(타자)·pit(투수)·all(공통). 같은 group 안에서는 하나만 가진다. fx 는 경기 효과(when 조건 + 수치, 구현은 sim/engine), season 은 훈련·부상·피로·컨디션 효과.",
+ "conditions": {
+  "risp": "득점권",
+  "lateClose": "7회 이후 2점 차 이내",
+  "late": "7회 이후",
+  "early": "1~2회",
+  "twoStrikes": "투 스트라이크",
+  "firstPitch": "초구",
+  "runnersOn": "주자 있음",
+  "basesLoaded": "만루",
+  "leadoff": "무사 주자 없음",
+  "twoOuts": "투아웃",
+  "vsL": "상대가 좌투/좌타",
+  "ahead": "리드 중",
+  "behindLate": "7회 이후 뒤지는 중"
+ },
  "abilities": [
   {
    "id": "chance",
    "name": "찬스◎",
-   "desc": "득점권에서 타격 능력이 오른다",
+   "tier": "good",
    "good": true,
-   "forPitcher": false
+   "for": "bat",
+   "group": "chance",
+   "desc": "득점권에서 컨택·파워가 오른다",
+   "fx": [
+    {
+     "when": "risp",
+     "con": 7,
+     "pow": 5
+    }
+   ],
+   "upgrade": "chanceG"
   },
   {
-   "id": "powerHitter",
-   "name": "파워히터",
-   "desc": "타구가 더 멀리 날아간다",
+   "id": "chanceG",
+   "name": "승부사",
+   "tier": "gold",
    "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "hitMachine",
-   "name": "안타제조기",
-   "desc": "컨택 능력이 오른다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "stealer",
-   "name": "도루 달인",
-   "desc": "도루 성공률이 크게 오른다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "bunter",
-   "name": "번트 달인",
-   "desc": "번트를 확실하게 성공시킨다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "laser",
-   "name": "레이저빔",
-   "desc": "송구가 빨라 주자의 진루를 막는다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "glove",
-   "name": "수비 달인",
-   "desc": "실책이 줄고 어려운 타구도 잡아낸다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "lefty",
-   "name": "좌완킬러",
-   "desc": "좌투수 상대로 강하다",
-   "good": true,
-   "forPitcher": false
-  },
-  {
-   "id": "tenacious",
-   "name": "끈질김",
-   "desc": "투 스트라이크 이후 삼진을 잘 당하지 않는다",
-   "good": true,
-   "forPitcher": false
+   "for": "bat",
+   "group": "chance",
+   "desc": "득점권에서 컨택·파워가 크게 오른다",
+   "fx": [
+    {
+     "when": "risp",
+     "con": 12,
+     "pow": 9
+    }
+   ]
   },
   {
    "id": "chanceX",
    "name": "찬스×",
-   "desc": "득점권에서 긴장해 버린다",
+   "tier": "bad",
    "good": false,
-   "forPitcher": false
+   "for": "bat",
+   "group": "chance",
+   "desc": "득점권에서 긴장해 버린다",
+   "fx": [
+    {
+     "when": "risp",
+     "con": -8,
+     "pow": -5
+    }
+   ]
+  },
+  {
+   "id": "lefty",
+   "name": "좌완킬러",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "lefty",
+   "desc": "좌투수 상대로 컨택이 오른다",
+   "fx": [
+    {
+     "when": "vsL",
+     "con": 6
+    }
+   ]
+  },
+  {
+   "id": "leftyX",
+   "name": "좌완 공포증",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "lefty",
+   "desc": "좌투수 상대로 컨택이 떨어진다",
+   "fx": [
+    {
+     "when": "vsL",
+     "con": -6
+    }
+   ]
+  },
+  {
+   "id": "powerHitter",
+   "name": "파워히터",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "power",
+   "desc": "타구가 더 멀리 날아간다",
+   "fx": [
+    {
+     "evel": 4,
+     "dist": 3
+    }
+   ],
+   "upgrade": "powerG"
+  },
+  {
+   "id": "powerG",
+   "name": "아치스트",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "power",
+   "desc": "타구가 훨씬 멀리 날아간다",
+   "fx": [
+    {
+     "evel": 7,
+     "dist": 6
+    }
+   ]
+  },
+  {
+   "id": "hitMachine",
+   "name": "안타제조기",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "contact",
+   "desc": "컨택 능력이 오른다",
+   "fx": [
+    {
+     "con": 5
+    }
+   ],
+   "upgrade": "hitG"
+  },
+  {
+   "id": "hitG",
+   "name": "타격 천재",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "contact",
+   "desc": "컨택 능력이 크게 오른다",
+   "fx": [
+    {
+     "con": 9
+    }
+   ]
+  },
+  {
+   "id": "tenacious",
+   "name": "끈질김",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "twoS",
+   "desc": "투 스트라이크 이후 삼진을 잘 당하지 않는다",
+   "fx": [
+    {
+     "when": "twoStrikes",
+     "contact": 0.05,
+     "foul": 0.1
+    }
+   ],
+   "upgrade": "tenaciousG"
+  },
+  {
+   "id": "tenaciousG",
+   "name": "커트의 신",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "twoS",
+   "desc": "투 스트라이크 이후 좀처럼 삼진당하지 않는다",
+   "fx": [
+    {
+     "when": "twoStrikes",
+     "contact": 0.09,
+     "foul": 0.16
+    }
+   ]
+  },
+  {
+   "id": "strikeoutX",
+   "name": "삼진 잘 당함",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "twoS",
+   "desc": "투 스트라이크 이후 헛스윙이 많다",
+   "fx": [
+    {
+     "when": "twoStrikes",
+     "contact": -0.05
+    }
+   ]
+  },
+  {
+   "id": "eye",
+   "name": "선구안◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "eye",
+   "desc": "나쁜 공에 잘 속지 않는다",
+   "fx": [
+    {
+     "eye": 15
+    }
+   ]
+  },
+  {
+   "id": "eyeX",
+   "name": "선구안×",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "eye",
+   "desc": "나쁜 공에 배트가 나간다",
+   "fx": [
+    {
+     "eye": -15
+    }
+   ]
+  },
+  {
+   "id": "firstStrike",
+   "name": "초구 공략",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "first",
+   "desc": "초구를 노려 강하게 친다",
+   "fx": [
+    {
+     "when": "firstPitch",
+     "con": 6,
+     "pow": 4,
+     "swing": 0.08
+    }
+   ]
+  },
+  {
+   "id": "comeback",
+   "name": "역전의 명수",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "comeback",
+   "desc": "7회 이후 뒤지고 있을 때 강하다",
+   "fx": [
+    {
+     "when": "behindLate",
+     "con": 5,
+     "pow": 5
+    }
+   ]
+  },
+  {
+   "id": "leadoff",
+   "name": "선두타자◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "leadoff",
+   "desc": "이닝 선두타자일 때 출루에 집중한다",
+   "fx": [
+    {
+     "when": "leadoff",
+     "con": 4,
+     "eye": 10
+    }
+   ]
+  },
+  {
+   "id": "basesLoaded",
+   "name": "만루 사나이",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "loaded",
+   "desc": "만루에서 무섭게 강하다",
+   "fx": [
+    {
+     "when": "basesLoaded",
+     "con": 10,
+     "pow": 8
+    }
+   ]
+  },
+  {
+   "id": "lineDrive",
+   "name": "라인드라이브",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "batType",
+   "desc": "날카로운 직선 타구가 많다",
+   "fx": [
+    {
+     "ld": 0.06,
+     "pu": -0.03
+    }
+   ]
+  },
+  {
+   "id": "popper",
+   "name": "뜬공 양산",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "batType",
+   "desc": "힘없는 뜬공이 많다",
+   "fx": [
+    {
+     "pu": 0.05
+    }
+   ]
+  },
+  {
+   "id": "dpAvoid",
+   "name": "병살 회피",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "dp",
+   "desc": "병살타를 잘 치지 않는다",
+   "fx": [
+    {
+     "dp": -0.12
+    }
+   ]
+  },
+  {
+   "id": "dpX",
+   "name": "병살타×",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "dp",
+   "desc": "병살타가 많다",
+   "fx": [
+    {
+     "dp": 0.12
+    }
+   ]
+  },
+  {
+   "id": "bunter",
+   "name": "번트 달인",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "bunt",
+   "desc": "번트를 확실하게 성공시킨다",
+   "fx": [
+    {
+     "bunt": 0.22,
+     "buntHit": 0.08
+    }
+   ]
+  },
+  {
+   "id": "buntX",
+   "name": "번트×",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "bunt",
+   "desc": "번트가 서툴다",
+   "fx": [
+    {
+     "bunt": -0.15
+    }
+   ]
+  },
+  {
+   "id": "infieldHit",
+   "name": "내야안타◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "infield",
+   "desc": "땅볼이 내야안타가 되기 쉽다",
+   "fx": [
+    {
+     "gbHit": 0.05
+    }
+   ]
+  },
+  {
+   "id": "clutch",
+   "name": "클러치 히터",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "lateBat",
+   "desc": "경기 후반 접전에서 강하다",
+   "fx": [
+    {
+     "when": "lateClose",
+     "con": 5,
+     "pow": 4
+    }
+   ]
+  },
+  {
+   "id": "clutchX",
+   "name": "승부처 약함",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "lateBat",
+   "desc": "경기 후반 접전에서 약하다",
+   "fx": [
+    {
+     "when": "lateClose",
+     "con": -5,
+     "pow": -3
+    }
+   ]
+  },
+  {
+   "id": "twoOut",
+   "name": "투아웃 집중",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "twoOut",
+   "desc": "투아웃에서 집중력이 오른다",
+   "fx": [
+    {
+     "when": "twoOuts",
+     "con": 5
+    }
+   ]
+  },
+  {
+   "id": "slowStartB",
+   "name": "슬로스타터",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "slowB",
+   "desc": "경기 초반(1~2회)에 타격이 무디다",
+   "fx": [
+    {
+     "when": "early",
+     "con": -5,
+     "pow": -3
+    }
+   ]
+  },
+  {
+   "id": "hasty",
+   "name": "조급함",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "hasty",
+   "desc": "서두르다 나쁜 공에 손이 나간다",
+   "fx": [
+    {
+     "swing": 0.08,
+     "eye": -8
+    }
+   ]
+  },
+  {
+   "id": "runner",
+   "name": "주루◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "run",
+   "desc": "한 베이스 더 가는 주루가 뛰어나다",
+   "fx": [
+    {
+     "run": 0.12
+    }
+   ]
+  },
+  {
+   "id": "runX",
+   "name": "주루×",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "run",
+   "desc": "주루 판단이 느리다",
+   "fx": [
+    {
+     "run": -0.12
+    }
+   ]
+  },
+  {
+   "id": "stealer",
+   "name": "도루 달인",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "steal",
+   "desc": "도루 성공률이 크게 오른다",
+   "fx": [
+    {
+     "steal": 0.13
+    }
+   ],
+   "upgrade": "stealG"
+  },
+  {
+   "id": "stealG",
+   "name": "대도",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "steal",
+   "desc": "도루와 주루가 압도적이다",
+   "fx": [
+    {
+     "steal": 0.22,
+     "run": 0.08
+    }
+   ]
+  },
+  {
+   "id": "stealX",
+   "name": "도루×",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "steal",
+   "desc": "도루 스타트가 늦다",
+   "fx": [
+    {
+     "steal": -0.12
+    }
+   ]
+  },
+  {
+   "id": "glove",
+   "name": "수비 달인",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "def",
+   "desc": "실책이 줄고 어려운 타구도 잡아낸다",
+   "fx": [
+    {
+     "fld": 8
+    }
+   ],
+   "upgrade": "gloveG"
+  },
+  {
+   "id": "gloveG",
+   "name": "철벽 수비",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "def",
+   "desc": "어떤 타구든 잡아내는 철벽 수비",
+   "fx": [
+    {
+     "fld": 14,
+     "err": -0.02
+    }
+   ]
+  },
+  {
+   "id": "errorX",
+   "name": "실책 잦음",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "def",
+   "desc": "쉬운 타구도 놓친다",
+   "fx": [
+    {
+     "fld": -3,
+     "err": 0.03
+    }
+   ]
+  },
+  {
+   "id": "laser",
+   "name": "레이저빔",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "arm",
+   "desc": "송구가 빨라 주자의 진루를 막는다",
+   "fx": [
+    {
+     "arm": 15
+    }
+   ],
+   "upgrade": "laserG"
+  },
+  {
+   "id": "laserG",
+   "name": "바주카포",
+   "tier": "gold",
+   "good": true,
+   "for": "bat",
+   "group": "arm",
+   "desc": "대포 같은 송구로 주자를 잡아낸다",
+   "fx": [
+    {
+     "arm": 25
+    }
+   ]
+  },
+  {
+   "id": "throwX",
+   "name": "송구 불안",
+   "tier": "bad",
+   "good": false,
+   "for": "bat",
+   "group": "arm",
+   "desc": "송구가 불안하다",
+   "fx": [
+    {
+     "arm": -8,
+     "err": 0.015
+    }
+   ]
+  },
+  {
+   "id": "catcherLead",
+   "name": "포수 리드◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "lead",
+   "desc": "포수로 나오면 투수의 제구·구위가 오른다",
+   "fx": [
+    {
+     "lead": 3
+    }
+   ],
+   "pos": [
+    "C"
+   ]
+  },
+  {
+   "id": "blocker",
+   "name": "블로킹◎",
+   "tier": "good",
+   "good": true,
+   "for": "bat",
+   "group": "block",
+   "desc": "포수로 나오면 폭투가 절반으로 준다",
+   "fx": [
+    {
+     "block": 0.5
+    }
+   ],
+   "pos": [
+    "C"
+   ]
   },
   {
    "id": "pinch",
    "name": "핀치◎",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "pinch",
    "desc": "득점권에 주자가 있을 때 공이 좋아진다",
-   "good": true,
-   "forPitcher": true
+   "fx": [
+    {
+     "when": "risp",
+     "ctl": 6,
+     "velo": 1.5,
+     "stuff": 4
+    }
+   ],
+   "upgrade": "pinchG"
   },
   {
-   "id": "heavyBall",
-   "name": "묵직한 공",
-   "desc": "직구의 위력이 오른다",
+   "id": "pinchG",
+   "name": "불사신",
+   "tier": "gold",
    "good": true,
-   "forPitcher": true
-  },
-  {
-   "id": "pinpoint",
-   "name": "핀포인트",
-   "desc": "제구가 흔들리지 않는다",
-   "good": true,
-   "forPitcher": true
-  },
-  {
-   "id": "strikeout",
-   "name": "탈삼진",
-   "desc": "투 스트라이크 이후 삼진을 잘 잡는다",
-   "good": true,
-   "forPitcher": true
-  },
-  {
-   "id": "ironArm",
-   "name": "철완",
-   "desc": "많이 던져도 지치지 않는다",
-   "good": true,
-   "forPitcher": true
-  },
-  {
-   "id": "bigHeart",
-   "name": "강심장",
-   "desc": "경기 후반, 접전에서 강하다",
-   "good": true,
-   "forPitcher": true
+   "for": "pit",
+   "group": "pinch",
+   "desc": "위기일수록 공이 살아난다",
+   "fx": [
+    {
+     "when": "risp",
+     "ctl": 10,
+     "velo": 2.5,
+     "stuff": 7
+    }
+   ]
   },
   {
    "id": "pinchX",
    "name": "핀치×",
-   "desc": "위기 상황에서 제구가 흔들린다",
+   "tier": "bad",
    "good": false,
-   "forPitcher": true
+   "for": "pit",
+   "group": "pinch",
+   "desc": "위기 상황에서 제구가 흔들린다",
+   "fx": [
+    {
+     "when": "risp",
+     "ctl": -12
+    }
+   ]
+  },
+  {
+   "id": "heavyBall",
+   "name": "묵직한 공",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "heavy",
+   "desc": "직구의 위력이 오른다",
+   "fx": [
+    {
+     "ppFB": 5
+    }
+   ],
+   "upgrade": "heavyG"
+  },
+  {
+   "id": "heavyG",
+   "name": "중전차",
+   "tier": "gold",
+   "good": true,
+   "for": "pit",
+   "group": "heavy",
+   "desc": "직구가 무겁고 위력적이다",
+   "fx": [
+    {
+     "ppFB": 9
+    }
+   ]
+  },
+  {
+   "id": "lightBall",
+   "name": "가벼운 공",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "heavy",
+   "desc": "직구가 가벼워 멀리 날아간다",
+   "fx": [
+    {
+     "ppFB": -4,
+     "hrAllow": 3
+    }
+   ]
+  },
+  {
+   "id": "pinpoint",
+   "name": "핀포인트",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "ctl",
+   "desc": "제구가 흔들리지 않는다",
+   "fx": [
+    {
+     "ctl": 6
+    }
+   ],
+   "upgrade": "pinpointG"
+  },
+  {
+   "id": "pinpointG",
+   "name": "정밀 기계",
+   "tier": "gold",
+   "good": true,
+   "for": "pit",
+   "group": "ctl",
+   "desc": "원하는 곳에 정확히 꽂는다",
+   "fx": [
+    {
+     "ctl": 11
+    }
+   ]
   },
   {
    "id": "wild",
    "name": "난조",
-   "desc": "가끔 제구가 크게 흔들린다",
+   "tier": "bad",
    "good": false,
-   "forPitcher": true
+   "for": "pit",
+   "group": "ctl",
+   "desc": "가끔 제구가 크게 흔들린다",
+   "fx": [
+    {
+     "wild": 0.06
+    }
+   ]
+  },
+  {
+   "id": "strikeout",
+   "name": "탈삼진",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "k",
+   "desc": "투 스트라이크 이후 삼진을 잘 잡는다",
+   "fx": [
+    {
+     "when": "twoStrikes",
+     "whiff": 0.05
+    }
+   ],
+   "upgrade": "kG"
+  },
+  {
+   "id": "kG",
+   "name": "닥터 K",
+   "tier": "gold",
+   "good": true,
+   "for": "pit",
+   "group": "k",
+   "desc": "투 스트라이크 이후 헛스윙을 이끌어낸다",
+   "fx": [
+    {
+     "when": "twoStrikes",
+     "whiff": 0.09
+    }
+   ]
+  },
+  {
+   "id": "ironArm",
+   "name": "철완",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "sta",
+   "desc": "많이 던져도 지치지 않는다",
+   "fx": [
+    {
+     "sta": 0.2
+    }
+   ],
+   "upgrade": "ironG"
+  },
+  {
+   "id": "ironG",
+   "name": "무한 체력",
+   "tier": "gold",
+   "good": true,
+   "for": "pit",
+   "group": "sta",
+   "desc": "완투를 해도 끄떡없다",
+   "fx": [
+    {
+     "sta": 0.35
+    }
+   ]
+  },
+  {
+   "id": "staX",
+   "name": "스태미나 부족",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "sta",
+   "desc": "금방 지친다",
+   "fx": [
+    {
+     "sta": -0.15
+    }
+   ]
+  },
+  {
+   "id": "bigHeart",
+   "name": "강심장",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "heart",
+   "desc": "경기 후반, 접전에서 강하다",
+   "fx": [
+    {
+     "when": "lateClose",
+     "ctl": 5,
+     "velo": 1.5
+    }
+   ]
+  },
+  {
+   "id": "chicken",
+   "name": "새가슴",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "heart",
+   "desc": "경기 후반 접전에서 제구가 흔들린다",
+   "fx": [
+    {
+     "when": "lateClose",
+     "ctl": -6,
+     "stuff": -3
+    }
+   ]
+  },
+  {
+   "id": "noMistake",
+   "name": "실투 적음",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "mistake",
+   "desc": "한가운데 실투가 적다",
+   "fx": [
+    {
+     "mistake": -0.03
+    }
+   ]
+  },
+  {
+   "id": "mistakeX",
+   "name": "실투 잦음",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "mistake",
+   "desc": "한가운데로 몰리는 공이 많다",
+   "fx": [
+    {
+     "mistake": 0.04
+    }
+   ]
+  },
+  {
+   "id": "quick",
+   "name": "퀵모션◎",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "quick",
+   "desc": "투구 동작이 빨라 도루를 잘 허용하지 않는다",
+   "fx": [
+    {
+     "hold": -0.1
+    }
+   ]
+  },
+  {
+   "id": "quickX",
+   "name": "퀵모션×",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "quick",
+   "desc": "투구 동작이 커서 도루를 쉽게 허용한다",
+   "fx": [
+    {
+     "hold": 0.1
+    }
+   ]
+  },
+  {
+   "id": "groundBall",
+   "name": "땅볼 유도",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "gb",
+   "desc": "땅볼 타구를 많이 유도한다",
+   "fx": [
+    {
+     "gbRate": 0.08
+    }
+   ]
+  },
+  {
+   "id": "noHR",
+   "name": "장타 억제",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "hr",
+   "desc": "큰 타구를 잘 허용하지 않는다",
+   "fx": [
+    {
+     "hrAllow": -4
+    }
+   ]
+  },
+  {
+   "id": "hrX",
+   "name": "한방 허용",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "hr",
+   "desc": "큰 타구를 자주 맞는다",
+   "fx": [
+    {
+     "hrAllow": 4
+    }
+   ]
+  },
+  {
+   "id": "slowStartP",
+   "name": "슬로스타터",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "slowP",
+   "desc": "경기 초반(1~2회)에 제구·구속이 떨어진다",
+   "fx": [
+    {
+     "when": "early",
+     "ctl": -6,
+     "velo": -1.5
+    }
+   ]
+  },
+  {
+   "id": "strongFinish",
+   "name": "뒷심",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "finish",
+   "desc": "7회 이후 구속과 구위가 오른다",
+   "fx": [
+    {
+     "when": "late",
+     "velo": 2,
+     "stuff": 4
+    }
+   ]
+  },
+  {
+   "id": "vsLefty",
+   "name": "좌타 킬러",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "vsL",
+   "desc": "좌타자 상대로 강하다",
+   "fx": [
+    {
+     "when": "vsL",
+     "stuff": 5,
+     "ctl": 3
+    }
+   ]
+  },
+  {
+   "id": "vsLeftyX",
+   "name": "좌타자 약점",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "vsL",
+   "desc": "좌타자 상대로 약하다",
+   "fx": [
+    {
+     "when": "vsL",
+     "stuff": -5,
+     "ctl": -3
+    }
+   ]
+  },
+  {
+   "id": "firstStrikeP",
+   "name": "초구 승부",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "zone",
+   "desc": "초구부터 과감하게 스트라이크를 던진다",
+   "fx": [
+    {
+     "when": "firstPitch",
+     "zone": 0.12,
+     "ctl": 4
+    }
+   ]
+  },
+  {
+   "id": "nibbler",
+   "name": "도망가는 투구",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "zone",
+   "desc": "승부를 피하다 볼이 많아진다",
+   "fx": [
+    {
+     "zone": -0.1
+    }
+   ]
+  },
+  {
+   "id": "breaker",
+   "name": "변화구 달인",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "breaking",
+   "desc": "변화구의 위력이 오른다",
+   "fx": [
+    {
+     "ppBR": 4
+    }
+   ],
+   "upgrade": "breakerG"
+  },
+  {
+   "id": "breakerG",
+   "name": "마구",
+   "tier": "gold",
+   "good": true,
+   "for": "pit",
+   "group": "breaking",
+   "desc": "변화구가 마구처럼 휜다",
+   "fx": [
+    {
+     "ppBR": 8
+    }
+   ]
+  },
+  {
+   "id": "pace",
+   "name": "완급 조절",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "pace",
+   "desc": "힘을 아껴 던지며 타자를 요리한다",
+   "fx": [
+    {
+     "sta": 0.08,
+     "stuff": 3
+    }
+   ]
+  },
+  {
+   "id": "setX",
+   "name": "셋포지션 불안",
+   "tier": "bad",
+   "good": false,
+   "for": "pit",
+   "group": "set",
+   "desc": "주자가 나가면 제구가 흔들린다",
+   "fx": [
+    {
+     "when": "runnersOn",
+     "ctl": -5
+    }
+   ]
+  },
+  {
+   "id": "cruise",
+   "name": "여유 있는 투구",
+   "tier": "good",
+   "good": true,
+   "for": "pit",
+   "group": "cruise",
+   "desc": "리드하고 있으면 더 안정된다",
+   "fx": [
+    {
+     "when": "ahead",
+     "ctl": 4,
+     "stuff": 2
+    }
+   ]
+  },
+  {
+   "id": "worker",
+   "name": "연습벌레",
+   "tier": "good",
+   "good": true,
+   "for": "all",
+   "group": "practice",
+   "desc": "훈련 성장이 빠르다",
+   "season": {
+    "growth": 0.15
+   }
+  },
+  {
+   "id": "lazy",
+   "name": "연습 싫어함",
+   "tier": "bad",
+   "good": false,
+   "for": "all",
+   "group": "practice",
+   "desc": "훈련 성장이 느리다",
+   "season": {
+    "growth": -0.15
+   }
+  },
+  {
+   "id": "durable",
+   "name": "강철 몸",
+   "tier": "good",
+   "good": true,
+   "for": "all",
+   "group": "body",
+   "desc": "좀처럼 다치지 않는다",
+   "season": {
+    "injury": -0.6
+   }
+  },
+  {
+   "id": "fragile",
+   "name": "유리몸",
+   "tier": "bad",
+   "good": false,
+   "for": "all",
+   "group": "body",
+   "desc": "쉽게 다친다",
+   "season": {
+    "injury": 1.0
+   }
+  },
+  {
+   "id": "recover",
+   "name": "회복◎",
+   "tier": "good",
+   "good": true,
+   "for": "all",
+   "group": "recover",
+   "desc": "피로가 빨리 풀린다",
+   "season": {
+    "recover": 0.35
+   }
+  },
+  {
+   "id": "recoverX",
+   "name": "회복×",
+   "tier": "bad",
+   "good": false,
+   "for": "all",
+   "group": "recover",
+   "desc": "피로가 잘 풀리지 않는다",
+   "season": {
+    "recover": -0.3
+   }
+  },
+  {
+   "id": "steady",
+   "name": "평정심",
+   "tier": "good",
+   "good": true,
+   "for": "all",
+   "group": "mental",
+   "desc": "컨디션이 잘 떨어지지 않는다",
+   "season": {
+    "mood": -1
+   }
+  },
+  {
+   "id": "moody",
+   "name": "기분파",
+   "tier": "bad",
+   "good": false,
+   "for": "all",
+   "group": "mental",
+   "desc": "컨디션 기복이 심하다",
+   "season": {
+    "mood": 1
+   }
   }
  ],
  "styles": {

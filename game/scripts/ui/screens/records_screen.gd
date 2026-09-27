@@ -14,7 +14,7 @@ func setup(_p := {}) -> void:
 	if s["history"].is_empty():
 		av.add_child(UI.label("아직 기록이 없습니다.", UI.DIM, true))
 	for y in s["history"]:
-		av.add_child(UI.label("%d 시즌" % y["year"], UI.ACCENT, true))
+		av.add_child(UI.label("%d 시즌%s" % [y["year"], ("  · 후원회 목표 %s" % y["goals"]) if y.get("goals") != null else ""], UI.ACCENT, true))
 		for r in y["results"]:
 			av.add_child(UI.label("  %s: %s" % [r["comp"], r["result"]], UI.TEXT, true))
 	var h2h = s.get("h2h")

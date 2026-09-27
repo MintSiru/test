@@ -360,12 +360,137 @@
    "desc": "특수능력 「강심장」 습득 (투수)"
   },
   {
+   "key": "bk_eye",
+   "name": "선구안 교본",
+   "type": "ability",
+   "ability": "eye",
+   "price": 90,
+   "weight": 3,
+   "desc": "특수능력 「선구안◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_first",
+   "name": "초구 공략 노트",
+   "type": "ability",
+   "ability": "firstStrike",
+   "price": 80,
+   "weight": 3,
+   "desc": "특수능력 「초구 공략」 습득 (타자)"
+  },
+  {
+   "key": "bk_loaded",
+   "name": "만루 사나이의 일기",
+   "type": "ability",
+   "ability": "basesLoaded",
+   "price": 80,
+   "weight": 3,
+   "desc": "특수능력 「만루 사나이」 습득 (타자)"
+  },
+  {
+   "key": "bk_line",
+   "name": "라인드라이브 타법서",
+   "type": "ability",
+   "ability": "lineDrive",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「라인드라이브」 습득 (타자)"
+  },
+  {
+   "key": "bk_runner",
+   "name": "주루 교본",
+   "type": "ability",
+   "ability": "runner",
+   "price": 80,
+   "weight": 3,
+   "desc": "특수능력 「주루◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_clutch",
+   "name": "클러치 히터 전기",
+   "type": "ability",
+   "ability": "clutch",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「클러치 히터」 습득 (타자)"
+  },
+  {
+   "key": "bk_lead",
+   "name": "포수 리드 교본",
+   "type": "ability",
+   "ability": "catcherLead",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「포수 리드◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_breaker",
+   "name": "변화구 비법서",
+   "type": "ability",
+   "ability": "breaker",
+   "price": 130,
+   "weight": 2,
+   "desc": "특수능력 「변화구 달인」 습득 (투수)"
+  },
+  {
+   "key": "bk_quick",
+   "name": "퀵모션 교본",
+   "type": "ability",
+   "ability": "quick",
+   "price": 70,
+   "weight": 3,
+   "desc": "특수능력 「퀵모션◎」 습득 (투수)"
+  },
+  {
+   "key": "bk_gb",
+   "name": "땅볼 유도술",
+   "type": "ability",
+   "ability": "groundBall",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「땅볼 유도」 습득 (투수)"
+  },
+  {
+   "key": "bk_nohr",
+   "name": "장타 억제 노트",
+   "type": "ability",
+   "ability": "noHR",
+   "price": 110,
+   "weight": 2,
+   "desc": "특수능력 「장타 억제」 습득 (투수)"
+  },
+  {
+   "key": "bk_worker",
+   "name": "연습벌레 일기장",
+   "type": "ability",
+   "ability": "worker",
+   "price": 120,
+   "weight": 2,
+   "desc": "특수능력 「연습벌레」 습득 (공통)"
+  },
+  {
+   "key": "bk_recover",
+   "name": "회복 스트레칭 북",
+   "type": "ability",
+   "ability": "recover",
+   "price": 90,
+   "weight": 3,
+   "desc": "특수능력 「회복◎」 습득 (공통)"
+  },
+  {
+   "key": "bk_gold",
+   "name": "비전의 서",
+   "type": "gold",
+   "price": 300,
+   "weight": 1,
+   "desc": "선수 한 명의 긍정 특수능력 하나를 금특(상위 능력)으로 진화"
+  },
+  {
    "key": "fixer",
    "name": "나쁜 버릇 교정서",
    "type": "fix",
    "price": 80,
    "weight": 4,
-   "desc": "선수 한 명의 부정적 특수능력(찬스×·핀치×·난조) 제거"
+   "desc": "선수 한 명의 부정적 특수능력(빨간색) 하나를 없앤다"
   },
   {
    "key": "charm",

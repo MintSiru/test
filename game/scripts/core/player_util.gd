@@ -228,23 +228,41 @@ static func gen_player(rng: Rng, o: Dictionary) -> Dictionary:
 		"faceSeed": rng.irange(1, 1 << 30), "middleSchool": middle_school(rng),
 	}
 
-	# 특수능력
-	var pool := []
-	for a in GameData.abilities():
-		if a["forPitcher"] == (pos == "P"):
-			pool.append(a)
-	var n_ab := (2 if rng.chance(0.25) else 1) if rng.chance(0.25 + talent * 0.08) else 0
-	for i in n_ab:
-		var a: Dictionary = rng.pick(pool)
-		if not a["good"] and rng.chance(0.5):
-			continue
-		if not a["id"] in p["abilities"]:
-			p["abilities"].append(a["id"])
+	roll_abilities(rng, p)
 
 	var pros: Array = o.get("pros", [])
 	if not pros.is_empty() and rng.chance(o.get("idolChance", 0.22)):
 		assign_idol(rng, p, pros)
 	return p
+
+
+## 입학 선수 특수능력: 긍정은 재능이 높을수록, 부정은 재능이 낮을수록 많고 금특은 드물다
+static func roll_abilities(rng: Rng, p: Dictionary) -> void:
+	var goods := []
+	var bads := []
+	for a in Abilities.all():
+		if a["tier"] == "gold" or not Abilities.fits(a, p):
+			continue
+		(goods if a["tier"] == "good" else bads).append(a)
+	var talent: int = p["talent"]
+	var n_good := (2 if rng.chance(0.3) else 1) if rng.chance(0.28 + talent * 0.08) else 0
+	var n_bad := (2 if rng.chance(0.2) else 1) if rng.chance(0.34 - talent * 0.05) else 0
+	for i in n_good:
+		var a: Dictionary = rng.pick(goods)
+		if Abilities.cannot_learn(p, a["id"]) == "":
+			Abilities.learn(p, a["id"])
+	for i in n_bad:
+		var a: Dictionary = rng.pick(bads)
+		if Abilities.cannot_learn(p, a["id"]) == "":
+			Abilities.learn(p, a["id"])
+	# 재능 4 이상은 드물게 금특을 가지고 들어온다
+	if talent >= 4 and rng.chance(0.08 * (talent - 3)):
+		var up := []
+		for x in p["abilities"]:
+			if Abilities.gold_of(x) != "":
+				up.append(Abilities.gold_of(x))
+		if not up.is_empty():
+			Abilities.learn(p, rng.pick(up))
 
 
 ## 동경 선수 지정: 성향(투수/야수)이 맞는 프로 선수를 골라 이름을 같게, 성은 다르게 한다

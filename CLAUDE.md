@@ -7,7 +7,7 @@
 
 - `game/` — **실제 게임** (Godot 4.7, GDScript). 여기가 주 개발 대상.
 - `web/` — **기반 시스템** (TypeScript). 규칙·밸런스의 원형이자 빠른 실험장. 텍스트 UI 만 있다.
-- `game/data/*.json` — 두 쪽이 함께 읽는 **단일 데이터 원본** (학교·권역, 프로 리그, 대회 일정, 특수능력, 이름).
+- `game/data/*.json` — 두 쪽이 함께 읽는 **단일 데이터 원본** (학교·권역, 프로 리그, 대회 일정, 특수능력, 장터, 후원회 목표, 이름). `help.json`(도움말 문구)은 Godot 만 쓴다.
 - 게임 상태는 양쪽 모두 **JSON 형태의 Dictionary/객체** 이고 키 이름이 같다 (`enrollYear`, `seasonRecord` …).
   로직 파일도 1:1 대응한다:
 
@@ -23,6 +23,8 @@
 | core/world.ts | core/world_gen.gd |
 | core/shop.ts | core/shop.gd |
 | core/rival.ts | core/rival.gd |
+| core/abilities.ts | core/abilities.gd |
+| core/goals.ts | core/goals.gd |
 | core/weather.ts | core/weather.gd |
 | core/season.ts | core/season.gd |
 | sim/engine.ts | sim/match_engine.gd |
@@ -36,16 +38,20 @@
 
 ```bash
 cd web && npm test                                   # vitest: 밸런스 + 2시즌
-GODOT=/path/to/godot game/tests/run_tests.sh         # Godot 헤드리스: 밸런스 + 1년 시즌
-# UI 통합 테스트 (화면 필요: xvfb)
+GODOT=/path/to/godot game/tests/run_tests.sh         # Godot 헤드리스: 파스 검사 + 밸런스·특수능력 + 1년 시즌 + 경기 중 저장
+# UI 통합 테스트 (화면 필요: xvfb). 주의: 시작할 때 이 컴퓨터의 저장 슬롯 1~3을 지운다
 xvfb-run -a godot --path game --rendering-driver opengl3 -- --uitest
 # 1시즌 전체를 실제 화면으로 자동 플레이 (약 80초, 스크린샷 저장)
 xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/tmp/shots
 # 스크린샷: -- --newgame --days=40 --screen=roster --shot=/tmp/a.png  (main.gd 개발용 인자)
 #   --pitches=N : 경기일에 경기를 만들고 N구 진행 / --watch : 자동 관전 / --delay=초
 #   --usecard : 훈련 카드 사용 직후 / --boxscore : 경기 후 박스스코어 / --night : 야간·가랑비 연출
+#   --notut : 처음 안내 팝업 끄기 (스크린샷용) / --catalog : 특수능력 도감 열기
 # 성능: godot --headless --path game -s tests/bench.gd
 # 파스 검사만: godot --headless --path game --check-only --script 파일.gd
+# 웹 빌드 성능: godot --headless --path game --export-release "Web" build/web/index.html
+#   node tools/web_bench.mjs build/web [--throttle=4]   (헤드리스 Chromium, 전역 playwright 사용)
+#   데스크톱 비교: godot --headless --path game -- --webbench
 ```
 
 Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` 에서 받는다.
@@ -63,6 +69,24 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 32비트 해시 곱셈은 64비트 정수에서 넘친다 → `Weather._imul` 처럼 16비트로 나눠 곱한다. 웹과 같은 값이 나와야 하는 계산은 테스트로 값 일치를 확인.
 - `Control` 에는 `rotation`, `scale`, `position` 같은 속성이 이미 있다 → 화면 스크립트 멤버 이름으로 쓰지 말 것.
 - 데이터 JSON 의 숫자는 float 다. `7 in [7.0]` 은 **false** → 숫자 목록 비교는 `int()` 로 바꿔서 (`Shop.facility_month` 참고).
+- `--check-only` 파스 검사를 통과해도 실제 실행에서 `var x := d.get(...) + 1` 같은 타입 추론 오류가 날 수 있다 (의존 스크립트의 클래스 캐시가 오래됐을 때).
+  `run_tests.sh` 는 테스트 출력에 `SCRIPT ERROR` 가 보이면 바로 중단한다. 결국 **테스트를 실제로 돌려야** 안전하다.
+- 웹 내보내기에서 `tests/` 는 빠진다 (`export_presets.cfg` exclude). 게임이 실행 중에 불러오는 개발용 스크립트는 `scripts/dev/` 에 둔다.
+
+## 특수능력 추가·수정 (v0.4)
+
+- `game/data/abilities.json` 에 항목만 추가하면 된다. `tier`(gold/good/bad), `for`(bat/pit/all), `group`(같은 종류 하나만), `fx`(경기 효과), `season`(시즌 효과), `upgrade`(금특 id), `pos`(포수 전용 등).
+- `fx` 의 조건(`when`)과 수치 키는 정해진 목록만 쓴다 (`docs/GDD.md` 2-5, 웹 `tests/abilities.test.ts` 의 KNOWN). 새 조건·키가 필요하면
+  웹 `sim/engine.ts`(cond, 해당 계산)와 Godot `sim/match_engine.gd`(`_cond`, **`step()` 과 `_fast_pa()` 둘 다**), `Abilities.COND`/`PIT_KEYS` 를 함께 고친다.
+- 부정 능력을 새로 만들면 같은 `group` 에 긍정 능력을 두면 각성으로 극복할 수 있다.
+- 장터 교본은 `shop.json` 의 `type: "ability"` 항목.
+
+## 경기 엔진 주의 (v0.4)
+
+- Godot 의 CPU끼리 경기(quiet)는 작전 없는 타석을 `_fast_pa()` 빠른 경로로 처리한다. **투구 규칙·확률을 바꾸면 `step()` 과 `_fast_pa()` 를 같이 고친다.**
+  `test_balance.gd` 가 두 경로의 통계를 비교한다.
+- 경기 중 저장은 입력 기록 재생 방식이다: 엔진 상태를 바꾸는 공개 함수(`step`, `change_pitcher`, `mound_visit`, `pinch_hit`, `pinch_run`, `def_sub`)는
+  맨 앞에서 `_rec()` 로 기록한다. 새 작전 함수를 추가하면 `_rec()` 와 `replay()` 에도 넣고 `tests/test_save.gd` 를 돌린다.
 
 ## UI 규칙
 
@@ -70,6 +94,8 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 폰트: Galmuri11(12px) 기본, Galmuri9(10px) 작은 글씨. 이모지는 폰트에 없으니 쓰지 않는다.
 - 도트 그래픽은 `PixelArt` 에서 코드로 생성·캐시한다. 외부 이미지를 추가하면 `default_texture_filter=0`(Nearest) 유지.
 - 새 화면: `scripts/ui/screens/xxx_screen.gd` (extends BaseScreen, `setup(params)`) + `main.gd` 의 `SCREENS` 에 등록.
+  `data/help.json` 의 `topics` 에 화면 이름과 같은 키로 도움말을 넣으면 상단 「?」 버튼이 그 도움말을 보여 준다.
+- 특수능력 표시는 `UI.ability_chip()` / `UI.ability_flow()` 로 (색: 금특 노랑 · 긍정 파랑 · 부정 빨강). 처음 한 번 안내는 `Help.once(key)`.
 
 ## 데이터·내용 원칙
 

@@ -1,5 +1,5 @@
 import './style.css';
-import { abilityName } from './core/abilities';
+import { abilityDef, sortAbilities } from './core/abilities';
 import { prettyDate } from './core/calendar';
 import { roundName, standings } from './core/competition';
 import { LEAGUE_GROUPS } from './core/data';
@@ -138,6 +138,14 @@ function statCell(p: Player, k: StatKey) {
   return `<td class="g-${letter(v)}">${letter(v)}${k === 'velo' ? ` ${p.r.velo}` : ` ${Math.round(v)}`}</td>`;
 }
 
+/** 특수능력 칩: 금특(노랑) · 긍정(파랑) · 부정(빨강), 마우스를 올리면 설명 */
+function abilityChips(ids: string[]): string {
+  return sortAbilities(ids).map((id) => {
+    const a = abilityDef(id);
+    return `<span class="ab ab-${a?.tier ?? 'good'}" title="${esc(a?.desc ?? '')}">${a?.tier === 'gold' ? '★' : ''}${esc(a?.name ?? id)}</span>`;
+  }).join(' ');
+}
+
 function renderRoster(body: HTMLElement, s: GameState) {
   const ps = teamPlayers(s, s.userTeamId).sort((a, b) => (a.pos === 'P' ? 0 : 1) - (b.pos === 'P' ? 0 : 1) || grade(b, s.year) - grade(a, s.year));
   const row = (p: Player) => {
@@ -151,7 +159,7 @@ function renderRoster(body: HTMLElement, s: GameState) {
       <td>${COND_KO[p.cond + 2]}</td><td>${Math.round(p.fatigue)}</td><td class="bad">${p.injury > 0 ? p.injury + '일' : ''}</td>
       <td>${isP ? `${era(p.season.pit)} ${p.season.pit.w}승` : `${avg(p.season.bat)} ${p.season.bat.hr}홈런`}</td>
       <td><select data-focus="${p.id}">${focusOpts}</select></td>
-      <td>${p.abilities.map(abilityName).join(', ')}</td>
+      <td>${abilityChips(p.abilities)}</td>
       <td class="idol">${idol ? `${esc(idol)} (${p.idolBond})` : ''}</td>
     </tr>`;
   };

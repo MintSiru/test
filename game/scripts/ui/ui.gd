@@ -16,6 +16,10 @@ const IDOL := Color("#c792ea")
 const BTN := Color("#2c3563")
 
 const KIND_COLORS := {"info": TEXT, "good": GOOD, "bad": BAD, "idol": IDOL, "result": TEXT}
+## 특수능력 등급 색: 금특(노랑) · 긍정(파랑) · 부정(빨강)
+const TIER_COLORS := {"gold": Color("#f4c542"), "good": Color("#5fa8ff"), "bad": Color("#ef6f6c")}
+const TIER_KO := {"gold": "금특", "good": "긍정", "bad": "부정"}
+const FOR_KO := {"bat": "타자", "pit": "투수", "all": "공통"}
 
 static var font: Font
 static var font_bold: Font
@@ -205,3 +209,77 @@ static func clear(node: Node) -> void:
 	for c in node.get_children():
 		node.remove_child(c)
 		c.queue_free()
+
+
+# ───────────── 특수능력 칩 ─────────────
+
+## 특수능력 한 개를 등급 색 칩으로. 누르면 설명 (clickable=false 면 표시만)
+static func ability_chip(id: String, clickable := true) -> Button:
+	var a := Abilities.info(id)
+	var t: String = a.get("tier", "good")
+	var col: Color = TIER_COLORS[t]
+	var b := Button.new()
+	b.text = ("★" if t == "gold" else "") + a.get("name", id)
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_override("font", font_small)
+	b.add_theme_font_size_override("font_size", 10)
+	var bg := col.darkened(0.55) if t != "gold" else Color("#5a4510")
+	for st in ["font_color", "font_hover_color", "font_pressed_color"]:
+		b.add_theme_color_override(st, col.lightened(0.3) if t != "gold" else Color("#ffe27a"))
+	b.add_theme_stylebox_override("normal", sb(bg, col, 1, 2))
+	b.add_theme_stylebox_override("hover", sb(bg.lightened(0.12), col.lightened(0.3), 1, 2))
+	b.add_theme_stylebox_override("pressed", sb(bg.lightened(0.2), col.lightened(0.3), 1, 2))
+	if clickable:
+		b.pressed.connect(func(): Game.main.show_modal(a.get("name", id), ability_text(id)))
+	else:
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return b
+
+
+## 특수능력 설명 (등급·대상·효과·진화)
+static func ability_text(id: String) -> String:
+	var a := Abilities.info(id)
+	var t: String = a.get("tier", "good")
+	var txt := "[%s · %s]\n%s" % [TIER_KO[t], FOR_KO[a.get("for", "bat")], a.get("desc", "")]
+	var up := Abilities.gold_of(id)
+	if up != "":
+		txt += "\n\n금특 진화: 「%s」 — %s" % [Abilities.name_of(up), Abilities.info(up).get("desc", "")]
+	if t == "bad":
+		txt += "\n\n훈련 중 각성으로 극복하거나, 장터의 「나쁜 버릇 교정서」로 없앨 수 있다."
+	return txt
+
+
+## 여러 특수능력을 금특 → 긍정 → 부정 순으로 줄바꿈 배치
+static func ability_flow(ids: Array, width: int, clickable := true) -> HFlowContainer:
+	var f := HFlowContainer.new()
+	f.custom_minimum_size.x = width
+	f.add_theme_constant_override("h_separation", 2)
+	f.add_theme_constant_override("v_separation", 2)
+	for id in Abilities.sorted(ids):
+		f.add_child(ability_chip(id, clickable))
+	return f
+
+
+## 색 범례 한 줄
+static func tier_legend() -> HBoxContainer:
+	var h := hbox(6)
+	for t in ["gold", "good", "bad"]:
+		h.add_child(label("■ " + TIER_KO[t], TIER_COLORS[t], true))
+	return h
+
+
+## 특수능력 도감: 대상별로 금특 → 긍정 → 부정 칩 목록
+static func ability_catalog() -> VBoxContainer:
+	var v := vbox(4)
+	var top := hbox(8)
+	top.add_child(tier_legend())
+	top.add_child(label("칩을 누르면 설명", DIM, true))
+	v.add_child(top)
+	for f in [["bat", "타자 (타격·주루·수비)"], ["pit", "투수"], ["all", "공통 (훈련·부상·피로·컨디션)"]]:
+		var ids := []
+		for a in Abilities.all():
+			if a["for"] == f[0]:
+				ids.append(a["id"])
+		v.add_child(label("%s  %d종" % [f[1], ids.size()], ACCENT, true))
+		v.add_child(ability_flow(ids, 540))
+	return v

@@ -39,6 +39,10 @@ func add_top_bar(title := "", back := true) -> void:
 	var s := st()
 	if s.is_empty():
 		return
+	# 이 화면 도움말
+	var help := UI.button("?", func(): Help.show(Game.main.current_name), 14, true)
+	help.tooltip_text = "도움말"
+	h.add_child(help)
 	var t: Dictionary = s["teams"][s["userTeamId"]]
 	h.add_child(UI.expand(UI.spacer()))
 	h.add_child(UI.label(t["name"], UI.ACCENT, true))

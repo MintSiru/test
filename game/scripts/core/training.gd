@@ -62,6 +62,7 @@ static func growth_mult(p: Dictionary, k: String, pros: Array) -> float:
 	if p["fatigue"] > 70:
 		m *= 0.7
 	m *= 1.0 + p["cond"] * 0.05
+	m *= 1.0 + Abilities.season_fx(p, "growth")
 	if p.get("idolId") != null:
 		for pro in pros:
 			if pro["id"] == p["idolId"]:
@@ -153,11 +154,11 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, growth_mult(p, k, pros) * Shop.growth(fac, k), rng)
 		if g2:
 			gains[k] = gains.get(k, 0) + g2
-	var fat_mul: float = 1.0 if card["kind"] == "rest" else 0.6 + card["value"] * 0.12
+	var fat_mul: float = 1.0 + Abilities.season_fx(p, "recover") if card["kind"] == "rest" else 0.6 + card["value"] * 0.12
 	p["fatigue"] = clampf(p["fatigue"] + info["fatigue"] * fat_mul, 0, 100)
 	if card["kind"] == "rest" and rng.chance(0.5 + card["value"] * 0.08):
 		p["cond"] = clampi(p["cond"] + 1, -2, 2)
-	var risk: float = (maxf(0.0, p["fatigue"] - 60) * 0.004 + (0.01 if card["kind"] == "special" else 0.0)) * (1.0 - 0.2 * Shop.level_of(fac, "ground"))
+	var risk: float = (maxf(0.0, p["fatigue"] - 60) * 0.004 + (0.01 if card["kind"] == "special" else 0.0)) * (1.0 - 0.2 * Shop.level_of(fac, "ground")) * maxf(0.0, 1.0 + Abilities.season_fx(p, "injury"))
 	if not cpu and rng.chance(risk):
 		p["injury"] = rng.irange(5, 25)
 		if report != null:
@@ -170,19 +171,66 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 	if card["kind"] == "meeting":
 		awaken_p *= 1.0 + 0.25 * Shop.level_of(fac, "analysis")
 	if awaken_p > 0 and rng.chance(awaken_p * (0.6 + p["talent"] * 0.15)):
-		var pool := GameData.abilities().filter(func(a): return a["good"] and a["forPitcher"] == is_p and not a["id"] in p["abilities"])
-		if not pool.is_empty():
-			var a: Dictionary = rng.pick(pool)
-			p["abilities"].append(a["id"])
-			if report != null:
-				report["awakenings"].append({"playerId": p["id"], "ability": a["id"]})
+		var aw := awaken(p, rng)
+		if not aw.is_empty() and report != null:
+			aw["playerId"] = p["id"]
+			report["awakenings"].append(aw)
 	if report != null and not gains.is_empty():
 		report["gains"][p["id"]] = gains
 
 
+## 특수능력 각성 {ability, removed}. 부정 능력이 있으면 절반 확률로 먼저 극복하고(같은 그룹 긍정 능력으로 바뀌거나 사라짐),
+## 가진 긍정 능력은 가끔 금특으로 진화한다. 없으면 새 긍정 능력. 아무 일도 없으면 빈 Dictionary
+static func awaken(p: Dictionary, rng: Rng) -> Dictionary:
+	var bad: Array = p["abilities"].filter(func(x): return Abilities.is_bad(x))
+	if not bad.is_empty() and rng.chance(0.5):
+		var b: String = rng.pick(bad)
+		var grp: String = Abilities.info(b)["group"]
+		for a in Abilities.all():
+			if a["group"] == grp and a["tier"] == "good" and Abilities.fits(a, p):
+				return {"ability": a["id"], "removed": Abilities.learn(p, a["id"])}
+		p["abilities"] = p["abilities"].filter(func(x): return x != b)
+		return {"ability": "", "removed": [b]}
+	var up := []
+	for x in p["abilities"]:
+		if Abilities.gold_of(x) != "":
+			up.append(Abilities.gold_of(x))
+	if not up.is_empty() and rng.chance(0.15 + p["talent"] * 0.03):
+		var g: String = rng.pick(up)
+		return {"ability": g, "removed": Abilities.learn(p, g)}
+	var pool := Abilities.all().filter(func(a): return a["tier"] == "good" and Abilities.fits(a, p) and Abilities.cannot_learn(p, a["id"]) == "")
+	if pool.is_empty():
+		return {}
+	var a: Dictionary = rng.pick(pool)
+	return {"ability": a["id"], "removed": Abilities.learn(p, a["id"])}
+
+
+## 각성 알림 {title, body}
+static func awakening_text(n: String, aw: Dictionary) -> Dictionary:
+	var bad := ""
+	for x in aw["removed"]:
+		if Abilities.is_bad(x):
+			bad = x
+	var ab: String = aw["ability"]
+	var q := func(id: String) -> String: return "「%s」" % Abilities.name_of(id)
+	if ab == "":
+		return {"title": "나쁜 버릇 극복", "body": "%s 꾸준한 노력 끝에 나쁜 버릇 %s을(를) 고쳤다!" % [Text.josa(n, "은/는"), q.call(bad)]}
+	if Abilities.tier(ab) == "gold":
+		var old: String = aw["removed"][0] if not aw["removed"].is_empty() else ""
+		return {"title": "금특 진화!", "body": "%s의 %s이(가) 한 단계 진화했다!\n금특 %s 획득!" % [n, q.call(old), q.call(ab)]}
+	if bad != "":
+		return {"title": "나쁜 버릇 극복", "body": "%s %s을(를) 극복하고\n%s에 눈을 떴다!" % [Text.josa(n, "은/는"), q.call(bad), q.call(ab)]}
+	return {"title": "특수능력 습득", "body": "%s 새로운 능력에 눈을 떴다!\n%s" % [Text.josa(n, "이/가"), q.call(ab)]}
+
+
+## 주간 컨디션 변동 (평정심: 떨어질 때 절반은 버팀 / 기분파: 기복 큼)
 static func weekly_condition(p: Dictionary, rng: Rng) -> void:
-	var vol := 0.45 if p["personality"] == "열혈" else (0.2 if p["personality"] == "냉정" else 0.32)
+	var mood := Abilities.season_fx(p, "mood")
+	var vol: float = (0.45 if p["personality"] == "열혈" else (0.2 if p["personality"] == "냉정" else 0.32)) + mood * 0.15
 	if rng.chance(vol):
-		p["cond"] = clampi(p["cond"] + (1 if rng.chance(0.5) else -1), -2, 2)
+		var up := rng.chance(0.5)
+		if not up and mood < 0 and rng.chance(0.5):
+			return
+		p["cond"] = clampi(p["cond"] + (1 if up else -1), -2, 2)
 	elif p["cond"] != 0 and rng.chance(0.3):
 		p["cond"] += -1 if p["cond"] > 0 else 1

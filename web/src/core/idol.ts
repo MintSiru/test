@@ -1,4 +1,4 @@
-import { STYLE_INFO, abilityName } from './abilities';
+import { STYLE_INFO, abilityName, cannotLearn, goldOf, learnAbility } from './abilities';
 import { josa } from './names';
 import { name } from './player';
 import { clamp, type Rng } from './rng';
@@ -66,8 +66,8 @@ export function checkIdolMilestones(state: GameState, p: Player, rng: Rng): Popu
   const flags = p.idolFlags ?? 0;
   if (p.idolBond >= 70 && !(flags & 1)) {
     p.idolFlags = flags | 1;
-    const had = p.abilities.includes(info.ability);
-    if (!had) p.abilities.push(info.ability);
+    const had = !!cannotLearn(p, info.ability);
+    if (!had) learnAbility(p, info.ability);
     return {
       kind: 'idol',
       playerId: p.id,
@@ -83,11 +83,15 @@ export function checkIdolMilestones(state: GameState, p: Player, rng: Rng): Popu
       else { (p.r[k] as number) = Math.min(99, (p.r[k] as number) + 5); p.cap[k] = Math.min(99, p.cap[k] + 5); }
     }
     p.cond = 2;
+    // 동경 선수의 대표 능력이 금특으로 진화
+    const gold = goldOf(info.ability);
+    const evolve = gold && p.abilities.includes(info.ability) && !cannotLearn(p, gold);
+    if (evolve) learnAbility(p, gold);
     return {
       kind: 'idol',
       playerId: p.id,
       title: '꿈의 만남',
-      body: `${proTeamName(state, idol)}의 ${josa(proName(idol), '이/가')} 모교 방문 행사로 근처에 왔다!\n"${p.given}? 나랑 이름이 같네. 열심히 해!"\n${josa(name(p), '은/는')} 사인볼을 품에 안고 누구보다 늦게까지 연습했다. (능력 대폭 상승)`,
+      body: `${proTeamName(state, idol)}의 ${josa(proName(idol), '이/가')} 모교 방문 행사로 근처에 왔다!\n"${p.given}? 나랑 이름이 같네. 열심히 해!"\n${josa(name(p), '은/는')} 사인볼을 품에 안고 누구보다 늦게까지 연습했다. (능력 대폭 상승)${evolve ? `\n「${abilityName(info.ability)}」이(가) 금특 「${abilityName(gold)}」(으)로 진화!` : ''}`,
     };
   }
   void rng;

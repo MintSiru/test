@@ -46,13 +46,54 @@ func _find_button(n: Node) -> Button:
 	return null
 
 
+## 맨 위 모달의 글자 모두
+func _modal_text() -> String:
+	var layer: Control = Game.main.modal_layer
+	if layer.get_child_count() == 0:
+		return ""
+	return _texts(layer.get_child(layer.get_child_count() - 1))
+
+
+func _texts(n: Node) -> String:
+	var t := ""
+	for c in n.get_children():
+		if c is Label:
+			t += c.text + "\n"
+		t += _texts(c)
+	return t
+
+
+func _match_snap(m: MatchEngine) -> String:
+	return str([m.inning, m.top, m.outs, m.balls, m.strikes, m.home.score, m.away.score, m.pitch_no, m.bases.map(func(b): return null if b == null else b["id"]), m.home.pitcher_id, m.away.pitcher_id])
+
+
 func _run() -> void:
 	await _wait(5)
+	# 테스트는 빈 슬롯에서 시작한다 (주의: 이 컴퓨터의 게임 저장 슬롯을 지운다)
+	for n in range(1, Game.SLOT_COUNT + 1):
+		Game.delete_slot(n)
 	Game.goto("new_game")
 	await _wait(5)
 	_cur()._start()
 	await _wait(5)
 	_check(Game.main.current_name == "hub", "새 게임 → 홈 화면")
+	_check(Game.slot == 1 and Game.slot_used(1), "빈 슬롯 1에 저장")
+	_check(_modal_text().contains(Help.topic("welcome")["title"]), "첫 안내 팝업 (환영)")
+	await _close_modals()
+	Game.goto("roster")
+	await _wait(5)
+	_check(_modal_text().contains(Help.topic("abilities")["title"]), "선수단 첫 방문 안내 (특수능력 색)")
+	await _close_modals()
+	Game.goto("hub")
+	await _wait(5)
+	_check(_modal_text().contains(Help.topic("goals")["title"]), "후원회 목표 첫 안내")
+	await _close_modals()
+	Game.goto("roster")
+	await _wait(5)
+	Game.goto("hub")
+	await _wait(5)
+	_check(Game.main.modal_layer.get_child_count() == 0, "안내 팝업은 한 번만")
+	_check(Game.state.get("goals") != null and Game.state["goals"]["list"].size() == 3, "후원회 목표 3개")
 	_check(not Game.state["weekTrained"], "첫 주 훈련 대기")
 	var hub := _cur()
 	hub._use_card(Game.state["hand"][0]["id"])
@@ -102,6 +143,18 @@ func _run() -> void:
 	if not bench.is_empty():
 		Game.current_match.def_sub(us, out_id, bench[0].id)
 		_check(bench[0].id in us.order and not out_id in us.order, "수비 교체")
+	# 경기 도중 저장 후 나가기 → 불러오기 → 같은 상황
+	var snap := _match_snap(Game.current_match)
+	ms._save_quit()
+	await _wait(5)
+	_check(Game.main.current_name == "title", "저장 후 나가기 → 타이틀")
+	_check(Game.slot_info(Game.slot).get("inMatch", false), "슬롯 요약에 [경기 중] 표시")
+	_check(Game.load_game(Game.slot) and Game.current_match != null, "경기 중 세이브 불러오기")
+	_check(Game.current_match != null and _match_snap(Game.current_match) == snap, "같은 이닝·점수·주자에서 재개 " + snap)
+	Game.goto("match")
+	await _wait(5)
+	ms = _cur()
+	_check(Game.main.current_name == "match", "경기 화면으로 복귀")
 	ms._delegate_all()
 	for i in 600:
 		await _wait(1)

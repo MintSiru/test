@@ -1,5 +1,6 @@
 import data from '../../../game/data/shop.json';
 import { addDays, monthOf } from './calendar';
+import { abilityName, cannotLearn, goldOf, isBad, learnAbility } from './abilities';
 import { josa } from './names';
 import { name } from './player';
 import { clamp, type Rng } from './rng';
@@ -123,8 +124,10 @@ export function buyFacility(state: GameState, key: string): string | null {
 
 // ───────────── 아이템 사용 ─────────────
 
-const NEGATIVE = ['chanceX', 'pinchX', 'wild'];
-const PITCHER_ABIL = ['pinch', 'heavyBall', 'pinpoint', 'strikeout', 'ironArm', 'bigHeart'];
+/** 금특으로 진화할 수 있는 긍정 능력 → 금특 */
+function goldTargets(p: Player): string[] {
+  return p.abilities.map(goldOf).filter((g): g is string => !!g && !cannotLearn(p, g));
+}
 
 /** 이 선수에게 쓸 수 있는가 (쓸 수 없으면 이유) */
 export function cannotUse(def: ItemDef, p: Player): string | null {
@@ -135,11 +138,11 @@ export function cannotUse(def: ItemDef, p: Player): string | null {
       if (def.stat === 'velo' && p.r.velo >= 158) return '더 오를 수 없음';
       return null;
     case 'ability':
-      if (PITCHER_ABIL.includes(def.ability!) !== isP) return isP ? '타자 전용' : '투수 전용';
-      if (p.abilities.includes(def.ability!)) return '이미 가지고 있음';
-      return null;
+      return cannotLearn(p, def.ability!);
+    case 'gold':
+      return goldTargets(p).length ? null : '진화할 능력이 없음';
     case 'fix':
-      return p.abilities.some((a) => NEGATIVE.includes(a)) ? null : '고칠 버릇이 없음';
+      return p.abilities.some(isBad) ? null : '고칠 버릇이 없음';
     case 'heal':
       return p.injury > 0 ? null : '부상이 없음';
     case 'idol':
@@ -152,7 +155,7 @@ export function cannotUse(def: ItemDef, p: Player): string | null {
 
 /** 대상이 선수 한 명인 아이템인가 */
 export function needsPlayer(def: ItemDef): boolean {
-  return ['stat', 'ability', 'fix', 'heal', 'idol', 'cond'].includes(def.type);
+  return ['stat', 'ability', 'gold', 'fix', 'heal', 'idol', 'cond'].includes(def.type);
 }
 
 /** 아이템 사용. 성공 시 결과 문구, 실패 시 null 과 이유 */
@@ -186,14 +189,23 @@ export function useItem(state: GameState, key: string, targetId: string | null, 
         msg = `${josa(n, '은/는')} ${def.name}(으)로 한층 성장했다!`;
         break;
       }
-      case 'ability':
-        p.abilities.push(def.ability!);
-        msg = `${josa(n, '은/는')} ${def.name}을 독파하고 새 능력을 익혔다!`;
+      case 'ability': {
+        const removed = learnAbility(p, def.ability!).filter(isBad);
+        msg = `${josa(n, '은/는')} ${def.name}을 독파하고 「${abilityName(def.ability!)}」을(를) 익혔다!${removed.length ? ` (「${abilityName(removed[0])}」 극복)` : ''}`;
         break;
-      case 'fix':
-        p.abilities = p.abilities.filter((a) => !NEGATIVE.includes(a));
-        msg = `${n}의 나쁜 버릇이 고쳐졌다.`;
+      }
+      case 'gold': {
+        const g = rng.pick(goldTargets(p));
+        const old = learnAbility(p, g).find((x) => !isBad(x)) ?? '';
+        msg = `${n}의 「${abilityName(old)}」이(가) 금특 「${abilityName(g)}」(으)로 진화했다!`;
         break;
+      }
+      case 'fix': {
+        const b = rng.pick(p.abilities.filter(isBad));
+        p.abilities = p.abilities.filter((a) => a !== b);
+        msg = `${n}의 나쁜 버릇 「${abilityName(b)}」이(가) 고쳐졌다.`;
+        break;
+      }
       case 'heal':
         p.injury = Math.max(0, p.injury - def.amount!);
         msg = `${n}의 부상이 빨리 나아지고 있다. (남은 기간 ${p.injury}일)`;

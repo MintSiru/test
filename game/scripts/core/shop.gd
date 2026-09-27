@@ -6,9 +6,6 @@ extends RefCounted
 ##  - 시설 기물은 방학·비시즌 달(1·2·7·8·12월) 장터에서만 설치
 ##  - 산 물건은 가방에 두었다가 원하는 때에 선수에게 쓴다
 
-const NEGATIVE := ["chanceX", "pinchX", "wild"]
-const PITCHER_ABIL := ["pinch", "heavyBall", "pinpoint", "strikeout", "ironArm", "bigHeart"]
-
 
 static func data() -> Dictionary:
 	return GameData.load_json("shop")
@@ -168,7 +165,7 @@ static func buy_facility(state: Dictionary, key: String) -> String:
 # ───────────── 아이템 사용 ─────────────
 
 static func needs_player(def: Dictionary) -> bool:
-	return def["type"] in ["stat", "ability", "fix", "heal", "idol", "cond"]
+	return def["type"] in ["stat", "ability", "gold", "fix", "heal", "idol", "cond"]
 
 
 ## 쓸 수 없으면 이유, 쓸 수 있으면 ""
@@ -181,13 +178,12 @@ static func cannot_use(def: Dictionary, p: Dictionary) -> String:
 			if def["stat"] == "velo" and int(p["r"]["velo"]) >= 158:
 				return "더 오를 수 없음"
 		"ability":
-			if (def["ability"] in PITCHER_ABIL) != is_p:
-				return "타자 전용" if is_p else "투수 전용"
-			if def["ability"] in p["abilities"]:
-				return "이미 가지고 있음"
+			return Abilities.cannot_learn(p, def["ability"])
+		"gold":
+			return "" if not Abilities.gold_targets(p).is_empty() else "진화할 능력이 없음"
 		"fix":
 			for a in p["abilities"]:
-				if a in NEGATIVE:
+				if Abilities.is_bad(a):
 					return ""
 			return "고칠 버릇이 없음"
 		"heal":
@@ -236,11 +232,20 @@ static func use_item(state: Dictionary, key: String, target_id: String, rng: Rng
 					p["cap"][k] = maxi(int(p["cap"][k]), int(r[k]))
 				msg = "%s %s(으)로 한층 성장했다!" % [Text.josa(n, "은/는"), def["name"]]
 			"ability":
-				p["abilities"].append(def["ability"])
-				msg = "%s %s을(를) 독파하고 새 능력 「%s」을(를) 익혔다!" % [Text.josa(n, "은/는"), def["name"], GameData.ability_name(def["ability"])]
+				var removed: Array = Abilities.learn(p, def["ability"]).filter(func(x): return Abilities.is_bad(x))
+				msg = "%s %s을(를) 독파하고 「%s」을(를) 익혔다!%s" % [Text.josa(n, "은/는"), def["name"], Abilities.name_of(def["ability"]),
+					" (「%s」 극복)" % Abilities.name_of(removed[0]) if not removed.is_empty() else ""]
+			"gold":
+				var g: String = rng.pick(Abilities.gold_targets(p))
+				var old := ""
+				for x in Abilities.learn(p, g):
+					if not Abilities.is_bad(x):
+						old = x
+				msg = "%s의 「%s」이(가) 금특 「%s」(으)로 진화했다!" % [n, Abilities.name_of(old), Abilities.name_of(g)]
 			"fix":
-				p["abilities"] = p["abilities"].filter(func(a): return not a in NEGATIVE)
-				msg = "%s의 나쁜 버릇이 고쳐졌다." % n
+				var b: String = rng.pick(p["abilities"].filter(func(a): return Abilities.is_bad(a)))
+				p["abilities"] = p["abilities"].filter(func(a): return a != b)
+				msg = "%s의 나쁜 버릇 「%s」이(가) 고쳐졌다." % [n, Abilities.name_of(b)]
 			"heal":
 				p["injury"] = maxi(0, int(p["injury"]) - int(def["amount"]))
 				msg = "%s의 부상이 빨리 나아지고 있다. (남은 기간 %d일)" % [n, p["injury"]]

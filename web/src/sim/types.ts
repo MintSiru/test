@@ -1,3 +1,4 @@
+import type { CompiledFx } from '../core/abilities';
 import type { BatHand, BatLine, Hand, LinePos, PitchSkill, PitchType, PitLine, Pos } from '../core/types';
 
 /** 경기용으로 평탄화한 선수 능력 (컨디션·피로 반영 완료) */
@@ -20,6 +21,8 @@ export interface SimPlayer {
   stuff: number;
   pitches: PitchSkill[];
   abil: string[];
+  /** 특수능력 효과 (조건별 수치, 미리 정리) */
+  fx: CompiledFx;
   /** 투수 등판 가능 여부 (투구수 휴식 규정) */
   canPitch: boolean;
 }
@@ -128,4 +131,6 @@ export interface SideState {
   /** 마운드 방문 횟수 / 효과가 남은 타자 수 */
   visits: number;
   visitPa: number;
+  /** 포수 리드 능력을 가진 선수가 있는가 (없으면 계산 생략) */
+  leadAny: boolean;
 }

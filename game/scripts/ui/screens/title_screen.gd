@@ -1,3 +1,4 @@
+class_name TitleScreen
 extends BaseScreen
 ## 타이틀 화면
 
@@ -30,12 +31,13 @@ func setup(_p := {}) -> void:
 	if Game.has_save():
 		v.add_child(UI.button("이어하기", _continue, 140))
 	v.add_child(UI.button("새 게임", func(): Game.goto("new_game"), 140))
+	v.add_child(UI.button("도움말", func(): Help.index_panel(), 140))
 	if OS.get_name() != "Web":
 		v.add_child(UI.button("종료", func(): get_tree().quit(), 140))
 	var note := UI.label("주말리그 · 이마트배 · 황금사자기 · 청룡기 · 대통령배 · 봉황대기 · 전국체전", UI.DIM, true)
 	UI.place(note, 150, 320, 400, 12)
 	add_child(note)
-	var ver := UI.label("v0.3  폰트: Galmuri (OFL)", UI.DIM, true)
+	var ver := UI.label("v0.4  폰트: Galmuri (OFL)", UI.DIM, true)
 	UI.place(ver, 6, 344, 200, 12)
 	add_child(ver)
 	var notice := UI.wrap_label(GameData.FAN_MADE_NOTICE, 620, Color("#c8c8d8"), true)
@@ -45,8 +47,40 @@ func setup(_p := {}) -> void:
 
 
 func _continue() -> void:
-	if Game.load_game():
-		Game.goto("hub")
+	var v := UI.vbox(6)
+	v.add_child(UI.label("불러올 슬롯을 고르세요.", UI.DIM, true))
+	for n in range(1, Game.SLOT_COUNT + 1):
+		v.add_child(slot_row(n, true))
+	Game.main.show_panel("이어하기", v)
+
+
+## 슬롯 한 줄: 요약 + 불러오기(또는 선택) / 삭제
+static func slot_row(n: int, load_mode: bool, on_pick: Callable = Callable()) -> Control:
+	var info := Game.slot_info(n)
+	var row := UI.hbox(8)
+	var txt := "슬롯 %d  " % n
+	if info.is_empty():
+		txt += "(비어 있음)"
+	else:
+		txt += "%s · %s · 명성 %s · %s%s" % [info.get("school", "?"), Cal.pretty(info["date"]) if str(info.get("date", "")) != "" else "?", info.get("reputation", "?"), info.get("record", ""), "  [경기 중]" if info.get("inMatch", false) else ""]
+	row.add_child(UI.expand(UI.label(txt, UI.TEXT if not info.is_empty() else UI.DIM, true)))
+	if load_mode:
+		var b := UI.button("불러오기", func():
+			if Game.load_game(n):
+				Game.main.modal_layer.get_children().map(func(c): c.queue_free())
+				Game.goto("match" if Game.current_match != null else "hub"), 80, true)
+		b.disabled = info.is_empty()
+		row.add_child(b)
+		var d := UI.button("삭제", func():
+			Game.main.show_modal("슬롯 %d 삭제" % n, "이 슬롯의 저장 데이터를 지울까요? 되돌릴 수 없습니다.", "bad", Callable(), [["취소", func(): pass], ["삭제", func():
+				Game.delete_slot(n)
+				Game.main.modal_layer.get_children().map(func(c): c.queue_free())
+				Game.goto("title")]]), 50, true)
+		d.disabled = info.is_empty()
+		row.add_child(d)
+	else:
+		row.add_child(UI.button("여기에 시작" if info.is_empty() else "덮어쓰기", func(): on_pick.call(n), 80, true))
+	return row
 
 
 func _process(delta: float) -> void:

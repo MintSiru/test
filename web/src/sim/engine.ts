@@ -41,8 +41,13 @@ function makeSide(input: SideInput): SideState {
     box,
     visits: 0,
     visitPa: 0,
+    leadAny: input.players.some((p) => p.fx.flat.lead > 0),
   };
 }
+
+/** 특수능력 수치 합 (조건을 만족하는 효과만) */
+type Mods = Record<string, number>;
+const NO_MODS: Mods = {};
 
 const DIR_SINGLE = (a: number) => (a < -14 ? '좌전' : a > 14 ? '우전' : '중전');
 const DIR_XBH = (a: number) => (a < -33 ? '좌익선상' : a < -10 ? '좌중간' : a > 33 ? '우익선상' : a > 10 ? '우중간' : '중견수 키를 넘기는');
@@ -102,8 +107,7 @@ export class Match {
     const apt = f.pos === pos ? 1 : f.sub.includes(pos) ? 0.88 : pos === '1B' ? 0.82 : 0.7;
     let v = f.fld * apt;
     if (['LF', 'CF', 'RF'].includes(pos)) v = v * 0.7 + f.spd * 0.3 * apt;
-    if (f.abil.includes('glove')) v += 8;
-    return v;
+    return v + f.fx.flat.fld;
   }
   pitchCountOf(id: string): number {
     return this.def.pitchCount[id] ?? this.home.pitchCount[id] ?? this.away.pitchCount[id] ?? 0;
@@ -122,19 +126,61 @@ export class Match {
     return this.inning >= 7 && Math.abs(this.home.score - this.away.score) <= 2;
   }
 
-  /** 투수의 현재(피로 반영) 능력 */
-  pitcherEff(p: SimPlayer, side: SideState): { velo: number; ctl: number; stuff: number; tired: number } {
-    const np = side.pitchCount[p.id] ?? 0;
-    const pool = 40 + p.sta * 0.85 * (p.abil.includes('ironArm') ? 1.2 : 1);
-    const over = Math.max(0, np - pool);
-    let velo = p.velo - over * 0.12;
-    let ctl = p.ctl - over * 0.45;
-    let stuff = p.stuff - over * 0.3;
-    if (this.risp()) {
-      if (p.abil.includes('pinch')) { ctl += 6; velo += 1.5; stuff += 4; }
-      if (p.abil.includes('pinchX')) ctl -= 12;
+  /** 특수능력 발동 조건. oppHand: 상대 투수의 투구 손(타자일 때)/상대 타자의 타석(투수일 때), diff: 우리 팀 점수 차 */
+  private cond(c: string, oppHand: string, diff: number): boolean {
+    switch (c) {
+      case 'always': return true;
+      case 'risp': return this.risp();
+      case 'lateClose': return this.lateClose();
+      case 'late': return this.inning >= 7;
+      case 'early': return this.inning <= 2;
+      case 'twoStrikes': return this.strikes === 2;
+      case 'firstPitch': return this.balls === 0 && this.strikes === 0;
+      case 'runnersOn': return !!(this.bases[0] || this.bases[1] || this.bases[2]);
+      case 'basesLoaded': return !!(this.bases[0] && this.bases[1] && this.bases[2]);
+      case 'leadoff': return this.outs === 0 && !this.bases[0] && !this.bases[1] && !this.bases[2];
+      case 'twoOuts': return this.outs === 2;
+      case 'vsL': return oppHand === 'L';
+      case 'ahead': return diff > 0;
+      case 'behindLate': return diff < 0 && this.inning >= 7;
     }
-    if (this.lateClose() && p.abil.includes('bigHeart')) { ctl += 5; velo += 1.5; }
+    return false;
+  }
+
+  private sumFx(list: { c: string; m: Mods }[], oppHand: string, diff: number): Mods {
+    if (!list.length) return NO_MODS;
+    let out: Mods | null = null;
+    for (const e of list) {
+      if (!this.cond(e.c, oppHand, diff)) continue;
+      out ??= {};
+      for (const k in e.m) out[k] = (out[k] ?? 0) + e.m[k];
+    }
+    return out ?? NO_MODS;
+  }
+
+  /** 현재 타자의 특수능력 효과 */
+  batMods(b: SimPlayer = this.batter()): Mods {
+    return this.sumFx(b.fx.bat, this.pitcher().throws, this.scoreDiffFor(this.off));
+  }
+
+  /** 투수의 특수능력 효과 (현재 타자 상대) */
+  pitMods(p: SimPlayer, side: SideState = this.def): Mods {
+    return this.sumFx(p.fx.pit, this.batter().bats, this.scoreDiffFor(side));
+  }
+
+  /** 투수의 현재(피로·특수능력 반영) 능력 */
+  pitcherEff(p: SimPlayer, side: SideState, pm: Mods = this.pitMods(p, side)): { velo: number; ctl: number; stuff: number; tired: number } {
+    const np = side.pitchCount[p.id] ?? 0;
+    const pool = 40 + p.sta * 0.85 * (1 + (pm.sta ?? 0));
+    const over = Math.max(0, np - pool);
+    let velo = p.velo - over * 0.12 + (pm.velo ?? 0);
+    let ctl = p.ctl - over * 0.45 + (pm.ctl ?? 0);
+    let stuff = p.stuff - over * 0.3 + (pm.stuff ?? 0);
+    if (side.leadAny) {
+      const lead = this.fielder('C', side).fx.flat.lead;
+      ctl += lead;
+      stuff += lead;
+    }
     if (side.visitPa > 0) ctl += 8;
     return { velo, ctl, stuff, tired: over };
   }
@@ -235,7 +281,9 @@ export class Match {
     def.pitchCount[p.id] = (def.pitchCount[p.id] ?? 0) + 1;
     def.box[p.id].pit.np++;
 
-    const eff = this.pitcherEff(p, def);
+    const pm = this.pitMods(p, def);
+    const bm = this.batMods(b);
+    const eff = this.pitcherEff(p, def, pm);
     // 구종 선택
     const breaking = p.pitches.filter((x) => x.type !== 'FB');
     let pt: PitchType = 'FB';
@@ -253,7 +301,7 @@ export class Match {
 
     // 구위: 타자가 공략하기 어려운 정도
     let pp = isBreaking ? lv * 5.5 + (eff.velo - 115) * 0.55 + 5 : (eff.velo - 115) * 1.2;
-    if (!isBreaking && p.abil.includes('heavyBall')) pp += 5;
+    pp += isBreaking ? (pm.ppBR ?? 0) : (pm.ppFB ?? 0);
     pp += (eff.stuff - 40) * 0.08;
 
     // 제구: 존 안에 던질 의도
@@ -265,15 +313,15 @@ export class Match {
     if (orders.pitch === 'edge') wantZone -= 0.22;
     const bunting = offOrder === 'bunt' || offOrder === 'squeeze' || offOrder === 'safetyBunt';
     if (bunting) wantZone -= 0.06;
+    wantZone += pm.zone ?? 0;
     let ctl = eff.ctl;
-    if (p.abil.includes('wild') && rng.chance(0.06)) ctl -= 30;
-    if (p.abil.includes('pinpoint')) ctl += 6;
+    if (pm.wild && rng.chance(pm.wild)) ctl -= 30;
     const intendZone = rng.chance(clamp(wantZone, 0.1, 0.95));
     let inZone: boolean;
     let mistake = false;
     if (intendZone) {
       inZone = rng.chance(clamp(0.7 + ctl * 0.0026 - (isBreaking ? 0.05 : 0), 0.55, 0.97));
-      if (inZone) mistake = rng.chance(clamp(0.13 - ctl * 0.0011, 0.02, 0.15));
+      if (inZone) mistake = rng.chance(clamp(0.13 - ctl * 0.0011 + (pm.mistake ?? 0), 0.01, 0.2));
     } else {
       inZone = !rng.chance(clamp(0.8 + ctl * 0.0015, 0.75, 0.97));
       if (inZone) mistake = rng.chance(0.4);
@@ -306,7 +354,7 @@ export class Match {
 
     // ── 번트 ──
     if (bunting) {
-      return this.resolveBunt(ev, b, p, pp, inZone, offOrder, shift, squeezeRunner);
+      return this.resolveBunt(ev, b, bm, pp, inZone, offOrder, shift, squeezeRunner);
     }
 
     // ── 타격 판단 ──
@@ -315,13 +363,14 @@ export class Match {
       swingP = 0.63 + (this.strikes === 0 ? -0.08 : 0) + (this.strikes === 2 ? 0.22 : 0);
       if (this.balls === 3 && this.strikes === 0) swingP = 0.15;
     } else {
-      swingP = 0.34 - b.eye * 0.0028 + (this.strikes === 2 ? 0.12 : 0) + (isBreaking ? 0.06 : 0);
+      swingP = 0.34 - (b.eye + (bm.eye ?? 0)) * 0.0028 + (this.strikes === 2 ? 0.12 : 0) + (isBreaking ? 0.06 : 0);
       if (this.balls === 3 && this.strikes < 2) swingP *= 0.4;
     }
     if (offOrder === 'wait') swingP = this.strikes === 0 ? 0.03 : swingP;
     if (offOrder === 'aggressive') swingP += 0.15;
     if (offOrder === 'hitRun') swingP = inZone ? 0.95 : 0.7;
     if (mistake) swingP += 0.12;
+    swingP += bm.swing ?? 0;
     const swing = rng.chance(clamp(swingP, 0.01, 0.98));
 
     if (!swing) {
@@ -333,31 +382,24 @@ export class Match {
         ev.call = 'ball';
       }
     } else {
-      let con = b.con;
-      let pow = b.pow;
-      if (this.risp()) {
-        if (b.abil.includes('chance')) { con += 7; pow += 5; }
-        if (b.abil.includes('chanceX')) { con -= 8; pow -= 5; }
-      }
-      if (b.abil.includes('hitMachine')) con += 5;
-      if (p.throws === 'L' && b.abil.includes('lefty')) con += 6;
+      const con = b.con + (bm.con ?? 0);
+      const pow = b.pow + (bm.pow ?? 0);
       const platoon = b.bats === 'S' ? 0.01 : b.bats === p.throws ? -0.015 : 0.015;
       let contactP = 0.87 + (con - 50) * 0.0045 - (pp - 28) * 0.0062 + platoon - (inZone ? 0 : 0.22) + (mistake ? 0.08 : 0);
-      if (this.strikes === 2 && b.abil.includes('tenacious')) contactP += 0.05;
-      if (this.strikes === 2 && p.abil.includes('strikeout')) contactP -= 0.05;
+      contactP += (bm.contact ?? 0) - (pm.whiff ?? 0);
       if (offOrder === 'hitRun') contactP += 0.05;
       const contact = rng.chance(clamp(contactP, 0.3, 0.97));
       if (!contact) {
         this.strikes++;
         ev.call = 'swinging';
       } else {
-        const foulP = (inZone ? 0.4 : 0.55) + (this.strikes === 2 && b.abil.includes('tenacious') ? 0.1 : 0);
+        const foulP = (inZone ? 0.4 : 0.55) + (bm.foul ?? 0);
         if (rng.chance(foulP)) {
           ev.call = 'foul';
           if (this.strikes < 2) this.strikes++;
         } else {
           ev.call = 'inplay';
-          this.resolveInPlay(ev, b, pow, pp, inZone, mistake, shift, stealer);
+          this.resolveInPlay(ev, b, pow, pp, inZone, mistake, shift, stealer, bm, pm);
           return this.finish(ev);
         }
       }
@@ -366,7 +408,7 @@ export class Match {
     // 폭투/포일
     if (this.bases.some(Boolean) && ev.call !== 'foul') {
       const catcher = this.fielder('C');
-      const wpP = 0.007 + Math.max(0, 55 - ctl) * 0.00025 + Math.max(0, 50 - catcher.fld) * 0.0002 + (isBreaking ? 0.004 : 0);
+      const wpP = (0.007 + Math.max(0, 55 - ctl) * 0.00025 + Math.max(0, 50 - catcher.fld) * 0.0002 + (isBreaking ? 0.004 : 0)) * (1 - catcher.fx.flat.block);
       if (rng.chance(wpP)) {
         ev.wildPitch = true;
         this.advanceAll(ev, 1, false);
@@ -407,7 +449,7 @@ export class Match {
   // ───────────────────────── 번트 ─────────────────────────
 
   private resolveBunt(
-    ev: PitchEvent, b: SimPlayer, _p: SimPlayer, pp: number, inZone: boolean,
+    ev: PitchEvent, b: SimPlayer, bm: Mods, pp: number, inZone: boolean,
     order: 'bunt' | 'squeeze' | 'safetyBunt', shift: string, squeezeRunner: Runner | null,
   ): PitchEvent {
     const rng = this.rng;
@@ -425,7 +467,7 @@ export class Match {
       ev.text = this.pitchText(ev) + ' (번트 자세에서 배트를 거둠)';
       return this.finish(ev, false);
     }
-    let good = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + (b.abil.includes('bunter') ? 0.22 : 0) - (inZone ? 0 : 0.15);
+    let good = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + (bm.bunt ?? 0) - (inZone ? 0 : 0.15);
     if (shift === 'buntShift') good -= 0.12;
     const roll = rng.next();
     if (roll < 0.1 + (1 - good) * 0.1) {
@@ -474,7 +516,7 @@ export class Match {
     const bl = off.box[b.id].bat;
     const success = rng.next() < good;
     if (order === 'safetyBunt' && success) {
-      const hitP = 0.2 + (b.spd - 50) * 0.009 + (b.abil.includes('bunter') ? 0.08 : 0) - (shift === 'buntShift' ? 0.1 : 0);
+      const hitP = 0.2 + (b.spd - 50) * 0.009 + (bm.buntHit ?? 0) - (shift === 'buntShift' ? 0.1 : 0);
       if (rng.chance(hitP)) {
         ev.batted = { type: 'BUNT', angle, dist: 12, result: '1B', fielder, caught: false };
         bl.pa++; bl.ab++; bl.h++;
@@ -543,7 +585,7 @@ export class Match {
 
   private resolveInPlay(
     ev: PitchEvent, b: SimPlayer, pow: number, pp: number, inZone: boolean, mistake: boolean, shift: string,
-    stealer: { base: number; r: Runner } | null,
+    stealer: { base: number; r: Runner } | null, bm: Mods, pm: Mods,
   ) {
     const rng = this.rng;
     const off = this.off;
@@ -553,12 +595,12 @@ export class Match {
     const pl = def.box[p.id].pit;
 
     let evel = 113 + pow * 0.42 + rng.gauss() * 13 - (pp - 28) * 0.35 + (mistake ? 10 : 0) - (inZone ? 0 : 10);
-    if (b.abil.includes('powerHitter')) evel += 4;
+    evel += bm.evel ?? 0;
     // 타구 종류
-    let gbW = 0.44 - (pow - 50) * 0.002;
-    let fbW = 0.27 + (pow - 50) * 0.002;
+    let gbW = 0.44 - (pow - 50) * 0.002 + (pm.gbRate ?? 0);
+    let fbW = 0.27 + (pow - 50) * 0.002 - (pm.gbRate ?? 0) * 0.6;
     if (ev.pitchType === 'SI' || ev.pitchType === 'FK') { gbW += 0.08; fbW -= 0.05; }
-    const type: BattedType = rng.weighted<BattedType>(['GB', 'LD', 'FB', 'PU'], [gbW, 0.21, fbW, 0.08]);
+    const type: BattedType = rng.weighted<BattedType>(['GB', 'LD', 'FB', 'PU'], [gbW, 0.21 + (bm.ld ?? 0), fbW, Math.max(0.01, 0.08 + (bm.pu ?? 0))]);
     const pull = b.bats === 'L' ? 1 : b.bats === 'R' ? -1 : p.throws === 'R' ? 1 : -1;
     const angle = clamp(rng.gauss() * 21 + pull * 7, -44, 44);
 
@@ -571,16 +613,16 @@ export class Match {
     if (type === 'GB') {
       fielder = angle < -24 ? '3B' : angle < -7 ? 'SS' : angle < 7 ? (rng.chance(0.15) ? 'P' : angle < 0 ? 'SS' : '2B') : angle < 24 ? '2B' : '1B';
       const dv = this.defValue(fielder);
-      let hitP = 0.25 + (evel - 130) * 0.0045 + (b.spd - 50) * 0.0025 - (dv - 50) * 0.0025;
+      let hitP = 0.25 + (evel - 130) * 0.0045 + (b.spd - 50) * 0.0025 - (dv - 50) * 0.0025 + (bm.gbHit ?? 0);
       if (Math.abs(angle) < 7) hitP += 0.06;
       if (shift === 'infieldIn') hitP += 0.08;
       dist = rng.range(28, 40);
       if (rng.chance(clamp(hitP, 0.05, 0.6))) {
         result = Math.abs(angle) > 36 && evel > 140 && rng.chance(0.4) ? '2B' : '1B';
         dist = result === '2B' ? 80 : 55;
-      } else if (rng.chance(clamp(0.05 + (55 - dv) * 0.001, 0.015, 0.1))) {
+      } else if (rng.chance(clamp(0.05 + (55 - dv) * 0.001 + this.fielder(fielder).fx.flat.err, 0.01, 0.14))) {
         result = 'E';
-      } else if (this.bases[0] && this.outs < 2 && !(stealer && stealer.base === 0) && rng.chance(clamp(0.42 - (b.spd - 50) * 0.004 + (dv - 50) * 0.003, 0.1, 0.65))) {
+      } else if (this.bases[0] && this.outs < 2 && !(stealer && stealer.base === 0) && rng.chance(clamp(0.42 - (b.spd - 50) * 0.004 + (dv - 50) * 0.003 + (bm.dp ?? 0), 0.05, 0.75))) {
         result = 'DP';
       } else if (this.bases[0] && this.outs < 2 && !(stealer && stealer.base === 0) && rng.chance(0.3)) {
         result = 'FC';
@@ -589,11 +631,11 @@ export class Match {
       fielder = Math.abs(angle) < 10 && rng.chance(0.3) ? 'C' : angle < -20 ? '3B' : angle < 0 ? 'SS' : angle < 20 ? '2B' : '1B';
       dist = rng.range(10, 35);
       caught = true;
-      if (rng.chance(0.02)) { result = 'E'; caught = false; }
+      if (rng.chance(0.02 + this.fielder(fielder).fx.flat.err * 0.5)) { result = 'E'; caught = false; }
     } else {
       // 라인드라이브 / 플라이
       fielder = angle < -15 ? 'LF' : angle > 15 ? 'RF' : 'CF';
-      dist = (evel - 55) * 0.95 + rng.gauss() * 6 + (type === 'LD' ? -12 : 0) + (b.abil.includes('powerHitter') ? 3 : 0);
+      dist = (evel - 55) * 0.95 + rng.gauss() * 6 + (type === 'LD' ? -12 : 0) + (bm.dist ?? 0) + (pm.hrAllow ?? 0);
       if (shift === 'deep') dist -= 0;
       const dv = this.defValue(fielder);
       const fence = 98 + (1 - Math.abs(angle) / 45) * 20;
@@ -621,7 +663,7 @@ export class Match {
         if (shift === 'infieldIn') catchP -= 0.04;
         if (rng.chance(clamp(catchP, 0.2, 0.97))) {
           caught = true;
-          if (rng.chance(clamp(0.02 + (50 - dv) * 0.0006, 0.005, 0.05))) { result = 'E'; caught = false; }
+          if (rng.chance(clamp(0.02 + (50 - dv) * 0.0006 + this.fielder(fielder).fx.flat.err, 0.003, 0.08))) { result = 'E'; caught = false; }
         } else if (dist > 88) {
           result = b.spd > 60 && rng.chance(0.25) ? '3B' : '2B';
         } else {
@@ -629,7 +671,8 @@ export class Match {
         }
       }
       if (caught && result === 'OUT' && this.outs < 2 && risp3 && type === 'FB') {
-        const ofArm = this.fielder(fielder).arm + (this.fielder(fielder).abil.includes('laser') ? 15 : 0);
+        const of = this.fielder(fielder);
+        const ofArm = of.arm + of.fx.flat.arm;
         const sfP = 0.5 + (dist - 60) * 0.018 + (off.byId[risp3.id].spd - 50) * 0.006 - (ofArm - 50) * 0.005;
         if (dist > 55 && rng.chance(clamp(sfP, 0.05, 0.97))) result = 'SF';
       }
@@ -815,8 +858,9 @@ export class Match {
     const rng = this.rng;
     const off = this.off;
     const f = this.fielder(fielder);
-    const arm = f.arm + (f.abil.includes('laser') ? 15 : 0);
-    const spd = (r: Runner) => off.byId[r.id].spd;
+    const arm = f.arm + f.fx.flat.arm;
+    // 주력 + 주루 능력 (확률 가산을 주력 환산: 0.009 당 1)
+    const spd = (r: Runner) => off.byId[r.id].spd + off.byId[r.id].fx.flat.run / 0.009;
     const r3 = this.bases[2];
     const r2 = this.bases[1];
     const r1 = this.bases[0];
@@ -898,8 +942,8 @@ export class Match {
     const off = this.off;
     const runner = off.byId[s.r.id];
     const catcher = this.fielder('C');
-    const arm = catcher.arm + (catcher.abil.includes('laser') ? 12 : 0);
-    let p = 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + (runner.abil.includes('stealer') ? 0.13 : 0);
+    const arm = catcher.arm + catcher.fx.flat.arm * 0.8;
+    let p = 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + runner.fx.flat.steal + (this.pitcher().fx.pit.length ? (this.pitMods(this.pitcher()).hold ?? 0) : 0);
     if (s.base === 1) p -= 0.08;
     if (this.pitcher().throws === 'L' && s.base === 0) p -= 0.05;
     const success = this.rng.chance(clamp(p, 0.1, 0.96));

@@ -79,7 +79,8 @@ func setup(_p := {}) -> void:
 		rv.add_child(UI.label("%s %s 컨%s 파%s 주%s%s" % [PlayerUtil.POS_SHORT[p["pos"]], PlayerUtil.full_name(p), PlayerUtil.letter(pr["contact"]), PlayerUtil.letter(pr["power"]), PlayerUtil.letter(pr["speed"]),
 			(" ♥" + idol["given"]) if not idol.is_empty() else ""], UI.TEXT, true))
 		if an >= 2 and not p["abilities"].is_empty():
-			rv.add_child(UI.label("    " + ", ".join(p["abilities"].map(func(a): return GameData.ability_name(a))), UI.GOOD, true))
+			var fl := UI.ability_flow(p["abilities"], 230)
+			rv.add_child(fl)
 
 	var row := UI.hbox(8)
 	UI.place(row, 4, 334, 632, 20)
@@ -89,6 +90,7 @@ func setup(_p := {}) -> void:
 	row.add_child(UI.expand(UI.spacer()))
 	row.add_child(UI.button("위임 (결과만)", _delegate))
 	row.add_child(UI.button("▶ 경기 시작", _start, 110))
+	Help.once("firstMatch")
 
 
 func _fill_pitchers() -> void:
@@ -116,8 +118,13 @@ func _fill_pitchers() -> void:
 
 func _start() -> void:
 	var s := st()
-	var rng := Rng.new(randi())
-	Game.current_match = Season.create_match(s, fixture, rng, {"starterId": starter_id})
+	var seed_val := randi() % 2000000000
+	var m := Season.create_match(s, fixture, Rng.new(seed_val), {"starterId": starter_id})
+	# 경기 도중 저장: 시드와 입력 기록으로 같은 상황을 다시 만든다
+	m.save_info = {"fixtureId": fixture["id"], "seed": seed_val, "starterId": starter_id}
+	m.journal_on = true
+	Game.current_match = m
+	Game.save_game()
 	Game.goto("match")
 
 

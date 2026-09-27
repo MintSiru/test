@@ -32,7 +32,11 @@ func _fill() -> void:
 		var v := UI.vbox(0)
 		v.custom_minimum_size.x = 500
 		row.add_child(v)
-		v.add_child(UI.label("%s ×%d" % [def["name"], inv[key]], UI.ACCENT, true))
+		var nr := UI.hbox(4)
+		nr.add_child(UI.label("%s ×%d" % [def["name"], inv[key]], UI.ACCENT, true))
+		if def["type"] == "ability":
+			nr.add_child(UI.ability_chip(def["ability"]))
+		v.add_child(nr)
 		v.add_child(UI.label(def["desc"], UI.DIM, true))
 		var k: String = key
 		row.add_child(UI.button("사용", func(): _use(k), 80, true))

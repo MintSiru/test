@@ -20,6 +20,7 @@ static func start_new_game(o: Dictionary) -> Dictionary:
 	Rival.init_rival(state)
 	var rng := rng_of(state)
 	create_season_competitions(state, rng)
+	Goals.set_goals(state)
 	save_rng(state, rng)
 	return state
 
@@ -228,7 +229,7 @@ static func _end_of_day(state: Dictionary, rng: Rng) -> void:
 		if p["injury"] > 0:
 			p["injury"] -= 1
 		if p["fatigue"] > 0:
-			p["fatigue"] = maxf(0.0, p["fatigue"] - 2)
+			p["fatigue"] = maxf(0.0, p["fatigue"] - 2.0 * (1.0 + Abilities.season_fx(p, "recover")))
 	for c in state["competitions"].duplicate():
 		if c["kind"] != "league" or c["status"] == "done":
 			continue
@@ -301,8 +302,10 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	for id in report["injuries"]:
 		_news(state, "bad", "%s, 훈련 중 부상! (%d일)" % [PlayerUtil.full_name(state["players"][id]), state["players"][id]["injury"]])
 	for a in report["awakenings"]:
-		state["popups"].append({"kind": "good", "playerId": a["playerId"], "title": "특수능력 습득",
-			"body": "%s 새로운 능력에 눈을 떴다!\n「%s」" % [Text.josa(PlayerUtil.full_name(state["players"][a["playerId"]]), "이/가"), GameData.ability_name(a["ability"])]})
+		var pop := Training.awakening_text(PlayerUtil.full_name(state["players"][a["playerId"]]), a)
+		pop["kind"] = "good"
+		pop["playerId"] = a["playerId"]
+		state["popups"].append(pop)
 	save_rng(state, rng)
 	return report
 
@@ -445,6 +448,10 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 		var opp: Dictionary = state["teams"][f["away"] if f["home"] == u else f["home"]]
 		if official:
 			Rival.record(state, opp["id"], res["winner"])
+		if official and res["winner"] == u:
+			Goals.event(state, "seasonWins", 1)
+			if comp["kind"] == "tournament":
+				Goals.event(state, "nationalWins", 1)
 		var us: int = res["homeScore"] if f["home"] == u else res["awayScore"]
 		var them: int = res["awayScore"] if f["home"] == u else res["homeScore"]
 		var outcome := "승리" if res["winner"] == u else ("패배" if res["winner"] != null else "무승부")
@@ -458,6 +465,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			var r := Competition.tournament_result_for(comp, u)
 			if r != "" and (comp.get("champion") != null or res["winner"] != u):
 				comp["userResult"] = r
+				Goals.event(state, "nationalBest", Goals.placing_rank(r))
 				var def := Cal.comp_def(comp["key"])
 				Shop.earn(state, Shop.placing_points(r), "%s %s" % [def["short"], r])
 				if r == "우승":
@@ -523,6 +531,7 @@ static func _finish_league(state: Dictionary, c: Dictionary, rng: Rng) -> void:
 			if rank <= 4:
 				pres.append(row["teamId"])
 			if row["teamId"] == u:
+				Goals.event(state, "leagueRank", rank)
 				c["userResult"] = "%s %d위 (%d승 %d패%s)" % [g["name"], rank, row["w"], row["l"], (" %d무" % row["d"]) if row["d"] else ""]
 				if rank == 1:
 					state["reputation"] = clampi(state["reputation"] + 3, 0, 100)
@@ -596,6 +605,8 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 			state["points"] = Shop.points(state) + int(Shop.data()["earn"]["draftRound1"] if rnd == 1 else Shop.data()["earn"]["draftOther"])
 			state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": p["sur"], "given": p["given"], "teamId": team["id"], "pos": p["pos"],
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
+	if not lines.is_empty():
+		Goals.event(state, "draft", lines.size())
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
 	var added := 0
 	for pk in picks:
@@ -652,7 +663,11 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 	for a in state["alumni"]:
 		if a["gradYear"] == prev and a.get("draft") != null:
 			drafted.append(a["name"])
-	state["history"].append({"year": prev, "results": results, "drafted": drafted})
+	var goals_done := Goals.close_goals(state)
+	var rec := {"year": prev, "results": results, "drafted": drafted}
+	if state.get("goals") != null:
+		rec["goals"] = "%d/%d" % [goals_done, state["goals"]["list"].size()]
+	state["history"].append(rec)
 	state["year"] = Cal.season_year_of(state["date"])
 	for p in state["players"].values():
 		p["season"] = {"bat": PlayerUtil.empty_bat(), "pit": PlayerUtil.empty_pit()}
@@ -672,6 +687,7 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 	WorldGen.user_team(state).erase("lineup")
 	state["reputation"] = clampi(roundi(state["reputation"] * 0.92 + 1.6), 0, 100)
 	create_season_competitions(state, rng)
+	Goals.set_goals(state)
 	_news(state, "info", "%d 시즌 개막! 신입생 %d명이 입부했다." % [state["year"], joined.size()])
 	var lines := []
 	for p in joined:

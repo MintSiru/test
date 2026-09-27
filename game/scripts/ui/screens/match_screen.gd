@@ -20,6 +20,7 @@ var speed_btn: Button
 var pause_btn: Button
 var waiting := true
 var busy := false
+var quit_after := false
 var delegate := false
 var speed_idx := 1
 var off_order := "normal"
@@ -71,6 +72,7 @@ func setup(_p := {}) -> void:
 	pause_btn = UI.button("", _cycle_pause, 130, true)
 	row.add_child(pause_btn)
 	row.add_child(UI.expand(UI.spacer()))
+	row.add_child(UI.button("저장 후 나가기", _save_quit, 0, true))
 	row.add_child(UI.button("위임 (끝까지 자동)", _delegate_all, 0, true))
 	var fx := Season.find_fixture(st(), st().get("pendingFixture", ""))
 	var cond_txt := ""
@@ -83,7 +85,10 @@ func setup(_p := {}) -> void:
 		if Rival.is_rival_game(st(), fx["f"]):
 			cond_txt += " · [color=#ef6f6c]라이벌전![/color]"
 	field.sync(m)
-	_add_line("[color=#f4d35e]%s vs %s — 플레이 볼![/color]%s" % [m.away.name, m.home.name, cond_txt])
+	if m.pitch_no > 0:
+		_add_line("[color=#f4d35e]%s vs %s — 저장한 곳부터 이어서 (%d회%s %d:%d)[/color]%s" % [m.away.name, m.home.name, m.inning, "초" if m.top else "말", m.away.score, m.home.score, cond_txt])
+	else:
+		_add_line("[color=#f4d35e]%s vs %s — 플레이 볼![/color]%s" % [m.away.name, m.home.name, cond_txt])
 	_refresh()
 	if _pause_mode() == "watch":
 		_toggle_play()
@@ -140,6 +145,9 @@ func _loop() -> void:
 		elif guard % 6 == 0:
 			await get_tree().process_frame
 		_log_event(ev, inning_txt)
+		# 이닝이 바뀔 때마다 자동 저장 (경기 도중 종료해도 이 이닝부터 재개)
+		if ev["endHalf"] and not m.over and m.top:
+			Game.save_game()
 		if ev["paResult"] != "":
 			off_order = "normal"
 			if pitch_order == "ibb":
@@ -151,6 +159,9 @@ func _loop() -> void:
 		if _should_pause(ev):
 			waiting = true
 	busy = false
+	if quit_after and not m.over:
+		_save_quit()
+		return
 	_refresh()
 	if m.over:
 		_show_result()
@@ -177,6 +188,18 @@ func _cycle_pause() -> void:
 	var i := PAUSE_MODES.find(_pause_mode())
 	st()["settings"]["pauseMode"] = PAUSE_MODES[(i + 1) % PAUSE_MODES.size()]
 	_refresh()
+
+
+## 경기 상황을 저장하고 타이틀로. 다시 불러오면 같은 이닝·점수·주자부터 이어서 한다
+func _save_quit() -> void:
+	if busy:
+		# 지금 공 하나를 마저 처리한 뒤 나간다
+		waiting = true
+		quit_after = true
+		return
+	Game.save_game()
+	Game.current_match = null
+	Game.goto("title")
 
 
 func _delegate_all() -> void:
@@ -275,6 +298,7 @@ func _refresh_info() -> void:
 	bv.add_child(UI.label("오늘 %d타수 %d안타 · 시즌 %s" % [today["ab"], today["h"], season_avg], UI.DIM, true))
 	bv.add_child(UI.label("컨%s 파%s 선%s 주%s" % [PlayerUtil.letter(b.con), PlayerUtil.letter(b.pow), PlayerUtil.letter(b.eye), PlayerUtil.letter(b.spd)], UI.TEXT, true))
 	info_box.add_child(bh)
+	_add_active(m.active_abilities(b, true))
 	# 투수
 	var d := m.def()
 	var p := m.pitcher()
@@ -289,6 +313,18 @@ func _refresh_info() -> void:
 	var pool := 40.0 + p.sta * 0.85
 	pv.add_child(UI.bar(maxf(0.0, pool - np), pool, 100, UI.GOOD if np < pool * 0.8 else UI.BAD))
 	info_box.add_child(ph)
+	_add_active(m.active_abilities(p, false))
+
+
+## 조건이 맞아 발동 중인 특수능력 (색 칩)
+func _add_active(ids: Array) -> void:
+	if ids.is_empty():
+		return
+	var h := UI.hbox(2)
+	h.add_child(UI.label("발동", UI.DIM, true))
+	for id in Abilities.sorted(ids).slice(0, 3):
+		h.add_child(UI.ability_chip(id, false))
+	info_box.add_child(h)
 
 
 func _tb(label: String, active: bool, cb: Callable, enabled := true) -> Button:

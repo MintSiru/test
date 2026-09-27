@@ -1,3 +1,4 @@
+import { compileFx } from '../core/abilities';
 import { breakingScore, name } from '../core/player';
 import { autoLineup, canPitchOn, pickStarter } from '../core/lineup';
 import { clamp } from '../core/rng';
@@ -28,6 +29,7 @@ export function toSim(p: Player, date: string, condBonus = 0): SimPlayer {
     stuff: breakingScore(p.r.pitches),
     pitches: p.r.pitches,
     abil: p.abilities,
+    fx: compileFx(p.abilities),
     canPitch: canPitchOn(p, date),
   };
 }

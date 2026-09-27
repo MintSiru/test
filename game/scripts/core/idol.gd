@@ -99,9 +99,9 @@ static func check_milestones(state: Dictionary, p: Dictionary):
 	var n := PlayerUtil.full_name(p)
 	if p["idolBond"] >= 70 and not (flags & 1):
 		p["idolFlags"] = flags | 1
-		var had: bool = info["ability"] in p["abilities"]
+		var had: bool = Abilities.cannot_learn(p, info["ability"]) != ""
 		if not had:
-			p["abilities"].append(info["ability"])
+			Abilities.learn(p, info["ability"])
 		return {"kind": "idol", "playerId": p["id"], "title": "동경의 비결",
 			"body": "%s %s의 경기 영상을 수백 번 돌려 보며 그 비결을 깨달았다!\n%s" % [Text.josa(n, "은/는"), pro_name(idol),
 				"가지고 있던 특수능력이 더욱 단단해졌다." if had else "특수능력 「%s」 습득!" % GameData.ability_name(info["ability"])]}
@@ -122,9 +122,15 @@ static func check_milestones(state: Dictionary, p: Dictionary):
 				r[k] = mini(99, int(r[k]) + 5)
 				cap[k] = mini(99, int(cap[k]) + 5)
 		p["cond"] = 2
+		# 동경 선수의 대표 능력이 금특으로 진화
+		var gold := Abilities.gold_of(info["ability"])
+		var evolve: bool = gold != "" and info["ability"] in p["abilities"] and Abilities.cannot_learn(p, gold) == ""
+		if evolve:
+			Abilities.learn(p, gold)
 		return {"kind": "idol", "playerId": p["id"], "title": "꿈의 만남",
-			"body": "%s의 %s 모교 방문 행사로 근처에 왔다!\n\"%s? 나랑 이름이 같네. 열심히 해!\"\n%s 사인볼을 품에 안고 누구보다 늦게까지 연습했다. (능력 대폭 상승)" % [
-				pro_team_name(state, idol), Text.josa(pro_name(idol), "이/가"), p["given"], Text.josa(n, "은/는")]}
+			"body": "%s의 %s 모교 방문 행사로 근처에 왔다!\n\"%s? 나랑 이름이 같네. 열심히 해!\"\n%s 사인볼을 품에 안고 누구보다 늦게까지 연습했다. (능력 대폭 상승)%s" % [
+				pro_team_name(state, idol), Text.josa(pro_name(idol), "이/가"), p["given"], Text.josa(n, "은/는"),
+				"\n「%s」이(가) 금특 「%s」(으)로 진화!" % [Abilities.name_of(info["ability"]), Abilities.name_of(gold)] if evolve else ""]}
 	return null
 
 

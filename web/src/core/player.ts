@@ -1,4 +1,4 @@
-import { ABILITIES, STYLE_INFO } from './abilities';
+import { ABILITIES, STYLE_INFO, cannotLearn, fitsPlayer, goldOf, learnAbility } from './abilities';
 import { middleSchoolName, pickGiven, pickSurname } from './names';
 import { clamp, type Rng } from './rng';
 import type {
@@ -231,20 +231,35 @@ export function genPlayer(rng: Rng, o: GenOpts): Player {
     middleSchool: middleSchoolName(rng),
   };
 
-  // 특수능력 부여
-  const abilityPool = ABILITIES.filter((a) => a.forPitcher === (pos === 'P'));
-  const nAb = rng.chance(0.25 + talent * 0.08) ? (rng.chance(0.25) ? 2 : 1) : 0;
-  for (let i = 0; i < nAb; i++) {
-    const a = rng.pick(abilityPool);
-    if (!a.good && rng.chance(0.5)) continue;
-    if (!p.abilities.includes(a.id)) p.abilities.push(a.id);
-  }
+  rollAbilities(rng, p);
 
   // 동경하는 프로 선수: 이름이 같고 성이 다른 선수
   if (o.pros && o.pros.length && rng.chance(o.idolChance ?? 0.22)) {
     assignIdol(rng, p, o.pros);
   }
   return p;
+}
+
+/** 입학 선수 특수능력: 긍정은 재능이 높을수록, 부정은 재능이 낮을수록 많고 금특은 드물다 */
+export function rollAbilities(rng: Rng, p: Player) {
+  const pool = ABILITIES.filter((a) => a.tier !== 'gold' && fitsPlayer(a, p));
+  const goods = pool.filter((a) => a.tier === 'good');
+  const bads = pool.filter((a) => a.tier === 'bad');
+  const nGood = rng.chance(0.28 + p.talent * 0.08) ? (rng.chance(0.3) ? 2 : 1) : 0;
+  const nBad = rng.chance(0.34 - p.talent * 0.05) ? (rng.chance(0.2) ? 2 : 1) : 0;
+  for (let i = 0; i < nGood; i++) {
+    const a = rng.pick(goods);
+    if (!cannotLearn(p, a.id)) learnAbility(p, a.id);
+  }
+  for (let i = 0; i < nBad; i++) {
+    const a = rng.pick(bads);
+    if (!cannotLearn(p, a.id)) learnAbility(p, a.id);
+  }
+  // 재능 4 이상은 드물게 금특을 가지고 들어온다
+  if (p.talent >= 4 && rng.chance(0.08 * (p.talent - 3))) {
+    const up = p.abilities.map(goldOf).filter((x): x is string => !!x);
+    if (up.length) learnAbility(p, rng.pick(up));
+  }
 }
 
 /** 포지션 성향이 맞는 프로 선수를 골라 동경 관계를 만든다. 이름을 프로 선수와 같게 바꾼다. */

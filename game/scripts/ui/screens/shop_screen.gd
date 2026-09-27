@@ -47,8 +47,12 @@ func _fill() -> void:
 		var v := UI.vbox(0)
 		v.custom_minimum_size.x = 250
 		row.add_child(v)
-		var kind_col := UI.IDOL if def["type"] == "ability" else (UI.GOOD if def["type"] == "stat" else UI.TEXT)
-		v.add_child(UI.label("%s  (남은 %d)" % [def["name"], sl["qty"]], kind_col, true))
+		var kind_col: Color = UI.TIER_COLORS["good"] if def["type"] == "ability" else (UI.TIER_COLORS["gold"] if def["type"] == "gold" else (UI.GOOD if def["type"] == "stat" else UI.TEXT))
+		var nr := UI.hbox(4)
+		nr.add_child(UI.label("%s  (남은 %d)" % [def["name"], sl["qty"]], kind_col, true))
+		if def["type"] == "ability":
+			nr.add_child(UI.ability_chip(def["ability"]))
+		v.add_child(nr)
 		v.add_child(UI.wrap_label(def["desc"], 250, UI.DIM, true))
 		var key: String = sl["key"]
 		var b := UI.button("%dP 구매" % def["price"], func(): _buy(key), 90, true)

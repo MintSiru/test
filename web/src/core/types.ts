@@ -1,3 +1,4 @@
+import type { Goals } from './goals';
 // 게임 전역 데이터 타입. 세이브 파일(JSON)에 그대로 들어가므로 클래스가 아닌 순수 객체만 사용한다.
 
 export type Pos = 'P' | 'C' | '1B' | '2B' | '3B' | 'SS' | 'LF' | 'CF' | 'RF';
@@ -281,6 +282,8 @@ export interface YearRecord {
   results: { comp: string; result: string }[];
   captain?: string;
   drafted: string[];
+  /** 후원회 목표 달성 수 (예: "2/3") */
+  goals?: string;
 }
 
 export interface Alumni {
@@ -345,4 +348,6 @@ export interface GameState {
   h2h?: Record<string, { w: number; l: number; d: number }>;
   /** 이번 시즌 상대별 패배 수 (라이벌 갱신용) */
   rivalLoss?: Record<string, number>;
+  /** 후원회 연간 목표 */
+  goals?: Goals;
 }

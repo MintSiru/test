@@ -1,4 +1,4 @@
-import { STYLE_INFO } from './abilities';
+import { STYLE_INFO, seasonFx } from './abilities';
 import { addDays, compDates, compDef, monthOf, prettyDate, seasonYearOf, weekday, yearEvents } from './calendar';
 import {
   advanceTournament, createLeague, createTournament, roundName, standings, tournamentResultFor,
@@ -8,12 +8,13 @@ import { weeklyEvent } from './events';
 import { initRival, isRivalGame, recordH2H, seasonRivalUpdate } from './rival';
 import { postponeRain } from './weather';
 import { SHOP, earn, facLevel, matchPoints, openMarket, placingPoints } from './shop';
+import { closeGoals, goalEvent, placingRank, setGoals } from './goals';
 import { checkIdolMilestones, idolOf, proName, proSeasonEnd, proTeamName, weeklyProNews } from './idol';
 import { josa } from './names';
 import { addBat, addPit, emptyBat, emptyPit, grade, name, overall, statValue } from './player';
 import { Rng, clamp } from './rng';
 import { enrollNewPlayers, generateProspects } from './scouting';
-import { CARD_INFO, applyExp, drawCard, growthMult, trainPlayer, weeklyCondition, type TrainingReport } from './training';
+import { CARD_INFO, applyExp, awakeningText, drawCard, growthMult, trainPlayer, weeklyCondition, type TrainingReport } from './training';
 import type { Card, Competition, Fixture, GameState, MatchResult, Player, ProStyle, StatKey } from './types';
 import { intakeFor, newGame, teamPlayers, uid, userTeam, type NewGameOpts } from './world';
 import { playOut } from '../sim/ai';
@@ -41,6 +42,7 @@ export function startNewGame(o: NewGameOpts): GameState {
   initRival(state);
   const rng = rngOf(state);
   createSeasonCompetitions(state, rng);
+  setGoals(state);
   state.rngState = rng.state;
   state.dayEventsDone = undefined;
   return state;
@@ -180,7 +182,7 @@ function endOfDay(state: GameState, rng: Rng) {
   void rng;
   for (const p of Object.values(state.players)) {
     if (p.injury > 0) p.injury--;
-    if (p.fatigue > 0) p.fatigue = Math.max(0, p.fatigue - 2);
+    if (p.fatigue > 0) p.fatigue = Math.max(0, p.fatigue - 2 * (1 + seasonFx(p, 'recover')));
   }
   // 리그 종료 → 전국대회 출전팀 결정
   for (const c of state.competitions) {
@@ -242,7 +244,7 @@ export function useCard(state: GameState, cardId: string): TrainingReport {
   state.news.push({ date: state.date, kind: 'info', text: `이번 주 훈련: ${info.name} Lv${card.value}` });
   for (const id of report.injuries) state.news.push({ date: state.date, kind: 'bad', text: `${name(state.players[id])}, 훈련 중 부상! (${state.players[id].injury}일)` });
   for (const a of report.awakenings) {
-    state.popups.push({ kind: 'good', playerId: a.playerId, title: '특수능력 습득', body: `${josa(name(state.players[a.playerId]), '이/가')} 새로운 능력에 눈을 떴다!` });
+    state.popups.push({ kind: 'good', playerId: a.playerId, ...awakeningText(name(state.players[a.playerId]), a) });
   }
   state.rngState = rng.state;
   return report;
@@ -375,6 +377,10 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
     const u = state.userTeamId;
     const opp = state.teams[f.home === u ? f.away : f.home];
     if (official) recordH2H(state, opp.id, res.winner);
+    if (official && res.winner === u) {
+      goalEvent(state, 'seasonWins', 1);
+      if (comp.kind === 'tournament') goalEvent(state, 'nationalWins', 1);
+    }
     const us = f.home === u ? res.homeScore : res.awayScore;
     const them = f.home === u ? res.awayScore : res.homeScore;
     const label = comp.kind === 'friendly' ? '연습 경기' : comp.kind === 'league' ? compDef(comp.key).short : `${compDef(comp.key).short} ${roundName(comp, f.round!)}`;
@@ -387,6 +393,7 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
       const r = tournamentResultFor(comp, u);
       if (r && (comp.champion || res.winner !== u)) {
         comp.userResult = r;
+        goalEvent(state, 'nationalBest', placingRank(r));
         const def = compDef(comp.key);
         earn(state, placingPoints(r), `${def.short} ${r}`);
         if (r === '우승') {
@@ -446,6 +453,7 @@ function finishLeague(state: GameState, c: Competition, rng: Rng) {
       else cr.push(row.teamId);
       if (rank <= 4) pres.push(row.teamId);
       if (row.teamId === u) {
+        goalEvent(state, 'leagueRank', rank);
         c.userResult = `${g.name} ${rank}위 (${row.w}승 ${row.l}패${row.d ? ` ${row.d}무` : ''})`;
         if (rank === 1) {
           state.reputation = clamp(state.reputation + 3, 0, 100);
@@ -529,6 +537,7 @@ export function runDraft(state: GameState, rng: Rng) {
       });
     }
   });
+  if (lines.length) goalEvent(state, 'draft', lines.length);
   // 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
   picks.filter(({ p }) => p.teamId !== state.userTeamId).slice(0, 10).forEach(({ p }) => {
     state.pros.push({
@@ -573,8 +582,10 @@ function retireSeniors(state: GameState) {
 
 function newSeason(state: GameState, rng: Rng) {
   const prevYear = state.year;
+  const goalsDone = closeGoals(state);
   state.history.push({
     year: prevYear,
+    goals: state.goals ? `${goalsDone}/${state.goals.list.length}` : undefined,
     results: state.competitions.filter((c) => c.userResult).map((c) => ({ comp: compDef(c.key).short, result: c.userResult! })),
     drafted: state.alumni.filter((a) => a.gradYear === prevYear && a.draft).map((a) => a.name),
   });
@@ -599,6 +610,7 @@ function newSeason(state: GameState, rng: Rng) {
   userTeam(state).lineup = undefined;
   state.reputation = clamp(Math.round(state.reputation * 0.92 + 20 * 0.08), 0, 100);
   createSeasonCompetitions(state, rng);
+  setGoals(state);
   state.news.push({ date: state.date, kind: 'info', text: `${state.year} 시즌 개막! 신입생 ${joined.length}명이 입부했다.` });
   state.popups.push({
     kind: 'good',

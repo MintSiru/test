@@ -1,0 +1,16 @@
+{
+ "note": "후원회 연간 목표. 매년 3월(새 게임 시작 포함) 명성(minRep 이상 중 가장 높은 단계)에 맞춰 3개를 정한다. 달성 즉시 포인트·명성 보상.",
+ "kinds": {
+  "seasonWins": "공식전 {n}승",
+  "leagueRank": "주말리그 권역 {n}위 이내",
+  "nationalWins": "전국대회 {n}승",
+  "nationalBest": "전국대회 {r} 진출",
+  "draft": "프로 지명 {n}명"
+ },
+ "tiers": [
+  {"minRep": 0, "name": "도약", "points": 80, "rep": 2, "goals": [{"kind": "seasonWins", "target": 6}, {"kind": "leagueRank", "target": 3}, {"kind": "nationalWins", "target": 1}]},
+  {"minRep": 30, "name": "중견", "points": 100, "rep": 2, "goals": [{"kind": "seasonWins", "target": 9}, {"kind": "leagueRank", "target": 2}, {"kind": "nationalWins", "target": 2}]},
+  {"minRep": 50, "name": "강호", "points": 120, "rep": 3, "goals": [{"kind": "leagueRank", "target": 1}, {"kind": "nationalBest", "target": 8}, {"kind": "draft", "target": 1}]},
+  {"minRep": 70, "name": "명문", "points": 150, "rep": 3, "goals": [{"kind": "nationalBest", "target": 4}, {"kind": "nationalWins", "target": 6}, {"kind": "draft", "target": 2}]}
+ ]
+}

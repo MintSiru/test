@@ -58,6 +58,8 @@ func _ready() -> void:
 			Game.state["settings"]["speed"] = 3
 		elif a.begins_with("--pitches="):
 			pitches = a.substr(10).to_int()
+		elif a == "--notut" and not Game.state.is_empty():
+			Game.state["settings"]["tutorial"] = false
 		elif a == "--newgame":
 			Game.state = Season.start_new_game({"schoolName": "한빛고", "managerName": "테스트", "groupId": "seoulA", "seed": 7})
 	if days > 0:
@@ -71,12 +73,17 @@ func _ready() -> void:
 	if "--night" in OS.get_cmdline_user_args() and current.get("field") != null:
 		current.field.night = true
 		current.field.weather = "가랑비"
+	if "--catalog" in OS.get_cmdline_user_args():
+		show_panel("특수능력 도감", UI.ability_catalog())
 	if "--usecard" in OS.get_cmdline_user_args() and current.has_method("_use_card"):
 		current._use_card(Game.state["hand"][0]["id"])
 	if shot != "":
 		_take_shot(shot)
 	if "--uitest" in OS.get_cmdline_user_args():
 		add_child(load("res://tests/ui_flow_test.gd").new())
+	# 성능 측정: 웹은 index.html?bench, 데스크톱은 -- --webbench
+	if "--webbench" in OS.get_cmdline_user_args() or (OS.get_name() == "Web" and str(JavaScriptBridge.eval("location.search")).contains("bench")):
+		add_child(load("res://scripts/dev/web_bench.gd").new())
 	if "--uiseason" in OS.get_cmdline_user_args():
 		add_child(load("res://tests/ui_season_test.gd").new())
 

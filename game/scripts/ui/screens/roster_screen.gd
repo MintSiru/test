@@ -27,6 +27,7 @@ func setup(p := {}) -> void:
 	UI.place(detail, 258, 22, 378, 334)
 	add_child(detail)
 	_fill_list()
+	Help.once("abilities")
 
 
 func _players() -> Array:
@@ -166,20 +167,20 @@ func _fill_detail() -> void:
 	fv.add_child(UI.option(opts.map(func(x): return Training.FOCUS_KO[x]), maxi(0, cur), func(i):
 		p["focus"] = opts[i]))
 
-	# 특수능력
-	var ab := UI.vbox(1)
-	UI.place(ab, 256, 96, 114, 64)
-	root.add_child(ab)
-	ab.add_child(UI.label("특수능력", UI.DIM, true))
+	# 특수능력 (색: 금특 노랑 · 긍정 파랑 · 부정 빨강, 눌러서 설명 보기)
+	var ab := UI.vbox(2)
+	var abs_ := UI.scroll(ab)
+	UI.place(abs_, 256, 86, 118, 76)
+	root.add_child(abs_)
+	var ah := UI.hbox(4)
+	ah.add_child(UI.label("특수능력", UI.DIM, true))
+	ah.add_child(UI.expand(UI.spacer()))
+	ah.add_child(UI.button("목록", func(): Game.main.show_panel("특수능력 목록 (%d종)" % Abilities.all().size(), UI.ability_catalog()), 0, true))
+	ab.add_child(ah)
 	if p["abilities"].is_empty():
 		ab.add_child(UI.label("없음", UI.DIM, true))
-	for a in p["abilities"]:
-		var d := GameData.ability_def(a)
-		# 터치 환경에서도 볼 수 있도록 눌러서 설명 보기
-		var b := UI.button(d.get("name", a), func(): Game.main.show_modal(d.get("name", a), d.get("desc", "")), 0, true)
-		b.add_theme_color_override("font_color", UI.GOOD if d.get("good", true) else UI.BAD)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		ab.add_child(b)
+	else:
+		ab.add_child(UI.ability_flow(p["abilities"], 108))
 
 	# 동경 선수
 	var idol := Idol.idol_of(s, p)

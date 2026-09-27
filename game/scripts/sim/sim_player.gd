@@ -23,6 +23,18 @@ var pitches: Array = []
 var breaking: Array = []
 var breaking_w: Array = []
 var abil: Array = []
+## 특수능력 효과 (Abilities.compile): 조건별 타격·투구 효과와 항상 적용되는 수비·주루 수치
+var fx_bat: Dictionary = {}
+var fx_bat_cond: Array = []
+var fx_pit: Dictionary = {}
+var fx_pit_cond: Array = []
+var f_fld := 0.0
+var f_arm := 0.0
+var f_err := 0.0
+var f_lead := 0.0
+var f_block := 0.0
+var f_steal := 0.0
+var f_run := 0.0
 var can_pitch: bool = true
 var face_seed: int = 0
 
@@ -59,6 +71,19 @@ static func from_player(p: Dictionary, date: String, cond_bonus := 0) -> SimPlay
 			s.breaking.append(x)
 			s.breaking_w.append(x["lv"] + 1)
 	s.abil = p["abilities"]
+	var fx := Abilities.compile(s.abil)
+	s.fx_bat = fx["bat"]
+	s.fx_bat_cond = fx["bat_cond"]
+	s.fx_pit = fx["pit"]
+	s.fx_pit_cond = fx["pit_cond"]
+	var fl: Dictionary = fx["flat"]
+	s.f_fld = fl["fld"]
+	s.f_arm = fl["arm"]
+	s.f_err = fl["err"]
+	s.f_lead = fl["lead"]
+	s.f_block = fl["block"]
+	s.f_steal = fl["steal"]
+	s.f_run = fl["run"]
 	s.can_pitch = Lineup.can_pitch_on(p, date)
 	s.face_seed = int(p.get("faceSeed", 0))
 	return s

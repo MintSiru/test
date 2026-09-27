@@ -1,7 +1,7 @@
-import { STYLE_INFO } from './abilities';
-import { ABILITIES } from './abilities';
+import { ABILITIES, STYLE_INFO, abilityDef, abilityName, cannotLearn, fitsPlayer, goldOf, learnAbility, seasonFx } from './abilities';
 import { facilityGrowth, facLevel, type FacLevels } from './shop';
 import { breakingScore, veloScore } from './player';
+import { josa } from './names';
 import { clamp, type Rng } from './rng';
 import type { Card, CardKind, Focus, PitchType, Player, ProPlayer, StatKey } from './types';
 
@@ -74,6 +74,7 @@ export function growthMult(p: Player, k: StatKey, pros: ProPlayer[]): number {
   else if (p.personality === '소심') m *= 0.95;
   if (p.fatigue > 70) m *= 0.7;
   m *= 1 + p.cond * 0.05;
+  m *= 1 + seasonFx(p, 'growth');
   if (p.idolId) {
     const idol = pros.find((x) => x.id === p.idolId);
     if (idol && STYLE_INFO[idol.style].stats.includes(k)) m *= p.idolBond >= 50 ? 1.4 : 1.25;
@@ -130,7 +131,8 @@ export function applyExp(p: Player, k: StatKey, pts: number, mult: number, rng: 
 export interface TrainingReport {
   gains: Record<string, Partial<Record<StatKey, number>>>;
   injuries: string[];
-  awakenings: { playerId: string; ability: string }[];
+  /** ability: 새 능력 ('' 이면 부정 능력만 고침), removed: 사라진 능력 */
+  awakenings: { playerId: string; ability: string; removed: string[] }[];
 }
 
 /** 한 주 훈련 적용 */
@@ -152,11 +154,12 @@ export function trainPlayer(p: Player, card: Card, pros: ProPlayer[], rng: Rng, 
   const focusMul = card.kind === 'special' ? 2.2 + card.value * 0.25 : card.kind === 'rest' ? 0.2 : 1;
   for (const [k, share] of Object.entries(focusStats(p)) as [StatKey, number][]) give(k, 1.3 * share * focusMul);
 
-  p.fatigue = clamp(p.fatigue + info.fatigue * (card.kind === 'rest' ? 1 : 0.6 + card.value * 0.12), 0, 100);
+  const fat = info.fatigue * (card.kind === 'rest' ? 1 + seasonFx(p, 'recover') : 0.6 + card.value * 0.12);
+  p.fatigue = clamp(p.fatigue + fat, 0, 100);
   if (card.kind === 'rest' && rng.chance(0.5 + card.value * 0.08)) p.cond = clamp(p.cond + 1, -2, 2);
 
   // 부상
-  const risk = (Math.max(0, p.fatigue - 60) * 0.004 + (card.kind === 'special' ? 0.01 : 0)) * (1 - 0.2 * facLevel(fac, 'ground'));
+  const risk = (Math.max(0, p.fatigue - 60) * 0.004 + (card.kind === 'special' ? 0.01 : 0)) * (1 - 0.2 * facLevel(fac, 'ground')) * Math.max(0, 1 + seasonFx(p, 'injury'));
   if (!cpu && rng.chance(risk)) {
     p.injury = rng.int(5, 25);
     report?.injuries.push(p.id);
@@ -164,19 +167,54 @@ export function trainPlayer(p: Player, card: Card, pros: ProPlayer[], rng: Rng, 
   // 특수능력 각성
   const awakenP = card.kind === 'practiceGame' ? 0.02 + card.value * 0.004 : card.kind === 'meeting' ? 0.03 + card.value * 0.006 : 0;
   if (awakenP && rng.chance(awakenP * (0.6 + p.talent * 0.15) * (card.kind === 'meeting' ? 1 + 0.25 * facLevel(fac, 'analysis') : 1))) {
-    const pool = ABILITIES.filter((a) => a.good && a.forPitcher === isP && !p.abilities.includes(a.id));
-    if (pool.length) {
-      const a = rng.pick(pool);
-      p.abilities.push(a.id);
-      report?.awakenings.push({ playerId: p.id, ability: a.id });
-    }
+    const aw = awaken(p, rng);
+    if (aw) report?.awakenings.push({ playerId: p.id, ...aw });
   }
   if (report && Object.keys(gains).length) report.gains[p.id] = gains;
 }
 
-/** 주간 컨디션 변동 */
+/**
+ * 특수능력 각성. 부정 능력이 있으면 절반 확률로 먼저 극복하고(같은 그룹 긍정 능력으로 바뀌거나 사라짐),
+ * 가진 긍정 능력은 가끔 금특으로 진화한다. 없으면 새 긍정 능력.
+ */
+export function awaken(p: Player, rng: Rng): { ability: string; removed: string[] } | null {
+  const bad = p.abilities.filter((x) => abilityDef(x)?.tier === 'bad');
+  if (bad.length && rng.chance(0.5)) {
+    const b = rng.pick(bad);
+    const g = ABILITIES.find((a) => a.group === abilityDef(b)!.group && a.tier === 'good' && fitsPlayer(a, p));
+    if (g) return { ability: g.id, removed: learnAbility(p, g.id) };
+    p.abilities = p.abilities.filter((x) => x !== b);
+    return { ability: '', removed: [b] };
+  }
+  const up = p.abilities.map(goldOf).filter((x): x is string => !!x);
+  if (up.length && rng.chance(0.15 + p.talent * 0.03)) {
+    const g = rng.pick(up);
+    return { ability: g, removed: learnAbility(p, g) };
+  }
+  const pool = ABILITIES.filter((a) => a.tier === 'good' && fitsPlayer(a, p) && !cannotLearn(p, a.id));
+  if (!pool.length) return null;
+  const a = rng.pick(pool);
+  return { ability: a.id, removed: learnAbility(p, a.id) };
+}
+
+/** 각성 알림 문구 */
+export function awakeningText(n: string, aw: { ability: string; removed: string[] }): { title: string; body: string } {
+  const bad = aw.removed.find((x) => abilityDef(x)?.tier === 'bad');
+  const q = (id: string) => `「${abilityName(id)}」`;
+  if (!aw.ability) return { title: '나쁜 버릇 극복', body: `${josa(n, '은/는')} 꾸준한 노력 끝에 나쁜 버릇 ${q(bad ?? '')}을(를) 고쳤다!` };
+  if (abilityDef(aw.ability)?.tier === 'gold') return { title: '금특 진화!', body: `${n}의 ${q(aw.removed[0] ?? '')}이(가) 한 단계 진화했다!\n금특 ${q(aw.ability)} 획득!` };
+  if (bad) return { title: '나쁜 버릇 극복', body: `${josa(n, '은/는')} ${q(bad)}을(를) 극복하고\n${q(aw.ability)}에 눈을 떴다!` };
+  return { title: '특수능력 습득', body: `${josa(n, '이/가')} 새로운 능력에 눈을 떴다!\n${q(aw.ability)}` };
+}
+
+/** 주간 컨디션 변동 (평정심: 떨어질 때 절반은 버팀 / 기분파: 기복 큼) */
 export function weeklyCondition(p: Player, rng: Rng) {
-  const vol = p.personality === '열혈' ? 0.45 : p.personality === '냉정' ? 0.2 : 0.32;
-  if (rng.chance(vol)) p.cond = clamp(p.cond + (rng.chance(0.5) ? 1 : -1), -2, 2);
+  const mood = seasonFx(p, 'mood');
+  const vol = (p.personality === '열혈' ? 0.45 : p.personality === '냉정' ? 0.2 : 0.32) + mood * 0.15;
+  if (rng.chance(vol)) {
+    const up = rng.chance(0.5);
+    if (!up && mood < 0 && rng.chance(0.5)) return;
+    p.cond = clamp(p.cond + (up ? 1 : -1), -2, 2);
+  }
   else if (p.cond !== 0 && rng.chance(0.3)) p.cond += p.cond > 0 ? -1 : 1;
 }
