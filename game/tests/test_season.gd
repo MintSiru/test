@@ -7,6 +7,9 @@ func _init() -> void:
 	var dates := Cal.comp_dates("hwanggeum", 2026)
 	if dates["start"] != "2026-05-02" or dates["end"] != "2026-05-16":
 		fails.append("황금사자기 일정 불일치 %s" % dates)
+	# 날씨 해시가 웹과 같은지 (web/tests/season.test.ts 와 같은 값)
+	if Weather.mix32(Weather.hash_str("42:2026-07-01")) != 3842815896:
+		fails.append("날씨 해시 불일치 %d" % Weather.mix32(Weather.hash_str("42:2026-07-01")))
 	var t0 := Time.get_ticks_msec()
 	var state := Season.start_new_game({"schoolName": "한빛고", "managerName": "테스트", "groupId": "seoulA", "seed": 42})
 	if state["teams"].size() != 103:
@@ -21,8 +24,43 @@ func _init() -> void:
 			for c in state["competitions"]:
 				if c["status"] != "done" or (c["kind"] == "tournament" and c.get("champion") == null):
 					fails.append("미완료 대회: " + c["name"])
-			var rain: int = state["news"].filter(func(n): return "연기" in n["text"]).size()
-			print("우천 연기 소식: ", rain)
+			var rain := 0
+			for c in state["competitions"]:
+				for f in c["fixtures"]:
+					if int(f.get("postponed", 0)) > 0:
+						rain += 1
+			var total := 0
+			var twice := 0
+			for c in state["competitions"]:
+				total += c["fixtures"].size()
+				for f in c["fixtures"]:
+					if int(f.get("postponed", 0)) >= 2:
+						twice += 1
+			print("우천 연기된 경기: %d / %d (두 번 연기 %d)" % [rain, total, twice])
+			if rain == 0 or float(rain) / total > 0.25 or float(twice) / total > 0.05:
+				fails.append("우천 연기 비율 이상")
+			# 연습 경기
+			var rec: Dictionary = state["teams"]["user"]["seasonRecord"].duplicate()
+			var fd := Season.friendly_date(state)
+			if fd == "":
+				fails.append("비시즌 연습 경기 불가")
+			else:
+				var ff := Season.schedule_friendly(state, Season.friendly_opponents(state, Rng.new(1))[0])
+				if Season.friendly_date(state) != "":
+					fails.append("같은 주 연습 경기 중복 허용")
+				while state["date"] <= ff["date"]:
+					var rr := Season.advance(state, 1)
+					if rr == "training":
+						Season.use_card(state, state["hand"][0]["id"])
+					elif rr == "match":
+						Season.auto_play_user_match(state)
+					elif rr == "popup":
+						state["popups"].clear()
+				if ff.get("result") == null:
+					fails.append("연습 경기 미진행")
+				if state["teams"]["user"]["seasonRecord"] != rec:
+					fails.append("연습 경기가 공식 전적에 반영됨")
+				print("연습 경기 결과: ", ff.get("result", {}).get("homeScore", -1), ":", ff.get("result", {}).get("awayScore", -1))
 		guard += 1
 		var r := Season.advance(state)
 		if r == "training":

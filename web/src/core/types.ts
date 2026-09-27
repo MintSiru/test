@@ -174,7 +174,7 @@ export interface Fixture {
   postponed?: number;
 }
 
-export type CompKind = 'league' | 'tournament';
+export type CompKind = 'league' | 'tournament' | 'friendly';
 
 export interface CompDef {
   key: string;
@@ -259,6 +259,8 @@ export interface Card {
   id: string;
   kind: CardKind;
   value: number; // 1~5
+  /** 손에 들고 있던 주 수 (4주가 지나면 새 카드로 교체) */
+  age?: number;
 }
 
 export interface NewsItem {

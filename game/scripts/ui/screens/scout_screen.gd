@@ -33,7 +33,7 @@ func _fill() -> void:
 		face.custom_minimum_size = Vector2(24, 24)
 		row.add_child(face)
 		var v := UI.vbox(0)
-		v.custom_minimum_size.x = 420
+		v.custom_minimum_size.x = 380
 		row.add_child(v)
 		var rv: int = pr["revealed"]
 		v.add_child(UI.label("%s  %s  %s  (경쟁: %s)" % [PlayerUtil.full_name(pl), PlayerUtil.POS_KO[pl["pos"]], pl["middleSchool"], pr["rival"]], UI.TEXT, true))
@@ -45,8 +45,10 @@ func _fill() -> void:
 			detail += " · 동경: ?"
 		v.add_child(UI.label(detail, UI.IDOL if rv >= 3 and pl.get("idolId") != null else UI.DIM, true))
 		var iv := UI.hbox(4)
-		iv.add_child(UI.label("의향 %d%%" % pr["interest"], UI.GOOD if pr["interest"] >= 70 else UI.TEXT, true))
-		iv.add_child(UI.bar(pr["interest"], 100, 100, UI.GOOD))
+		var il := UI.label("의향 %d%%" % pr["interest"], UI.GOOD if pr["interest"] >= 70 else UI.TEXT, true)
+		il.custom_minimum_size.x = 56
+		iv.add_child(il)
+		iv.add_child(UI.bar(pr["interest"], 100, 80, UI.GOOD))
 		row.add_child(iv)
 		var id: String = pr["id"]
 		var b := UI.button("방문", func():

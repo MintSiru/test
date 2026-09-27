@@ -198,6 +198,11 @@ function weekStart(state: GameState, rng: Rng) {
   for (const p of Object.values(state.players)) weeklyCondition(p, rng);
   const dorm = facLevel(state.facilities, 'dorm');
   if (dorm) for (const p of roster) p.fatigue = Math.max(0, p.fatigue - 5 * dorm);
+  // 4주 동안 쓰지 않은 훈련 카드는 새 카드로 교체
+  state.hand = state.hand.map((c) => {
+    const age = (c.age ?? 0) + 1;
+    return age >= 4 ? drawCard(rng, uid(state, 'c')) : { ...c, age };
+  });
   const ev = weeklyEvent(state, roster, rng);
   if (ev?.news) state.news.push(ev.news);
   if (ev?.popup) state.popups.push(ev.popup);
@@ -246,7 +251,45 @@ export function useCard(state: GameState, cardId: string): TrainingReport {
 // ───────────────────────── 경기 ─────────────────────────
 
 export function rulesFor(comp: Competition): MatchRules {
-  return comp.kind === 'league' ? { ...DEFAULT_RULES, allowDraw: true, maxInnings: 12 } : DEFAULT_RULES;
+  return comp.kind === 'league' || comp.kind === 'friendly' ? { ...DEFAULT_RULES, allowDraw: true, maxInnings: comp.kind === 'friendly' ? 9 : 12 } : DEFAULT_RULES;
+}
+
+// ───────────────────────── 연습 경기 ─────────────────────────
+
+/** 공식 경기가 없는 주에 연습 경기를 잡을 수 있는 날짜 (7일 안에 우리 경기가 없고, 이번 주에 잡은 연습 경기도 없을 때) */
+export function friendlyDate(state: GameState): string | null {
+  const u = state.userTeamId;
+  const until = addDays(state.date, 7);
+  for (const c of state.competitions) for (const f of c.fixtures) {
+    if ((f.home === u || f.away === u) && !f.result && f.date >= state.date && f.date <= until) return null;
+  }
+  // 다음 토요일 (오늘이 토요일이면 다음 주)
+  let d = addDays(state.date, 1);
+  while (weekday(d) !== 6) d = addDays(d, 1);
+  return d;
+}
+
+/** 연습 경기 상대 후보: 명성이 비슷한 학교 3곳 */
+export function friendlyOpponents(state: GameState, rng: Rng): string[] {
+  const teams = Object.values(state.teams).filter((t) => !t.isUser);
+  teams.sort((a, b) => Math.abs(a.prestige - state.reputation - 20) - Math.abs(b.prestige - state.reputation - 20));
+  return rng.shuffle(teams.slice(0, 12)).slice(0, 3).map((t) => t.id);
+}
+
+export function scheduleFriendly(state: GameState, oppId: string): Fixture | null {
+  const date = friendlyDate(state);
+  if (!date) return null;
+  const id = `friendly-${state.year}`;
+  let comp = state.competitions.find((c) => c.id === id);
+  if (!comp) {
+    comp = { id, key: 'friendly', name: '연습 경기', kind: 'friendly', year: state.year, start: date, end: date, status: 'active', fixtures: [] };
+    state.competitions.push(comp);
+  }
+  const f: Fixture = { id: `${id}-${comp.fixtures.length}`, compId: id, date, home: state.userTeamId, away: oppId };
+  comp.fixtures.push(f);
+  comp.end = date;
+  state.news.push({ date: state.date, kind: 'info', text: `${prettyDate(date)} ${state.teams[oppId].name}와(과) 연습 경기를 잡았다.` });
+  return f;
 }
 
 export function createMatch(state: GameState, f: Fixture, rng: Rng, userOpts: { lineup?: Player['id'][]; starterId?: string } = {}): Match {
@@ -281,23 +324,29 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
   };
   f.result = res;
   const isUserGame = f.home === state.userTeamId || f.away === state.userTeamId;
+  // 연습 경기는 공식 기록에 넣지 않는다 (실전 경험치·피로·투구수 휴식만 반영)
+  const official = comp.kind !== 'friendly';
 
   for (const side of [m.home, m.away]) {
     const team = state.teams[side.input.teamId];
     const won = m.winner === team.id;
     const drew = !m.winner;
-    if (won) team.seasonRecord.w++;
-    else if (drew) team.seasonRecord.d++;
-    else team.seasonRecord.l++;
-    if (won) team.seasonPoints += comp.kind === 'league' ? 1 : 3;
+    if (official) {
+      if (won) team.seasonRecord.w++;
+      else if (drew) team.seasonRecord.d++;
+      else team.seasonRecord.l++;
+      if (won) team.seasonPoints += comp.kind === 'league' ? 1 : 3;
+    }
     // 선수 기록 반영
     for (const [id, box] of Object.entries(side.box)) {
       const p = state.players[id];
       if (!p) continue;
-      addBat(p.season.bat, box.bat);
-      addBat(p.career.bat, box.bat);
-      addPit(p.season.pit, box.pit);
-      addPit(p.career.pit, box.pit);
+      if (official) {
+        addBat(p.season.bat, box.bat);
+        addBat(p.career.bat, box.bat);
+        addPit(p.season.pit, box.pit);
+        addPit(p.career.pit, box.pit);
+      }
       p.fatigue = clamp(p.fatigue + 4 + box.pit.np / 4, 0, 100);
       if (box.pit.np > 0) p.restUntil = addDays(f.date, restDays(box.pit.np) + 1);
       // 실전 경험치 (사용자 팀만 — CPU 팀은 주간 훈련으로 대체)
@@ -325,10 +374,10 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
     state.pendingFixture = undefined;
     const u = state.userTeamId;
     const opp = state.teams[f.home === u ? f.away : f.home];
-    recordH2H(state, opp.id, res.winner);
+    if (official) recordH2H(state, opp.id, res.winner);
     const us = f.home === u ? res.homeScore : res.awayScore;
     const them = f.home === u ? res.awayScore : res.homeScore;
-    const label = comp.kind === 'league' ? compDef(comp.key).short : `${compDef(comp.key).short} ${roundName(comp, f.round!)}`;
+    const label = comp.kind === 'friendly' ? '연습 경기' : comp.kind === 'league' ? compDef(comp.key).short : `${compDef(comp.key).short} ${roundName(comp, f.round!)}`;
     const outcome = res.winner === u ? '승리' : res.winner ? '패배' : '무승부';
     state.news.push({ date: f.date, kind: res.winner === u ? 'good' : res.winner ? 'bad' : 'info', text: `[${label}] vs ${opp.name} ${us}:${them} ${outcome}${res.called ? ' (콜드)' : ''}` });
     if (comp.kind === 'tournament') {

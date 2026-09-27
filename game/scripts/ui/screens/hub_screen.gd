@@ -172,6 +172,11 @@ func _fill_action() -> void:
 	var b := UI.button("▶ 다음으로 진행", _start_advance, 200)
 	UI.place(b, 40, 96 if not train_lines.is_empty() else 40, 200, 20)
 	action_box.add_child(b)
+	if train_lines.is_empty() and Season.friendly_date(s) != "":
+		var fb := UI.button("연습 경기 신청 (%s)" % Cal.short(Season.friendly_date(s)), _ask_friendly, 200, true)
+		fb.tooltip_text = "공식 기록에 남지 않지만 실전 경험을 쌓는다"
+		UI.place(fb, 40, 66, 200, 16)
+		action_box.add_child(fb)
 
 
 func _card_widget(c: Dictionary, pos: Vector2) -> Control:
@@ -238,6 +243,23 @@ func _delegate() -> void:
 	Game.save_game()
 	if m != null:
 		Game.main.show_match_result(m, _after_popups)
+
+
+func _ask_friendly() -> void:
+	var s := st()
+	var rng := Season.rng_of(s)
+	var opps := Season.friendly_opponents(s, rng)
+	Season.save_rng(s, rng)
+	var buttons := []
+	for id in opps:
+		var t: Dictionary = s["teams"][id]
+		var oid: String = id
+		buttons.append(["%s (전통 %d)" % [t["name"], t["prestige"]], func():
+			Season.schedule_friendly(s, oid)
+			Game.save_game()
+			_refresh()])
+	buttons.append(["취소", func(): pass])
+	Game.main.show_modal("연습 경기 상대", "연습 경기는 공식 기록에 남지 않지만 실전 경험치를 얻고, 투수 휴식 규정은 똑같이 적용됩니다.\n상대를 고르세요.", "info", Callable(), buttons)
 
 
 func _start_advance() -> void:

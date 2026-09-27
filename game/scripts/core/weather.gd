@@ -3,7 +3,7 @@ extends RefCounted
 ## 날씨 (web/src/core/weather.ts 이식). 날짜+시드 해시로 결정 → 웹과 같은 결과.
 ## 비가 오면 그날 경기는 다음 날로 연기 (같은 경기는 최대 2번, 그 뒤엔 강행)
 
-const RAIN := {1: 0.05, 2: 0.05, 3: 0.08, 4: 0.1, 5: 0.1, 6: 0.2, 7: 0.28, 8: 0.18, 9: 0.1, 10: 0.07, 11: 0.07, 12: 0.05}
+const RAIN := {1: 0.04, 2: 0.04, 3: 0.06, 4: 0.08, 5: 0.08, 6: 0.15, 7: 0.2, 8: 0.14, 9: 0.08, 10: 0.05, 11: 0.05, 12: 0.04}
 
 
 ## FNV-1a 32bit (web 의 hashStr 과 동일)
@@ -15,8 +15,23 @@ static func hash_str(s: String) -> int:
 	return h
 
 
+## 32비트 곱셈 (64비트 정수 넘침 방지)
+static func _imul(a: int, b: int) -> int:
+	return (a * (b & 0xFFFF) + (((a * (b >> 16)) & 0xFFFF) << 16)) & 0xFFFFFFFF
+
+
+## 해시 섞기 (MurmurHash3 fmix32). FNV 만 쓰면 이웃한 날짜의 값이 거의 같아 비가 며칠씩 이어졌다
+static func mix32(h: int) -> int:
+	h = h ^ (h >> 16)
+	h = _imul(h, 0x85ebca6b)
+	h = h ^ (h >> 13)
+	h = _imul(h, 0xc2b2ae35)
+	h = h ^ (h >> 16)
+	return h
+
+
 static func on(seed_val: int, date: String) -> String:
-	var h := hash_str("%d:%s" % [seed_val, date]) / 4294967296.0
+	var h := mix32(hash_str("%d:%s" % [seed_val, date])) / 4294967296.0
 	var rain: float = RAIN.get(Cal.month_of(date), 0.08)
 	if h < rain:
 		return "비"
@@ -43,7 +58,6 @@ static func postpone_rain(state: Dictionary, today: Array) -> bool:
 		moved += 1
 		if f["home"] == u or f["away"] == u:
 			user_moved = true
-	if moved > 0:
-		state["news"].append({"date": state["date"], "kind": "bad" if user_moved else "info",
-			"text": "비로 오늘 경기 %d개가 내일로 연기됐다.%s" % [moved, " 우리 경기도 순연! 투수진이 하루 더 쉴 수 있다." if user_moved else ""]})
+	if user_moved:
+		state["news"].append({"date": state["date"], "kind": "bad", "text": "비로 우리 경기가 내일로 순연됐다. 투수진이 하루 더 쉴 수 있다."})
 	return moved > 0

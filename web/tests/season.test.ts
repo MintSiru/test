@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { advance, autoPlayUserMatch, startNewGame, useCard, userFixtures } from '../src/core/season';
+import { advance, autoPlayUserMatch, friendlyDate, friendlyOpponents, rngOf, scheduleFriendly, startNewGame, useCard, userFixtures } from '../src/core/season';
+import { addDays } from '../src/core/calendar';
+import { mix32 } from '../src/core/weather';
+import { hashStr } from '../src/core/rng';
 import { teamPlayers } from '../src/core/world';
 import { grade, name, overall } from '../src/core/player';
 import { compDates } from '../src/core/calendar';
@@ -32,9 +35,15 @@ describe('weather', () => {
   it('rain postponements never leave a competition unfinished', () => {
     const state = startNewGame({ schoolName: '한빛고', managerName: '테스트', groupId: 'seoulB', seed: 77 });
     playUntil(state, '2026-11-01');
-    const rain = state.news.filter((n) => n.text.includes('연기')).length;
-    console.log('우천 연기 소식', rain);
+    const rain = state.competitions.flatMap((c) => c.fixtures).filter((f) => (f.postponed ?? 0) > 0).length;
+    const total = state.competitions.flatMap((c) => c.fixtures).length;
+    const twice = state.competitions.flatMap((c) => c.fixtures).filter((f) => (f.postponed ?? 0) >= 2).length;
+    console.log('우천 연기된 경기', rain, '/', total, '두 번 연기', twice);
     expect(rain).toBeGreaterThan(0);
+    // 장마철 포함 연기율은 5~25% (비 오는 주말 하루에 50경기가 한꺼번에 밀려 편차가 크다), 이틀 연속 비로 두 번 밀리는 경기는 드물어야 한다
+    expect(rain / total).toBeGreaterThan(0.05);
+    expect(rain / total).toBeLessThan(0.25);
+    expect(twice / total).toBeLessThan(0.05);
     for (const c of state.competitions) {
       expect(c.status, c.name).toBe('done');
       if (c.kind === 'tournament') expect(c.champion, c.name).toBeTruthy();
@@ -67,4 +76,28 @@ describe('full season simulation', () => {
     // 새 시즌 대회가 편성되어 있어야 한다
     expect(userFixtures(state).length).toBeGreaterThan(5);
   }, 120000);
+});
+
+describe('friendly games', () => {
+  it('can schedule a practice game in the off-season without touching official records', () => {
+    const state = startNewGame({ schoolName: '한빛고', managerName: '테스트', groupId: 'seoulA', seed: 3 });
+    playUntil(state, '2026-11-03');
+    const recBefore = { ...state.teams.user.seasonRecord };
+    const date = friendlyDate(state);
+    expect(date).toBeTruthy();
+    const rng = rngOf(state);
+    const opp = friendlyOpponents(state, rng)[0];
+    const f = scheduleFriendly(state, opp)!;
+    expect(friendlyDate(state)).toBeNull(); // 같은 주에 두 번은 안 됨
+    playUntil(state, addDays(f.date, 1));
+    expect(f.result).toBeTruthy();
+    expect(state.teams.user.seasonRecord).toEqual(recBefore);
+  }, 120000);
+});
+
+describe('weather hash parity', () => {
+  it('matches known values (Godot 쪽 weather.gd 와 같아야 함)', () => {
+    // Godot 테스트(test_season.gd)에서도 같은 값을 확인한다
+    expect(mix32(hashStr('42:2026-07-01'))).toBe(3842815896);
+  });
 });

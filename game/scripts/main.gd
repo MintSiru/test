@@ -76,6 +76,8 @@ func _ready() -> void:
 		_take_shot(shot)
 	if "--uitest" in OS.get_cmdline_user_args():
 		add_child(load("res://tests/ui_flow_test.gd").new())
+	if "--uiseason" in OS.get_cmdline_user_args():
+		add_child(load("res://tests/ui_season_test.gd").new())
 
 
 func _debug_advance(days: int) -> void:

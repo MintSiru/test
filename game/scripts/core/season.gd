@@ -95,6 +95,8 @@ static func next_user_fixture(state: Dictionary) -> Dictionary:
 
 
 static func fixture_label(comp: Dictionary, f: Dictionary) -> String:
+	if comp["kind"] == "friendly":
+		return "연습 경기"
 	var short: String = Cal.comp_def(comp["key"])["short"]
 	if comp["kind"] == "tournament":
 		return "%s %s" % [short, Competition.round_name(comp, int(f["round"]))]
@@ -247,6 +249,14 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	if dorm > 0:
 		for p in roster:
 			p["fatigue"] = maxf(0.0, p["fatigue"] - 5 * dorm)
+	# 4주 동안 쓰지 않은 훈련 카드는 새 카드로 교체
+	var hand: Array = state["hand"]
+	for i in hand.size():
+		var age := int(hand[i].get("age", 0)) + 1
+		if age >= 4:
+			hand[i] = Training.draw_card(rng, WorldGen.uid(state, "c"))
+		else:
+			hand[i]["age"] = age
 	var ev := WeeklyEvents.roll(state, roster, rng)
 	if ev.has("news"):
 		state["news"].append(ev["news"])
@@ -300,7 +310,52 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 # ───────────── 경기 ─────────────
 
 static func rules_for(comp: Dictionary) -> Dictionary:
+	if comp["kind"] == "friendly":
+		var r := LEAGUE_RULES.duplicate()
+		r["maxInnings"] = 9
+		return r
 	return LEAGUE_RULES if comp["kind"] == "league" else MatchEngine.DEFAULT_RULES
+
+
+# ───────────── 연습 경기 ─────────────
+
+## 7일 안에 우리 경기가 없으면 다음 토요일 날짜, 아니면 ""
+static func friendly_date(state: Dictionary) -> String:
+	var u: String = state["userTeamId"]
+	var until := Cal.add_days(state["date"], 7)
+	for c in state["competitions"]:
+		for f in c["fixtures"]:
+			if (f["home"] == u or f["away"] == u) and f.get("result") == null and f["date"] >= state["date"] and f["date"] <= until:
+				return ""
+	var d := Cal.add_days(state["date"], 1)
+	while Cal.weekday(d) != 6:
+		d = Cal.add_days(d, 1)
+	return d
+
+
+## 명성이 비슷한 학교 3곳
+static func friendly_opponents(state: Dictionary, rng: Rng) -> Array:
+	var teams: Array = state["teams"].values().filter(func(t): return not t["isUser"])
+	var target: float = state["reputation"] + 20
+	teams.sort_custom(func(a, b): return absf(a["prestige"] - target) < absf(b["prestige"] - target))
+	var pool: Array = rng.shuffle(teams.slice(0, 12))
+	return pool.slice(0, 3).map(func(t): return t["id"])
+
+
+static func schedule_friendly(state: Dictionary, opp_id: String) -> Dictionary:
+	var date := friendly_date(state)
+	if date == "":
+		return {}
+	var id := "friendly-%d" % state["year"]
+	var comp = comp_by_id(state, id)
+	if comp == null:
+		comp = {"id": id, "key": "friendly", "name": "연습 경기", "kind": "friendly", "year": state["year"], "start": date, "end": date, "status": "active", "fixtures": []}
+		state["competitions"].append(comp)
+	var f := {"id": "%s-%d" % [id, comp["fixtures"].size()], "compId": id, "date": date, "home": state["userTeamId"], "away": opp_id}
+	comp["fixtures"].append(f)
+	comp["end"] = date
+	_news(state, "info", "%s %s 연습 경기를 잡았다." % [Cal.pretty(date), Text.josa(state["teams"][opp_id]["name"], "과/와")])
+	return f
 
 
 ## user_opts: {starterId?, lineup?}
@@ -334,11 +389,15 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	f["result"] = res
 	var u: String = state["userTeamId"]
 	var is_user_game: bool = f["home"] == u or f["away"] == u
+	# 연습 경기는 공식 기록에 넣지 않는다 (실전 경험치·피로·투구수 휴식만 반영)
+	var official: bool = comp["kind"] != "friendly"
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]
 		var rec: Dictionary = team["seasonRecord"]
-		if won:
+		if not official:
+			pass
+		elif won:
 			rec["w"] += 1
 			team["seasonPoints"] += 1 if comp["kind"] == "league" else 3
 		elif m.winner == null:
@@ -350,10 +409,11 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			if p == null:
 				continue
 			var box: Dictionary = side.box[id]
-			PlayerUtil.add_line(p["season"]["bat"], box["bat"])
-			PlayerUtil.add_line(p["career"]["bat"], box["bat"])
-			PlayerUtil.add_line(p["season"]["pit"], box["pit"])
-			PlayerUtil.add_line(p["career"]["pit"], box["pit"])
+			if official:
+				PlayerUtil.add_line(p["season"]["bat"], box["bat"])
+				PlayerUtil.add_line(p["career"]["bat"], box["bat"])
+				PlayerUtil.add_line(p["season"]["pit"], box["pit"])
+				PlayerUtil.add_line(p["career"]["pit"], box["pit"])
 			p["fatigue"] = clampf(p["fatigue"] + 4 + box["pit"]["np"] / 4.0, 0, 100)
 			if box["pit"]["np"] > 0:
 				p["restUntil"] = Cal.add_days(f["date"], rest_days(box["pit"]["np"]) + 1)
@@ -383,7 +443,8 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	if is_user_game:
 		state.erase("pendingFixture")
 		var opp: Dictionary = state["teams"][f["away"] if f["home"] == u else f["home"]]
-		Rival.record(state, opp["id"], res["winner"])
+		if official:
+			Rival.record(state, opp["id"], res["winner"])
 		var us: int = res["homeScore"] if f["home"] == u else res["awayScore"]
 		var them: int = res["awayScore"] if f["home"] == u else res["homeScore"]
 		var outcome := "승리" if res["winner"] == u else ("패배" if res["winner"] != null else "무승부")

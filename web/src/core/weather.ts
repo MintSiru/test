@@ -7,10 +7,20 @@ import type { Competition, Fixture, GameState } from './types';
 
 export type Weather = '맑음' | '흐림' | '가랑비' | '비';
 
-const RAIN: Record<number, number> = { 1: 0.05, 2: 0.05, 3: 0.08, 4: 0.1, 5: 0.1, 6: 0.2, 7: 0.28, 8: 0.18, 9: 0.1, 10: 0.07, 11: 0.07, 12: 0.05 };
+const RAIN: Record<number, number> = { 1: 0.04, 2: 0.04, 3: 0.06, 4: 0.08, 5: 0.08, 6: 0.15, 7: 0.2, 8: 0.14, 9: 0.08, 10: 0.05, 11: 0.05, 12: 0.04 };
+
+/** 해시 섞기 (MurmurHash3 fmix32). FNV 만 쓰면 이웃한 날짜의 값이 거의 같아 비가 며칠씩 이어졌다 */
+export function mix32(h: number): number {
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
 
 export function weatherOn(seed: number, date: string): Weather {
-  const h = hashStr(`${seed}:${date}`) / 4294967296;
+  const h = mix32(hashStr(`${seed}:${date}`)) / 4294967296;
   const rain = RAIN[monthOf(date)] ?? 0.08;
   if (h < rain) return '비';
   if (h < rain + 0.07) return '가랑비';
@@ -30,8 +40,8 @@ export function postponeRain(state: GameState, today: { comp: Competition; f: Fi
     moved++;
     if (f.home === state.userTeamId || f.away === state.userTeamId) userMoved = true;
   }
-  if (moved) {
-    state.news.push({ date: state.date, kind: userMoved ? 'bad' : 'info', text: `비로 오늘 경기 ${moved}개가 내일로 연기됐다.${userMoved ? ' 우리 경기도 순연! 투수진이 하루 더 쉴 수 있다.' : ''}` });
+  if (userMoved) {
+    state.news.push({ date: state.date, kind: userMoved ? 'bad' : 'info', text: `비로 우리 경기가 내일로 순연됐다. 투수진이 하루 더 쉴 수 있다.` });
   }
   return moved > 0;
 }

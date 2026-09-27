@@ -29,7 +29,7 @@ func setup(_p := {}) -> void:
 	head.add_child(hv)
 	hv.add_child(UI.title_label("%s  —  %s" % [Season.fixture_label(comp, fixture), Cal.pretty(fixture["date"])]))
 	hv.add_child(UI.label("%s (%s) vs %s (%s)   ·   %s" % [s["teams"][fixture["away"]]["name"], "원정", s["teams"][fixture["home"]]["name"], "홈",
-		"리그전: 9회 무승부 가능 (12회까지)" if comp["kind"] == "league" else "토너먼트: 10회부터 승부치기 · 콜드게임(5회 10점/7회 7점)"], UI.DIM, true))
+		"연습 경기: 공식 기록에 남지 않음" if comp["kind"] == "friendly" else ("리그전: 9회 무승부 가능 (12회까지)" if comp["kind"] == "league" else "토너먼트: 10회부터 승부치기 · 콜드게임(5회 10점/7회 7점)")], UI.DIM, true))
 
 	var lp := UI.panel()
 	UI.place(lp, 4, 60, 380, 270)
