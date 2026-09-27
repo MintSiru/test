@@ -1,0 +1,88 @@
+name: CI
+
+# 모든 푸시/PR 에서 테스트, 기본 브랜치에서는 웹 빌드를 GitHub Pages 로 배포한다.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  web-foundation:
+    name: 웹 기반 시스템 테스트
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx vitest run
+      - run: npx vite build
+
+  godot-tests:
+    name: Godot 헤드리스 테스트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Godot 설치
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+      - name: 테스트 (밸런스 + 1년 시즌)
+        run: GODOT=godot game/tests/run_tests.sh
+
+  pages:
+    name: 웹 빌드 · GitHub Pages 배포
+    needs: [web-foundation, godot-tests]
+    if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-templates-${{ env.GODOT_VERSION }}
+      - name: Godot + 내보내기 템플릿 설치
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          T=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          if [ ! -f "$T/web_nothreads_release.zip" ]; then
+            curl -sSL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            mkdir -p "$T" && unzip -q tpl.tpz -d tplx && mv tplx/templates/* "$T/"
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 게임(Godot) 웹 내보내기
+        run: |
+          cd game
+          timeout 300 godot --headless --path . --import || true
+          mkdir -p ../build/web
+          godot --headless --path . --export-release "Web" ../build/web/index.html
+      - name: 기반 시스템(웹) 빌드 → /foundation
+        run: |
+          cd web && npm ci && npx vite build --outDir ../build/web/foundation --emptyOutDir
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+      - id: deploy
+        uses: actions/deploy-pages@v4

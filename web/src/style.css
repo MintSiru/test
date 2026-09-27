@@ -1,5 +1,5 @@
-@font-face { font-family: 'Galmuri11'; src: url('../../game/assets/fonts/Galmuri11.woff2') format('woff2'); }
-@font-face { font-family: 'Galmuri11'; font-weight: bold; src: url('../../game/assets/fonts/Galmuri11-Bold.woff2') format('woff2'); }
+@font-face { font-family: 'Galmuri11'; src: url('../../game/assets/fonts/Galmuri11.ttf') format('truetype'); }
+@font-face { font-family: 'Galmuri11'; font-weight: bold; src: url('../../game/assets/fonts/Galmuri11-Bold.ttf') format('truetype'); }
 :root { --bg: #14182b; --panel: #1f2540; --line: #3a4270; --text: #e8e8f0; --dim: #9aa0c0; --accent: #f4d35e; --good: #6fd08c; --bad: #ef6f6c; --idol: #c792ea; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Galmuri11', monospace; font-size: 13px; }

@@ -65,9 +65,9 @@ static func new_game(o: Dictionary) -> Dictionary:
 			if not is_user:
 				color_idx += 1
 			state["teams"][id] = team
-			var per_grade := 5 if is_user else 6
+			var per_grade := 6
 			for gr in 3:
-				for p in intake_for(state, rng, team, year - gr, per_grade, 30.0 if is_user else float(prestige)):
+				for p in intake_for(state, rng, team, year - gr, per_grade, 34.0 if is_user else float(prestige)):
 					state["players"][p["id"]] = p
 					team["playerIds"].append(p["id"])
 	for i in 5:

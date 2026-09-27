@@ -15,6 +15,8 @@ const CARD_INFO := {
 	"scout": {"name": "스카우트 활동", "desc": "스카우트 행동력 +2", "fatigue": 3, "batter": {"contact": 0.1}, "pitcher": {"control": 0.1}},
 	"special": {"name": "특별 훈련", "desc": "개인 연습 효과 2배, 부상 위험", "fatigue": 20, "batter": {}, "pitcher": {}},
 }
+## 카드에 표시할 짧은 설명
+const CARD_SHORT := {"batting": "컨택\n파워", "pitching": "구속\n제구", "defense": "수비\n어깨", "running": "주력", "stamina": "체력", "rest": "피로\n회복", "practiceGame": "전체\n각성", "meeting": "선구\n제구", "scout": "행동력\n+2", "special": "개인\n×2"}
 const DRAW_KINDS := ["batting", "pitching", "defense", "running", "stamina", "rest", "practiceGame", "meeting", "scout", "special"]
 const DRAW_WEIGHTS := [16, 16, 14, 10, 10, 10, 8, 6, 6, 4]
 const FOCUS_KO := {"auto": "자동", "contact": "컨택", "power": "파워", "eye": "선구안", "speed": "주력", "defense": "수비", "velo": "구속", "control": "제구", "breaking": "변화구", "stamina": "스태미나"}

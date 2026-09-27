@@ -112,9 +112,9 @@ export function newGame(o: NewGameOpts): GameState {
       };
       state.teams[id] = team;
       // 3개 학년 선수 생성
-      const perGrade = isUser ? 5 : 6;
+      const perGrade = 6;
       for (let gr = 0; gr < 3; gr++) {
-        const q = isUser ? 30 : prestige;
+        const q = isUser ? 34 : prestige;
         for (const p of intakeFor(state, rng, team, year - gr, perGrade, q)) {
           state.players[p.id] = p;
           team.playerIds.push(p.id);

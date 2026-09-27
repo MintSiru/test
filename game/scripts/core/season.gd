@@ -104,7 +104,7 @@ static func fixture_label(comp: Dictionary, f: Dictionary) -> String:
 
 static func advance(state: Dictionary, max_days := 800) -> String:
 	var rng := rng_of(state)
-	var result := "popup"
+	var result := ""
 	for i in max_days:
 		if not state["popups"].is_empty():
 			result = "popup"

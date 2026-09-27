@@ -2,18 +2,18 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://dinm6u8x2tkkc"
-path="res://.godot/imported/Galmuri9.woff2-bddb66ba7c030e4095b819f45690f221.fontdata"
+uid="uid://nedmo6rcuafy"
+path="res://.godot/imported/Galmuri9.ttf-98ce197f22f89047170858fe1b62fb4f.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/Galmuri9.woff2"
-dest_files=["res://.godot/imported/Galmuri9.woff2-bddb66ba7c030e4095b819f45690f221.fontdata"]
+source_file="res://assets/fonts/Galmuri9.ttf"
+dest_files=["res://.godot/imported/Galmuri9.ttf-98ce197f22f89047170858fe1b62fb4f.fontdata"]
 
 [params]
 
 Rendering=null
-antialiasing=1
+antialiasing=0
 generate_mipmaps=false
 disable_embedded_bitmaps=true
 multichannel_signed_distance_field=false
@@ -22,8 +22,8 @@ msdf_size=48
 allow_system_fallback=true
 force_autohinter=false
 modulate_color_glyphs=false
-hinting=3
-subpixel_positioning=4
+hinting=0
+subpixel_positioning=0
 keep_rounding_remainders=true
 oversampling=0.0
 Fallbacks=null
