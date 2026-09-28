@@ -570,7 +570,12 @@ func _highlight(ev: Dictionary, o: TeamSide, d: TeamSide, lead_before: int, risp
 		kind = "escape"
 		txt = "%s 위기에서 %s 삼진으로 이닝 종료" % [p.name, b.name]
 	if kind != "":
-		highlights.append({"inning": inn, "top": tp, "kind": kind, "text": txt})
+		var h := {"inning": inn, "top": tp, "kind": kind, "text": txt}
+		# 다시 보기용 타구 (방향·거리·종류·결과)
+		if ev.get("batted") != null:
+			var bt: Dictionary = ev["batted"]
+			h["b"] = {"type": bt["type"], "angle": bt["angle"], "dist": bt["dist"], "result": bt["result"]}
+		highlights.append(h)
 
 
 ## 타석 결과에 영향을 준 특수능력 한 줄 (없으면 "")

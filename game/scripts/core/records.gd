@@ -122,8 +122,11 @@ static func add_highlights(state: Dictionary, comp: Dictionary, f: Dictionary, m
 	var opp: String = state["teams"][f["away"] if f["home"] == u else f["home"]]["name"]
 	var label: String = Cal.comp_def(comp["key"])["short"] if comp["kind"] != "friendly" else "연습 경기"
 	for h in m.highlights:
-		state["highlights"].append({"date": f["date"], "comp": label, "opp": opp, "inning": "%d회%s" % [h["inning"], "초" if h["top"] else "말"],
-			"kind": h["kind"], "text": h["text"], "won": m.winner == u})
+		var rec := {"date": f["date"], "comp": label, "opp": opp, "inning": "%d회%s" % [h["inning"], "초" if h["top"] else "말"],
+			"kind": h["kind"], "text": h["text"], "won": m.winner == u}
+		if h.has("b"):
+			rec["b"] = h["b"]
+		state["highlights"].append(rec)
 	var hl: Array = state["highlights"]
 	if hl.size() > HIGHLIGHT_MAX:
 		state["highlights"] = hl.slice(hl.size() - HIGHLIGHT_MAX)

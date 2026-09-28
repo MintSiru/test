@@ -87,6 +87,14 @@ func _ready() -> void:
 			drain_popups()
 	if "--catalog" in dev_args():
 		show_panel("특수능력 도감", UI.ability_catalog())
+	# 개발용: 기록실에서 가장 최근 명장면 다시 보기 (--screen=records --replay)
+	if "--replay" in dev_args() and current.has_method("_replay") and not Game.state.get("highlights", []).is_empty():
+		var hls: Array = Game.state["highlights"]
+		var pick: Dictionary = hls[hls.size() - 1]
+		for h in hls:
+			if h.has("b") and h["b"]["result"] == "HR":
+				pick = h
+		current._replay(pick)
 	if "--usecard" in dev_args() and current.has_method("_use_card"):
 		current._use_card(Game.state["hand"][0]["id"])
 	if shot != "":

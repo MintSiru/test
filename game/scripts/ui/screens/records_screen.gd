@@ -146,7 +146,22 @@ func _highlights() -> void:
 	list.reverse()
 	for h in list:
 		var col: Color = UI.TIER_COLORS["gold"] if h["kind"] == "walkoff" else (UI.GOOD if h["kind"] in ["hr", "clutch"] else UI.IDOL)
-		body.add_child(UI.label("%s %s vs %s  %s  [%s] %s" % [Cal.short(h["date"]), h["comp"], h["opp"], h["inning"], Records.HIGHLIGHT_KO.get(h["kind"], ""), h["text"]], col, true))
+		var row := UI.hbox(4)
+		var hh: Dictionary = h
+		var vb := UI.button("보기", func(): _replay(hh), 36, true)
+		vb.tooltip_text = "명장면 다시 보기 (공의 궤적)"
+		row.add_child(vb)
+		row.add_child(UI.label("%s %s vs %s  %s  [%s] %s" % [Cal.short(h["date"]), h["comp"], h["opp"], h["inning"], Records.HIGHLIGHT_KO.get(h["kind"], ""), h["text"]], col, true))
+		body.add_child(row)
+
+
+func _replay(h: Dictionary) -> void:
+	var v := UI.vbox(4)
+	var rp := HighlightReplay.new()
+	rp.setup_replay(h)
+	v.add_child(rp)
+	v.add_child(UI.label("%s %s vs %s  %s" % [Cal.pretty(h["date"]), h["comp"], h["opp"], h["inning"]], UI.DIM, true))
+	Game.main.show_panel("명장면 다시 보기", v)
 
 
 func _hall() -> void:
