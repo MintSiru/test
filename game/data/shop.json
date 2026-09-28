@@ -615,6 +615,143 @@
     1
    ],
    "desc": "(연말연시 한정) 장터 물건 두 개가 무작위로 들어 있다 (교본이 나올 수도!)"
+  },
+  {
+   "key": "bk_comeback",
+   "name": "역전의 명수 자서전",
+   "type": "ability",
+   "ability": "comeback",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「역전의 명수」 습득 (타자)"
+  },
+  {
+   "key": "bk_leadoff",
+   "name": "1번 타자 교본",
+   "type": "ability",
+   "ability": "leadoff",
+   "price": 80,
+   "weight": 2,
+   "desc": "특수능력 「선두타자◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_dp",
+   "name": "병살 피하는 주루법",
+   "type": "ability",
+   "ability": "dpAvoid",
+   "price": 70,
+   "weight": 2,
+   "desc": "특수능력 「병살 회피」 습득 (타자)"
+  },
+  {
+   "key": "bk_infield",
+   "name": "내야안타 비법",
+   "type": "ability",
+   "ability": "infieldHit",
+   "price": 80,
+   "weight": 2,
+   "desc": "특수능력 「내야안타◎」 습득 (타자)"
+  },
+  {
+   "key": "bk_twoout",
+   "name": "투아웃 집중력 노트",
+   "type": "ability",
+   "ability": "twoOut",
+   "price": 90,
+   "weight": 2,
+   "desc": "특수능력 「투아웃 집중」 습득 (타자)"
+  },
+  {
+   "key": "bk_block",
+   "name": "포수 블로킹 교본",
+   "type": "ability",
+   "ability": "blocker",
+   "price": 70,
+   "weight": 2,
+   "desc": "특수능력 「블로킹◎」 습득 (포수)"
+  },
+  {
+   "key": "bk_nomistake",
+   "name": "실투 줄이는 투구론",
+   "type": "ability",
+   "ability": "noMistake",
+   "price": 110,
+   "weight": 2,
+   "desc": "특수능력 「실투 적음」 습득 (투수)"
+  },
+  {
+   "key": "bk_finish",
+   "name": "뒷심 트레이닝",
+   "type": "ability",
+   "ability": "strongFinish",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「뒷심」 습득 (투수)"
+  },
+  {
+   "key": "bk_vsleft",
+   "name": "좌타자 공략 노트",
+   "type": "ability",
+   "ability": "vsLefty",
+   "price": 90,
+   "weight": 2,
+   "desc": "특수능력 「좌타 킬러」 습득 (투수)"
+  },
+  {
+   "key": "bk_firstp",
+   "name": "초구 승부 교본",
+   "type": "ability",
+   "ability": "firstStrikeP",
+   "price": 80,
+   "weight": 2,
+   "desc": "특수능력 「초구 승부」 습득 (투수)"
+  },
+  {
+   "key": "bk_pace",
+   "name": "완급 조절의 기술",
+   "type": "ability",
+   "ability": "pace",
+   "price": 110,
+   "weight": 2,
+   "desc": "특수능력 「완급 조절」 습득 (투수)"
+  },
+  {
+   "key": "bk_cruise",
+   "name": "여유 있는 투구법",
+   "type": "ability",
+   "ability": "cruise",
+   "price": 90,
+   "weight": 2,
+   "desc": "특수능력 「여유 있는 투구」 습득 (투수)"
+  },
+  {
+   "key": "bk_durable",
+   "name": "강철 몸 만들기",
+   "type": "ability",
+   "ability": "durable",
+   "price": 100,
+   "weight": 2,
+   "desc": "특수능력 「강철 몸」 습득 (공통)"
+  },
+  {
+   "key": "bk_steady",
+   "name": "평정심 명상록",
+   "type": "ability",
+   "ability": "steady",
+   "price": 90,
+   "weight": 2,
+   "desc": "특수능력 「평정심」 습득 (공통)"
+  },
+  {
+   "key": "bk_gold_ye",
+   "name": "명인의 비전서",
+   "type": "gold",
+   "price": 220,
+   "weight": 3,
+   "months": [
+    12
+   ],
+   "desc": "(연말 한정) 선수 한 명의 긍정 특수능력 하나를 금특으로 진화 — 비전의 서보다 저렴"
   }
  ]
 }

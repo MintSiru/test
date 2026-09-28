@@ -18,7 +18,7 @@ describe('후원회 연간 목표', () => {
     let done = 0;
     let total = 0;
     const lines: string[] = [];
-    for (const seed of [3, 11, 29, 47, 58, 71]) {
+    for (const seed of [3, 11, 29, 47, 58, 71, 83, 97, 104, 120]) {
       const s = startNewGame({ schoolName: '한빛고', managerName: '테스트', groupId: 'seoulA', seed });
       expect(s.goals?.list.length).toBe(3);
       playUntil(s, '2027-03-03');

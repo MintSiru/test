@@ -119,8 +119,9 @@ func _init() -> void:
 	var tm := MatchEngine.new(side, opp, Rng.new(4))
 	var us := tm.home
 	var tw_ok: bool = side["pitcherId"] == ace["id"] and ace["id"] in us.order and us.pos_of[ace["id"]] == "DH"
-	for i in 60:
-		if tm.over:
+	# 겸업 선수가 타석에 설 때까지 (타순이 늦으면 60구로는 모자랄 수 있다)
+	for i in 400:
+		if tm.over or int(us.box[ace["id"]]["bat"]["pa"]) > 0:
 			break
 		tm.step(MatchAI.orders(tm))
 	var reliever := MatchAI.relievers(us)
@@ -128,7 +129,7 @@ func _init() -> void:
 		tm.change_pitcher(us, reliever[0].id)
 	tw_ok = tw_ok and ace["id"] in us.order and int(us.box[ace["id"]]["bat"]["pa"]) > 0 and int(us.box[ace["id"]]["pit"]["np"]) > 0
 	if not tw_ok:
-		fails.append("투타 겸업 실패")
+		fails.append("투타 겸업 실패 (선발 %s, 타순 %s, DH %s, 타석 %d, 투구 %d)" % [side["pitcherId"] == ace["id"], ace["id"] in us.order, us.pos_of.get(ace["id"], "-"), int(us.box[ace["id"]]["bat"]["pa"]), int(us.box[ace["id"]]["pit"]["np"])])
 	ace.erase("twoWay")
 	# CPU 학교 흥망: 새 시즌에 신흥 강호 1~2곳
 	var risen: int = state["teams"].values().filter(func(t): return t.get("story") != null and t["story"]["tag"] == "신흥 강호").size()
