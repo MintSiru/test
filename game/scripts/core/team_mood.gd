@@ -2,8 +2,8 @@ class_name TeamMood
 extends RefCounted
 ## 주장과 팀 분위기 (Godot 전용)
 ##  - 팀 분위기 0~100 (state.teamMood, 처음 50). 이기면 오르고 지면 내려가며, 연승·연패는 더 크게.
-##    매주 「50 + 주장 보너스」 쪽으로 15% 돌아간다.
-##  - 분위기 70 이상이면 매주 선수 컨디션이 오를 가능성, 30 이하면 떨어질 가능성.
+##    매주 「50 + 주장 보너스」 쪽으로 10% 돌아간다. 승 +6 / 패 -6 (3연승·3연패부터 ±3 더)
+##  - 분위기 65 이상이면 매주 선수 컨디션이 오를 가능성, 35 이하면 떨어질 가능성.
 ##  - 주장: 은퇴식 직후 다음 해 3학년(지금 2학년) 중에서, 새 게임은 3학년 중에서 고른다 (선택 팝업, 기본값 1순위).
 ##    주장 보너스 = 3 + 성격(열혈 4 · 낙천 3 · 노력파 2 · 냉정 1) + 종합 능력치(50 넘는 10마다 1, 최대 4)
 
@@ -52,9 +52,9 @@ static func after_match(state: Dictionary, won: bool, drew: bool, official: bool
 	state["streak"] = st
 	var d := 0
 	if won:
-		d = 4 + (2 if st >= 3 else 0)
+		d = 6 + (3 if st >= 3 else 0)
 	elif not drew:
-		d = -4 - (2 if st <= -3 else 0)
+		d = -6 - (3 if st <= -3 else 0)
 	change(state, d if official else d / 2)
 
 
@@ -62,11 +62,11 @@ static func after_match(state: Dictionary, won: bool, drew: bool, official: bool
 static func week(state: Dictionary, roster: Array, rng: Rng) -> void:
 	var target := 50 + captain_bonus(captain(state)) + int(Manager.bonus(state, "motivator"))
 	var m := mood(state)
-	state["teamMood"] = clampi(m + roundi((target - m) * 0.15), 0, 100)
+	state["teamMood"] = clampi(m + roundi((target - m) * 0.10), 0, 100)
 	for p in roster:
-		if m >= 70 and rng.chance((m - 65) / 100.0):
+		if m >= 65 and rng.chance((m - 58) / 100.0):
 			p["cond"] = mini(2, int(p["cond"]) + 1)
-		elif m <= 30 and rng.chance((35 - m) / 100.0):
+		elif m <= 35 and rng.chance((42 - m) / 100.0):
 			p["cond"] = maxi(-2, int(p["cond"]) - 1)
 
 
