@@ -66,6 +66,9 @@ func setup(_p := {}) -> void:
 		var ace := Stories.rival_ace(s)
 		if not ace.is_empty():
 			rv.add_child(UI.label("경계 대상: 에이스 %s (%d학년 %s, 종합 %d)" % [PlayerUtil.full_name(ace), PlayerUtil.grade(ace, s["year"]), PlayerUtil.POS_KO[ace["pos"]], PlayerUtil.overall(ace)], UI.BAD, true))
+			var ar := Stories.ace_record_text(s, ace)
+			if ar != "":
+				rv.add_child(UI.label("  " + ar, UI.DIM, true))
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))

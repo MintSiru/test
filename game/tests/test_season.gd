@@ -246,6 +246,7 @@ func _init() -> void:
 	state["popups"].clear()
 	if Stories.rival_ace(state).is_empty():
 		fails.append("라이벌 에이스 없음")
+	print("라이벌 에이스 기록: ", state.get("rivalAceLog", {}).size(), "명 ", Stories.ace_record_text(state, Stories.rival_ace(state)))
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

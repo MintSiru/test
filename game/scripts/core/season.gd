@@ -448,6 +448,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 				Achievements.event(state, "grandSlam")
 		Achievements.check(state)
 		Stories.after_match(state, m.home if f["home"] == u else m.away)
+		Stories.after_rival_match(state, m)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]
@@ -689,6 +690,7 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 		if lines.size() >= 3:
 			Achievements.event(state, "draft3")
 	Offseason.college_draft(state, rng)
+	Stories.rival_draft_news(state)
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
 	var added := 0
 	for pk in picks:

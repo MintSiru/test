@@ -95,5 +95,50 @@ static func monthly_rival_news(state: Dictionary) -> void:
 	_news(state, "info", "[라이벌] %s 에이스 %s(%d학년 %s) — %s" % [school, PlayerUtil.full_name(ace), PlayerUtil.grade(ace, state["year"]), PlayerUtil.POS_KO[ace["pos"]], line])
 
 
+## 라이벌전 뒤: 라이벌 에이스가 우리 상대로 낸 성적 누적 (state.rivalAceLog[선수 id] = {g, bat, pit})
+static func after_rival_match(state: Dictionary, m: MatchEngine) -> void:
+	var rid = state.get("rivalId")
+	if rid == null:
+		return
+	var opp := m.home if m.home.team_id == rid else (m.away if m.away.team_id == rid else null)
+	if opp == null:
+		return
+	var ace := rival_ace(state)
+	if ace.is_empty() or not opp.box.has(ace["id"]):
+		return
+	if state.get("rivalAceLog") == null:
+		state["rivalAceLog"] = {}
+	var alog: Dictionary = state["rivalAceLog"]
+	if not alog.has(ace["id"]):
+		alog[ace["id"]] = {"g": 0, "bat": PlayerUtil.empty_bat(), "pit": PlayerUtil.empty_pit()}
+	var rec: Dictionary = alog[ace["id"]]
+	rec["g"] = int(rec["g"]) + 1
+	PlayerUtil.add_line(rec["bat"], opp.box[ace["id"]]["bat"])
+	PlayerUtil.add_line(rec["pit"], opp.box[ace["id"]]["pit"])
+
+
+## 라이벌 에이스의 우리 상대 통산 한 줄 (기록 없으면 "")
+static func ace_record_text(state: Dictionary, ace: Dictionary) -> String:
+	var alog = state.get("rivalAceLog")
+	if alog == null or not alog.has(ace["id"]):
+		return ""
+	var rec: Dictionary = alog[ace["id"]]
+	var pt: Dictionary = rec["pit"]
+	var b: Dictionary = rec["bat"]
+	if ace["pos"] == "P" and int(pt["outs"]) > 0:
+		return "우리 상대 %d경기 %d승 %d패 평균자책점 %s 탈삼진 %d" % [rec["g"], pt["w"], pt["l"], PlayerUtil.era_str(pt), pt["so"]]
+	return "우리 상대 %d경기 %d타수 %d안타 %d홈런 %d타점" % [rec["g"], b["ab"], b["h"], b["hr"], b["rbi"]]
+
+
+## 드래프트 뒤: 라이벌 에이스가 지명됐으면 소식
+static func rival_draft_news(state: Dictionary) -> void:
+	var ace := rival_ace(state)
+	if ace.is_empty() or ace.get("draft") == null:
+		return
+	var rec := ace_record_text(state, ace)
+	_news(state, "info", "[라이벌] %s 에이스 %s, %s %d라운드 지명.%s" % [state["teams"][ace["teamId"]]["name"], PlayerUtil.full_name(ace),
+		Season.pro_team_name(state, ace["draft"]["teamId"]), ace["draft"]["round"], (" (" + rec + ")") if rec != "" else ""])
+
+
 static func _news(state: Dictionary, kind: String, text: String) -> void:
 	state["news"].append({"date": state["date"], "kind": kind, "text": text})
