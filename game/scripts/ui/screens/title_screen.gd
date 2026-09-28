@@ -28,6 +28,8 @@ func setup(_p := {}) -> void:
 	var v := UI.vbox(6)
 	UI.place(v, 250, 170, 140, 120)
 	add_child(v)
+	# 개발용 --splash: 버튼 없는 화면 → 웹 로딩 이미지(assets/splash.png) 만들기
+	v.visible = not "--splash" in load("res://scripts/main.gd").dev_args()
 	if Game.has_save():
 		v.add_child(UI.button("이어하기", _continue, 140))
 	v.add_child(UI.button("새 게임", func(): Game.goto("new_game"), 140))
