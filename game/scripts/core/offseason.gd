@@ -131,6 +131,7 @@ static func camp_episode(state: Dictionary, rng: Rng) -> void:
 		"obVisit":
 			for p in roster:
 				p["cond"] = mini(2, int(p["cond"]) + 1)
+			TeamMood.change(state, 5)
 		"sprain":
 			who["injury"] = maxi(int(who["injury"]), 7)
 	var text: String = e["text"].replace("{n}", PlayerUtil.full_name(who)).replace("{ob}", ob) + extra
@@ -168,6 +169,7 @@ static func _camp_night(state: Dictionary, key: String) -> String:
 			if undo.has(p["id"]):
 				p["fatigue"] = float(undo[p["id"]])
 	else:
+		TeamMood.change(state, 3)
 		return "푹 쉬며 합숙을 마무리했다. (피로 -20)"
 	match key:
 		"special":
@@ -188,6 +190,7 @@ static func _camp_night(state: Dictionary, key: String) -> String:
 			state["points"] = Shop.points(state) - cost
 			for p in roster:
 				p["cond"] = mini(2, int(p["cond"]) + 1)
+			TeamMood.change(state, 8)
 			return "고기 파티! 선수들이 감독님을 헹가래쳤다. (전원 컨디션 상승, -%dP)" % cost
 	return "푹 쉬며 합숙을 마무리했다. (피로 -20)"
 
@@ -296,6 +299,8 @@ static func choose(state: Dictionary, choice: String, key: String) -> String:
 			return "%s에게 감독 추천서를 써 주었다.\n\"감독님, 꼭 프로에서 보여 드릴게요!\"\n(드래프트 평가 +%d)" % [n, int(data()["counsel"]["recommendBonus"])]
 		"campNight":
 			return _camp_night(state, key)
+		"captain":
+			return TeamMood.set_captain(state, key)
 	return ""
 
 
@@ -338,4 +343,7 @@ static func school_event(state: Dictionary, roster: Array, rng: Rng) -> Dictiona
 				var fs := Training.focus_stats(p)
 				for k in fs:
 					Training.apply_exp(p, k, 5.0 * fs[k], Training.growth_mult(p, k, state["pros"]), rng)
+	# 학교 행사는 팀 분위기도 조금 올린다 (기말고사 제외)
+	if e["key"] != "exam":
+		TeamMood.change(state, 2)
 	return {"date": state["date"], "kind": "good", "text": e["text"]}

@@ -183,6 +183,23 @@ func _init() -> void:
 	state["alumni"].erase(fake)
 	state["pros"] = state["pros"].filter(func(x): return x != late)
 	state["popups"].clear()
+	# 주장 · 팀 분위기
+	var cap := TeamMood.captain(state)
+	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])
+	if cap.is_empty() or PlayerUtil.grade(cap, state["year"]) != 3 or not "새 주장 선출" in popups:
+		fails.append("주장 선출 실패")
+	var m0 := TeamMood.mood(state)
+	TeamMood.after_match(state, true, false, true)
+	if TeamMood.mood(state) <= m0 and m0 < 100:
+		fails.append("승리 후 분위기 그대로")
+	state["teamMood"] = 90
+	var ros := WorldGen.team_players(state, "user")
+	for p in ros:
+		p["cond"] = 0
+	TeamMood.week(state, ros, Rng.new(4))
+	var ups := ros.filter(func(p): return int(p["cond"]) > 0).size()
+	if ups == 0 or TeamMood.mood(state) >= 90:
+		fails.append("분위기 주간 효과 실패 (컨디션 상승 %d, 분위기 %d)" % [ups, TeamMood.mood(state)])
 	# 합숙 선택: 포인트가 있으면 비용을 내고 효과, 없으면 무료 합숙
 	var pts0 := Shop.points(state)
 	state["points"] = 400

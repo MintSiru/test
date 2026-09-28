@@ -21,6 +21,7 @@ static func start_new_game(o: Dictionary) -> Dictionary:
 	var rng := rng_of(state)
 	create_season_competitions(state, rng)
 	Goals.set_goals(state)
+	TeamMood.captain_event(state, 3)
 	save_rng(state, rng)
 	return state
 
@@ -222,6 +223,7 @@ static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 				# 은퇴 전에 올해 개인 타이틀·학교 기록 결산 (3학년 기록이 사라지기 전)
 				Records.season_end(state)
 				_retire_seniors(state, rng)
+				TeamMood.captain_event(state, 2)
 			"proSeason":
 				Idol.pro_season_end(state, rng)
 				_news(state, "idol", "프로야구 시즌이 막을 내렸다.")
@@ -259,6 +261,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)
+	TeamMood.week(state, roster, rng)
 	var dorm := Shop.level(state, "dorm")
 	if dorm > 0:
 		for p in roster:
@@ -423,6 +426,8 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 		res.erase("lineScore")
 	# 연습 경기는 공식 기록에 넣지 않는다 (실전 경험치·피로·투구수 휴식만 반영)
 	var official: bool = comp["kind"] != "friendly"
+	if is_user_game:
+		TeamMood.after_match(state, m.winner == u, m.winner == null, official)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]

@@ -120,7 +120,7 @@ func _fill_detail() -> void:
 	var nm := UI.label("%s  %d학년 %s" % [PlayerUtil.full_name(p), PlayerUtil.grade(p, s["year"]), PlayerUtil.POS_KO[p["pos"]]], UI.ACCENT, false, true)
 	info.add_child(nm)
 	var hand := "%s투%s타" % ["좌" if p["throws"] == "L" else "우", {"L": "좌", "R": "우", "S": "양"}[p["bats"]]]
-	info.add_child(UI.label("%s · 재능 %s · 성격 %s · %s 출신" % [hand, Text.stars(p["talent"]), p["personality"], p["middleSchool"]], UI.TEXT, true))
+	info.add_child(UI.label("%s · 재능 %s · 성격 %s · %s 출신%s" % [hand, Text.stars(p["talent"]), p["personality"], p["middleSchool"], "  [주장]" if st().get("captainId") == p["id"] else ""], UI.TEXT, true))
 	var subs := ", ".join(p["sub"].map(func(x): return PlayerUtil.POS_KO[x]))
 	info.add_child(UI.label("종합 %d  %s" % [PlayerUtil.overall(p), ("서브: " + subs) if subs != "" else ""], PlayerUtil.letter_color(PlayerUtil.overall(p)), true))
 	var cond_row := UI.hbox(6)

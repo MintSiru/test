@@ -139,6 +139,14 @@ func _fill_left() -> void:
 		left_box.add_child(UI.label(Cal.pretty(f["date"]), UI.TEXT, true))
 		left_box.add_child(UI.label(Season.fixture_label(nx["comp"], f), UI.TEXT, true))
 		left_box.add_child(UI.label("vs %s (%s)" % [opp["name"], opp["province"]], UI.GOOD, true))
+	# 팀 분위기 · 주장
+	var md := TeamMood.mood(s)
+	var cap := TeamMood.captain(s)
+	var ml := UI.label("분위기 %s (%d)%s" % [TeamMood.label(md), md, ("  주장 " + PlayerUtil.full_name(cap)) if not cap.is_empty() else ""],
+		UI.GOOD if md >= 62 else (UI.BAD if md <= 38 else UI.TEXT), true)
+	ml.tooltip_text = "팀 분위기: 이기면 오르고 지면 내려갑니다. 70 이상이면 선수 컨디션이 오르기 쉽고, 30 이하면 떨어지기 쉽습니다. 주장이 기준점을 올려 줍니다."
+	ml.mouse_filter = Control.MOUSE_FILTER_STOP
+	left_box.add_child(ml)
 	var rid = s.get("rivalId")
 	if rid != null:
 		var hh := Rival.h2h_of(s, rid)

@@ -116,6 +116,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 합숙 에피소드는 합숙 주 `Season.use_card` 에서 `Offseason.camp_episode`, 대졸 드래프트는 `run_draft` 끝에서 `Offseason.college_draft`.
 - 세이브는 `Game.save_game()` 이 압축 바이너리로 쓴다. 파일을 직접 읽을 때는 `Game.read_save(path)` (이전 JSON 도 읽음).
 - 개발용 인자는 `main.gd` 의 `dev_args()` 로 읽는다 (다른 스크립트에서는 `load("res://scripts/main.gd").dev_args()`) (명령줄 + 웹 주소 `?newgame&days=5&screen=match&notut`). 터치 화면은 버튼을 길게 누르면 `tooltip_text` 가 설명으로 뜬다 → 새 버튼에도 설명을 넣는다.
+- 주장·팀 분위기는 `TeamMood` (`state.teamMood`, `state.captainId`, `state.streak`). 경기 뒤 `after_match`, 매주 `week`, 은퇴식 직후 `captain_event`.
 - 배경음악은 `Music.SONGS` 에 곡을 추가하고 `main.gd` 의 `bgm_for()` 나 화면에서 `Game.bgm(이름)`.
 
 ## 작전 확률 (v0.5)
