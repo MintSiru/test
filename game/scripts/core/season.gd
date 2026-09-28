@@ -265,6 +265,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 		state["scoutPoints"] = mini(6 + int(Manager.bonus(state, "scout")), int(state["scoutPoints"]) + 1)
 	Idol.weekly_pro_news(state, rng)
 	Stories.monthly_rival_news(state)
+	Stories.monthly_talk(state, rng)
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)

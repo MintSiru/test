@@ -59,7 +59,7 @@ xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/
 #   node tools/web_bench.mjs build/web [--throttle=4]   (헤드리스 Chromium, 전역 playwright 사용)
 #   데스크톱 비교: godot --headless --path game -- --webbench
 # 모바일 화면 점검: node tools/mobile_check.mjs build/web /tmp/shots  (8개 기종 세로/가로 스크린샷·화면 사용률·터치·이름 입력)
-#   개발용 인자 --choice=camp / --choice=counsel : 비시즌 선택 팝업 보기
+#   개발용 인자 --choice=camp / --choice=counsel / --choice=talk : 선택 팝업 보기
 ```
 
 Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` 에서 받는다.
@@ -123,6 +123,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 주장·팀 분위기는 `TeamMood` (`state.teamMood`, `state.captainId`, `state.streak`). 경기 뒤 `after_match`, 매주 `week`, 은퇴식 직후 `captain_event`.
 - 감독 성장은 `Manager` (`data/manager.json`, `state.manager`). 특기 효과는 `Manager.bonus(state, key)`. 「수비 코치」는 `TeamSide.err_mul`(실책 확률 배율), 「투수 코치」는 훈련 카드의 `pitMult`. 「작전가」는 우리 팀 `TeamSide.tac` 으로 작전 공식(`steal_prob` 등)에 더해져 안내와 판정이 함께 바뀐다.
 - 업적은 `data/achievements.json` + `Achievements` (사건형은 `Achievements.event(state, key)`, 상태형은 `check` 가 우리 경기 뒤·매주 판정). 명장면은 엔진 `highlights` → `Records.add_highlights`.
+- 선수 면담은 `Stories.monthly_talk` (매달 첫 주, 기본값 격려를 먼저 적용하고 `talkUndo` 로 되돌림).
 - 선수 이야기는 `Stories` (우리 경기 뒤 `after_match` 가 선수의 `recent` 최근 5경기로 불방망이·슬럼프, 매일 `daily` 재활 복귀, 매주 `monthly_rival_news`).
 - 배경음악은 `Music.SONGS` 에 곡을 추가하고 `main.gd` 의 `bgm_for()` 나 화면에서 `Game.bgm(이름)`.
 

@@ -140,5 +140,103 @@ static func rival_draft_news(state: Dictionary) -> void:
 		Season.pro_team_name(state, ace["draft"]["teamId"]), ace["draft"]["round"], (" (" + rec + ")") if rec != "" else ""])
 
 
+# ───────────── 선수 면담 (매달 첫 주) ─────────────
+
+const TALK_OPTS := [["praise", "격려한다"], ["scold", "따끔하게 혼낸다"], ["idol", "동경하는 선수 이야기를 한다"], ["rest", "푹 쉬게 한다"]]
+
+
+## 면담 대상: 슬럼프 → 재활 중 → 컨디션 나쁨 → 무작위 (우리 선수)
+static func talk_target(state: Dictionary, rng: Rng) -> Dictionary:
+	var roster := WorldGen.team_players(state, state["userTeamId"])
+	if roster.is_empty():
+		return {}
+	for f in [func(p): return p.get("slump", false), func(p): return p.get("rehab", false), func(p): return int(p["cond"]) <= -1]:
+		var c: Array = roster.filter(f)
+		if not c.is_empty():
+			return rng.pick(c)
+	return rng.pick(roster)
+
+
+static func monthly_talk(state: Dictionary, rng: Rng) -> void:
+	if Cal.day_of(state["date"]) > 7:
+		return
+	var p := talk_target(state, rng)
+	if p.is_empty():
+		return
+	var n := PlayerUtil.full_name(p)
+	var why := "요즘 방망이가 안 맞아 고민이 많다." if p.get("slump", false) else ("재활 중이라 마음이 조급하다." if p.get("rehab", false) else ("컨디션이 안 좋아 보인다." if int(p["cond"]) <= -1 else "감독과 이야기하고 싶어 한다."))
+	var opts := []
+	for o in TALK_OPTS:
+		if o[0] == "idol" and p.get("idolId") == null:
+			continue
+		opts.append([p["id"] + ":" + o[0], o[1]])
+	# 기본값(격려)을 먼저 적용하고, 다른 걸 고르면 되돌린 뒤 적용
+	state["talkUndo"] = {"id": p["id"], "cond": p["cond"], "fatigue": p["fatigue"], "idolBond": p["idolBond"], "mood": TeamMood.mood(state), "slump": p.get("slump", false)}
+	_talk_apply(state, p, "praise", rng)
+	state["popups"].append({"kind": "choice", "choice": "talk", "title": "선수 면담: " + n, "options": opts,
+		"body": "%s(%d학년 %s, 성격 %s) %s\n지금: 컨디션 %s · 피로 %d%s\n\n어떻게 할까? (열혈·노력파는 꾸중에 힘을 내고, 소심한 선수는 풀이 죽는다)" % [n, PlayerUtil.grade(p, state["year"]), PlayerUtil.POS_KO[p["pos"]], p["personality"], why,
+			["최악", "나쁨", "보통", "좋음", "절호조"][int(p["cond"]) + 2], int(p["fatigue"]), (" · 동경도 %d" % int(p["idolBond"])) if p.get("idolId") != null else ""]})
+
+
+## 면담 효과. 결과 문구
+static func _talk_apply(state: Dictionary, p: Dictionary, key: String, rng: Rng) -> String:
+	var n := PlayerUtil.full_name(p)
+	match key:
+		"praise":
+			p["cond"] = mini(2, int(p["cond"]) + 1)
+			if p.get("slump", false) and rng.chance(0.5):
+				p.erase("slump")
+				return "%s 「감독님 말씀에 힘이 났어요!」 (컨디션 +1, 슬럼프 탈출)" % Text.josa(n, "은/는")
+			return "%s 고개를 끄덕였다. (컨디션 +1)" % Text.josa(n, "은/는")
+		"scold":
+			if p["personality"] in ["열혈", "노력파"]:
+				p["cond"] = mini(2, int(p["cond"]) + 2)
+				p.erase("slump")
+				var fs := Training.focus_stats(p)
+				for k in fs:
+					Training.apply_exp(p, k, 6.0 * fs[k], Training.growth_mult(p, k, state["pros"]), rng)
+				return "%s 눈빛이 달라졌다! 「다시 해 보겠습니다!」 (컨디션 +2, 개인 연습 성장)" % Text.josa(n, "은/는")
+			if p["personality"] == "소심":
+				p["cond"] = maxi(-2, int(p["cond"]) - 1)
+				TeamMood.change(state, -2)
+				return "%s 풀이 죽었다... (컨디션 -1, 팀 분위기 -2)" % Text.josa(n, "은/는")
+			return "%s 묵묵히 들었다. (변화 없음)" % Text.josa(n, "은/는")
+		"idol":
+			p["idolBond"] = clampi(int(p["idolBond"]) + 8, 0, 100)
+			var pop = Idol.check_milestones(state, p)
+			if pop != null:
+				state["popups"].append(pop)
+			return "%s 동경하는 선수 이야기에 신이 났다. (동경도 +8)" % Text.josa(n, "은/는")
+		"rest":
+			p["fatigue"] = maxf(0.0, p["fatigue"] - 30.0)
+			return "%s 오랜만에 푹 쉬었다. (피로 -30)" % Text.josa(n, "은/는")
+	return ""
+
+
+static func choose_talk(state: Dictionary, choice_key: String) -> String:
+	var parts := choice_key.split(":")
+	var undo = state.get("talkUndo")
+	state.erase("talkUndo")
+	if parts.size() != 2 or undo == null or undo["id"] != parts[0]:
+		return ""
+	var p = state["players"].get(parts[0])
+	if p == null:
+		return ""
+	if parts[1] == "praise":
+		return "%s 고개를 끄덕였다." % Text.josa(PlayerUtil.full_name(p), "은/는")
+	# 기본값(격려) 되돌리기
+	p["cond"] = int(undo["cond"])
+	p["fatigue"] = float(undo["fatigue"])
+	p["idolBond"] = int(undo["idolBond"])
+	state["teamMood"] = int(undo["mood"])
+	if undo["slump"]:
+		p["slump"] = true
+	var rng := Season.rng_of(state)
+	var msg := _talk_apply(state, p, parts[1], rng)
+	Season.save_rng(state, rng)
+	state["news"].append({"date": state["date"], "kind": "info", "text": "[면담] " + msg})
+	return msg
+
+
 static func _news(state: Dictionary, kind: String, text: String) -> void:
 	state["news"].append({"date": state["date"], "kind": kind, "text": text})

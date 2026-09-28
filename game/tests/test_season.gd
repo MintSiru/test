@@ -256,6 +256,26 @@ func _init() -> void:
 		fails.append("우승 기록 실패")
 	state["trophies"].pop_back()
 	state["popups"].pop_back()
+	# 선수 면담: 달마다 한 번, 기본값(격려) → 다른 선택이면 되돌리고 적용
+	var talks: int = popups.filter(func(t): return str(t).begins_with("선수 면담")).size()
+	print("선수 면담 팝업: ", talks)
+	if talks < 10:
+		fails.append("선수 면담 부족 %d" % talks)
+	state["date"] = Cal.add_days(state["date"], -(Cal.day_of(state["date"]) - 1))
+	state["popups"].clear()
+	Stories.monthly_talk(state, Rng.new(8))
+	var tp: Dictionary = state["popups"][0] if not state["popups"].is_empty() else {}
+	if tp.is_empty():
+		fails.append("면담 팝업 없음")
+	else:
+		var tid: String = str(tp["options"][0][0]).split(":")[0]
+		var tpl: Dictionary = state["players"][tid]
+		var fat0: float = state["talkUndo"]["fatigue"]
+		var cond0: int = int(state["talkUndo"]["cond"])
+		Offseason.choose(state, "talk", tid + ":rest")
+		if int(tpl["cond"]) != cond0 or absf(tpl["fatigue"] - maxf(0.0, fat0 - 30.0)) > 0.01 or state.has("talkUndo"):
+			fails.append("면담 선택 반영 실패")
+	state["popups"].clear()
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

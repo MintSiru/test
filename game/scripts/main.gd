@@ -82,6 +82,8 @@ func _ready() -> void:
 		if a2.begins_with("--choice=") and not Game.state.is_empty():
 			if a2.ends_with("camp"):
 				Offseason.camp_event(Game.state)
+			elif a2.ends_with("talk"):
+				Stories.monthly_talk(Game.state, Rng.new(3))
 			else:
 				Offseason.counsel_event(Game.state)
 			drain_popups()
