@@ -221,7 +221,7 @@ static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 			"retire":
 				# 은퇴 전에 올해 개인 타이틀·학교 기록 결산 (3학년 기록이 사라지기 전)
 				Records.season_end(state)
-				_retire_seniors(state)
+				_retire_seniors(state, rng)
 			"proSeason":
 				Idol.pro_season_end(state, rng)
 				_news(state, "idol", "프로야구 시즌이 막을 내렸다.")
@@ -315,6 +315,8 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 		Training.train_player(p, eff, state["pros"], rng, report, false, state.get("facilities"))
 	state.erase("trainingBonus")
 	state.erase("awakenBonus")
+	if state.has("campKey"):
+		Offseason.camp_episode(state, rng)
 	for n in Lineup.weekly_position_practice(state, card):
 		state["news"].append(n)
 	if card["kind"] == "scout":
@@ -642,6 +644,7 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 	if not lines.is_empty():
 		Goals.event(state, "draft", lines.size())
+	Offseason.college_draft(state, rng)
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
 	var added := 0
 	for pk in picks:
@@ -666,8 +669,11 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 		"body": ("우리 학교에서 프로 선수가 탄생했다!\n\n" + "\n".join(lines)) if not lines.is_empty() else "올해는 우리 학교에서 지명된 선수가 없었다...\n3학년들은 대학 진학을 준비한다."})
 
 
-static func _retire_seniors(state: Dictionary) -> void:
+static func _retire_seniors(state: Dictionary, rng: Rng) -> void:
 	var names := []
+	var ranks := {}
+	for x in Offseason.senior_outlook(state):
+		ranks[x["p"]["id"]] = int(x["rank"])
 	for t in state["teams"].values():
 		var keep := []
 		for id in t["playerIds"]:
@@ -677,9 +683,10 @@ static func _retire_seniors(state: Dictionary) -> void:
 			if PlayerUtil.grade(p, state["year"]) >= 3:
 				if t["isUser"]:
 					var dr = p.get("draft")
-					names.append("%s (%s)" % [PlayerUtil.full_name(p), (pro_team_name(state, dr["teamId"]) + " 입단") if dr != null else "대학 진학"])
-					state["alumni"].append({"playerId": p["id"], "name": PlayerUtil.full_name(p), "gradYear": state["year"], "pos": p["pos"],
-						"draft": {"teamId": dr["teamId"], "round": dr["round"]} if dr != null else null, "hs": Records.career_summary(p)})
+					var path = null if dr != null else Offseason.after_school(state, p, int(ranks.get(p["id"], 9999)), rng)
+					names.append("%s (%s)" % [PlayerUtil.full_name(p), (pro_team_name(state, dr["teamId"]) + " 입단") if dr != null else Offseason.path_text(path)])
+					state["alumni"].append({"playerId": p["id"], "name": PlayerUtil.full_name(p), "sur": p["sur"], "given": p["given"], "gradYear": state["year"], "pos": p["pos"],
+						"draft": {"teamId": dr["teamId"], "round": dr["round"]} if dr != null else null, "path": path, "hs": Records.career_summary(p)})
 				state["players"].erase(id)
 			else:
 				keep.append(id)
@@ -720,6 +727,7 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 			t["playerIds"].append(p["id"])
 		t["prestige"] = clampi(roundi(t["prestige"] * 0.9 + 4.5), 10, 95)
 	Rival.season_update(state)
+	Offseason.alumni_news(state, rng)
 	var joined := Scouting.enroll(state, rng)
 	WorldGen.user_team(state).erase("lineup")
 	state["reputation"] = clampi(roundi(state["reputation"] * 0.92 + 1.6), 0, 100)

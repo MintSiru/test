@@ -146,6 +146,43 @@ func _init() -> void:
 	print("학교 행사 소식: ", school_news)
 	if school_news == 0:
 		fails.append("학교 행사 없음")
+	# 합숙 에피소드 · 마지막 밤 선택
+	var camp_news: int = state["news"].filter(func(n): return n["text"].begins_with("[합숙]")).size()
+	print("합숙 에피소드 소식: ", camp_news)
+	if camp_news != 1 or not "합숙 마지막 밤" in popups:
+		fails.append("합숙 에피소드 없음 (%d)" % camp_news)
+	# 마지막 밤: 기본값(푹 쉰다) → 고기 파티로 바꾸면 피로가 되돌아가고 포인트가 빠진다
+	var r0: Dictionary = WorldGen.team_players(state, "user")[0]
+	r0["fatigue"] = 50.0
+	Offseason._camp_night_apply(state, "rest")
+	var pts_n := Shop.points(state)
+	state["points"] = maxi(pts_n, 40)
+	var pts1 := Shop.points(state)
+	if absf(r0["fatigue"] - 30.0) > 0.01:
+		fails.append("마지막 밤 기본값 실패")
+	Offseason.choose(state, "campNight", "party")
+	if absf(r0["fatigue"] - 50.0) > 0.01 or Shop.points(state) != pts1 - 40 or state.has("campNightUndo"):
+		fails.append("마지막 밤 선택 반영 실패")
+	state["points"] = pts_n
+	# 졸업 후 진로: 지명 못 받은 졸업생은 대학·독립리그, 4년 뒤 대졸 드래프트
+	var no_draft: Array = state["alumni"].filter(func(a): return a.get("draft") == null)
+	var with_path: Array = no_draft.filter(func(a): return a.get("path") != null)
+	print("졸업생 %d명 중 미지명 %d명, 진로 %s" % [state["alumni"].size(), no_draft.size(), with_path.map(func(a): return Offseason.path_text(a["path"]))])
+	if no_draft.size() != with_path.size() or (not no_draft.is_empty() and not no_draft[0].has("sur")):
+		fails.append("졸업생 진로 없음")
+	var fake := {"playerId": "zz", "name": "남궁민수", "sur": "남궁", "given": "민수", "gradYear": int(state["year"]) - 4, "pos": "SS", "draft": null,
+		"path": {"kind": "uni", "school": "한빛대", "chance": 1.0}, "hs": {}}
+	state["alumni"].append(fake)
+	var npros: int = state["pros"].size()
+	var cl := Offseason.college_draft(state, Rng.new(5))
+	var late := Records.pro_of(state, fake)
+	if cl.size() < 1 or fake.get("draft") == null or state["pros"].size() != npros + cl.size() or late.is_empty() or late["sur"] != "남궁":
+		fails.append("대졸 드래프트 실패 %s" % [cl])
+	if not Offseason.college_draft(state, Rng.new(5)).is_empty():
+		fails.append("대졸 드래프트 중복")
+	state["alumni"].erase(fake)
+	state["pros"] = state["pros"].filter(func(x): return x != late)
+	state["popups"].clear()
 	# 합숙 선택: 포인트가 있으면 비용을 내고 효과, 없으면 무료 합숙
 	var pts0 := Shop.points(state)
 	state["points"] = 400

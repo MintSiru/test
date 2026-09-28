@@ -132,7 +132,9 @@ func _hall() -> void:
 		var hs: Dictionary = al.get("hs", {})
 		var head := "%d 졸업 %s (%s)" % [al["gradYear"], al["name"], PlayerUtil.POS_KO[al["pos"]]]
 		if d != null:
-			head += " → %s %d라운드" % [Season.pro_team_name(s, d["teamId"]), d["round"]]
+			head += " → %s %d라운드%s" % [Season.pro_team_name(s, d["teamId"]), d["round"], (" (%d년 %s 거쳐)" % [int(al["gradYear"]) + int(Offseason.data()["afterSchool"]["collegeDraftYears"]), Offseason.path_text(al.get("path"))]) if d.get("late", false) else ""]
+		elif al.get("path") != null:
+			head += " → " + Offseason.path_text(al["path"])
 		var star: bool = d != null or not hs.get("titles", []).is_empty()
 		body.add_child(UI.label(("★ " if star else "  ") + head, UI.GOOD if d != null else (UI.ACCENT if star else UI.TEXT), true))
 		if not hs.is_empty():
@@ -148,7 +150,7 @@ func _hall() -> void:
 				body.add_child(fl)
 		var pro := Records.pro_of(s, al)
 		if not pro.is_empty():
-			var yrs: int = int(s["year"]) - int(al["gradYear"])
+			var yrs: int = int(s["year"]) - int(al["gradYear"]) - (int(Offseason.data()["afterSchool"]["collegeDraftYears"]) if d.get("late", false) else 0)
 			body.add_child(UI.label("     프로 %s: %s%s" % ["신인" if yrs <= 0 else "%d년차" % (yrs + 1), pro.get("line", "-"), " (은퇴)" if pro.get("retired", false) else ""], UI.IDOL, true))
 
 
