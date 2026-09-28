@@ -111,3 +111,50 @@ static func pick_starter(players: Array, date: String, rotation: Array = []):
 	var any := players.filter(func(p): return can_pitch_on(p, date))
 	any.sort_custom(func(a, b): return a["r"]["arm"] > b["r"]["arm"])
 	return any[0] if not any.is_empty() else (players[0] if not players.is_empty() else null)
+
+
+# ───────────── 포지션 연습 · 투타 겸업 (Godot 전용) ─────────────
+
+const PRACTICE_POS := ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+## 어려운 위치일수록 오래 걸린다 (주간 진행도 배율)
+const PRACTICE_EASE := {"C": 0.6, "SS": 0.7, "2B": 0.8, "CF": 0.8, "3B": 0.9, "1B": 1.3, "LF": 1.1, "RF": 1.0}
+const TWO_WAY_BAT := 40.0
+
+
+## 연습할 수 있는 수비 위치 (야수만, 주 포지션·서브 포지션 제외)
+static func practice_options(p: Dictionary) -> Array:
+	if p["pos"] == "P":
+		return []
+	return PRACTICE_POS.filter(func(x): return x != p["pos"] and not x in p["sub"])
+
+
+## 투타 겸업 가능: 타격이 야수 평균 이상인 투수
+static func can_two_way(p: Dictionary) -> bool:
+	return p["pos"] == "P" and PlayerUtil.bat_value(p["r"]) >= TWO_WAY_BAT
+
+
+## 주간 훈련 뒤 포지션 연습 진행 (우리 팀). 소식 목록 반환
+static func weekly_position_practice(state: Dictionary, card: Dictionary) -> Array:
+	var news := []
+	for p in WorldGen.team_players(state, state["userTeamId"]):
+		var pos = p.get("practicePos")
+		if pos == null or p["injury"] > 0:
+			continue
+		var gain: float = (10.0 + float(card["value"]) * 2.0 + (10.0 if card["kind"] == "defense" else 0.0)) * float(PRACTICE_EASE.get(pos, 1.0))
+		p["practiceProg"] = float(p.get("practiceProg", 0.0)) + gain
+		if p["practiceProg"] >= 100.0:
+			if not pos in p["sub"]:
+				p["sub"].append(pos)
+			p.erase("practicePos")
+			p.erase("practiceProg")
+			news.append({"date": state["date"], "kind": "good", "text": "%s %s 수비를 익혔다! (서브 포지션)" % [Text.josa(PlayerUtil.full_name(p), "이/가"), PlayerUtil.POS_KO[pos]]})
+	return news
+
+
+## 주 포지션을 서브 포지션 중 하나로 바꾼다 (이전 주 포지션은 서브로)
+static func set_main_pos(p: Dictionary, pos: String) -> void:
+	if not pos in p["sub"] or p["pos"] == "P":
+		return
+	p["sub"].erase(pos)
+	p["sub"].append(p["pos"])
+	p["pos"] = pos

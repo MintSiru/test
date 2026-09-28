@@ -167,10 +167,50 @@ func _fill_detail() -> void:
 	fv.add_child(UI.option(opts.map(func(x): return Training.FOCUS_KO[x]), maxi(0, cur), func(i):
 		p["focus"] = opts[i]))
 
+	# 포지션 연습 (야수) · 투타 겸업 (투수)
+	var pv := UI.vbox(1)
+	UI.place(pv, 256, 86, 118, 30)
+	root.add_child(pv)
+	if p["pos"] == "P":
+		var ok := Lineup.can_two_way(p)
+		var on: bool = p.get("twoWay", false)
+		var tb := UI.button("투타 겸업: %s" % ("켬" if on else "끔"), func():
+			p["twoWay"] = not on
+			_fill_detail(), 118, true)
+		tb.disabled = not ok and not on
+		tb.tooltip_text = "선발로 나오는 날에도 지명타자로 타석에 선다. 강판 뒤에도 지명타자로 남는다." if ok else "타격이 야수 평균 이상인 투수만 (타격 %d / 필요 %d)" % [roundi(PlayerUtil.bat_value(p["r"])), roundi(Lineup.TWO_WAY_BAT)]
+		if on:
+			tb.add_theme_color_override("font_color", UI.ACCENT)
+		pv.add_child(UI.label("투타 겸업" + ("" if ok else " (타격 부족)"), UI.DIM, true))
+		pv.add_child(tb)
+	else:
+		var prac = p.get("practicePos")
+		pv.add_child(UI.label("포지션 연습" + ((" %d%%" % roundi(float(p.get("practiceProg", 0.0)))) if prac != null else ""), UI.DIM, true))
+		var popts: Array = Lineup.practice_options(p)
+		var labels := ["안 함"] + popts.map(func(x): return PlayerUtil.POS_KO[x])
+		var idx := 0 if prac == null else popts.find(prac) + 1
+		var prow := UI.hbox(2)
+		pv.add_child(prow)
+		prow.add_child(UI.option(labels, maxi(0, idx), func(i):
+			if i == 0:
+				p.erase("practicePos")
+			elif p.get("practicePos") != popts[i - 1]:
+				p["practicePos"] = popts[i - 1]
+				p["practiceProg"] = 0.0
+			_fill_detail()))
+		# 서브 포지션을 주 포지션으로
+		if not p["sub"].is_empty():
+			var sub_list: Array = p["sub"].duplicate()
+			prow.add_child(UI.option(["주 포지션"] + sub_list.map(func(x): return PlayerUtil.POS_KO[x] + "로"), 0, func(i):
+				if i > 0:
+					Lineup.set_main_pos(p, sub_list[i - 1])
+					Game.main.show_modal("포지션 변경", "%s의 주 포지션을 %s(으)로 바꿨다." % [PlayerUtil.full_name(p), PlayerUtil.POS_KO[p["pos"]]])
+					_fill_list()))
+
 	# 특수능력 (색: 금특 노랑 · 긍정 파랑 · 부정 빨강, 눌러서 설명 보기)
 	var ab := UI.vbox(2)
 	var abs_ := UI.scroll(ab)
-	UI.place(abs_, 256, 86, 118, 76)
+	UI.place(abs_, 256, 118, 118, 44)
 	root.add_child(abs_)
 	var ah := UI.hbox(4)
 	ah.add_child(UI.label("특수능력", UI.DIM, true))

@@ -314,6 +314,8 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 		Training.train_player(p, eff, state["pros"], rng, report, false, state.get("facilities"))
 	state.erase("trainingBonus")
 	state.erase("awakenBonus")
+	for n in Lineup.weekly_position_practice(state, card):
+		state["news"].append(n)
 	if card["kind"] == "scout":
 		state["scoutPoints"] = mini(8, int(state["scoutPoints"]) + 2)
 	hand.erase(card)

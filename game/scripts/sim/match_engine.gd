@@ -46,9 +46,12 @@ class TeamSide:
 			order.append(s["playerId"])
 			pos_of[s["playerId"]] = s["pos"]
 		pitcher_id = input["pitcherId"]
-		pos_of[pitcher_id] = "P"
+		# 투타 겸업: 선발 투수가 지명타자로 타순에 있으면 타순의 위치(DH)를 그대로 둔다
+		if not pitcher_id in order:
+			pos_of[pitcher_id] = "P"
 		used = order.duplicate()
-		used.append(pitcher_id)
+		if not pitcher_id in used:
+			used.append(pitcher_id)
 		for id in used:
 			box[id] = {"bat": PlayerUtil.empty_bat(), "pit": PlayerUtil.empty_pit()}
 		for id in order:

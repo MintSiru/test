@@ -28,7 +28,8 @@ static func build(team: Dictionary, roster: Array, date: String, opts: Dictionar
 			for p in healthy:
 				if p["id"] == s["playerId"]:
 					ok = true
-			if not ok or s["playerId"] == starter["id"]:
+			# 선발 투수는 타순에 넣을 수 없다 (투타 겸업 선수는 지명타자로 가능)
+			if not ok or (s["playerId"] == starter["id"] and not (starter.get("twoWay", false) and s["pos"] == "DH")):
 				valid = false
 			ids[s["playerId"]] = true
 			poss[s["pos"]] = true
@@ -54,6 +55,17 @@ static func build(team: Dictionary, roster: Array, date: String, opts: Dictionar
 					_lineup_cache.clear()
 				lineup = Lineup.auto_lineup(healthy, [starter["id"]])
 				_lineup_cache[key] = lineup
+	# 투타 겸업 선발 투수: 자동 오더일 때 지명타자보다 잘 치면 지명타자로 (우리 팀만)
+	if not valid and team.get("isUser", false) and starter.get("twoWay", false):
+		lineup = lineup.duplicate(true)
+		for sl in lineup:
+			if sl["pos"] == "DH":
+				var dh = null
+				for p in healthy:
+					if p["id"] == sl["playerId"]:
+						dh = p
+				if dh == null or PlayerUtil.bat_value(starter["r"]) > PlayerUtil.bat_value(dh["r"]):
+					sl["playerId"] = starter["id"]
 	var bonus: int = opts.get("condBonus", 0)
 	var sims := healthy.map(func(p): return SimPlayer.from_player(p, date, bonus))
 	return {

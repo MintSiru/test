@@ -89,6 +89,47 @@ func _init() -> void:
 		fails.append("학교 기록 없음")
 	if state["alumni"].is_empty() or not state["alumni"][0].has("hs"):
 		fails.append("졸업생 고교 통산 없음")
+	# 포지션 연습: 1루 연습 → 몇 주 뒤 서브 포지션, 주 포지션 바꾸기
+	var fielder: Dictionary = WorldGen.team_players(state, state["userTeamId"]).filter(func(x): return x["pos"] != "P" and x["pos"] != "1B" and not "1B" in x["sub"] and x["injury"] <= 0)[0]
+	fielder["practicePos"] = "1B"
+	var weeks := 0
+	while fielder.has("practicePos") and weeks < 20:
+		Lineup.weekly_position_practice(state, {"kind": "defense", "value": 3})
+		weeks += 1
+	print("1루 연습 %d주 → 서브 %s" % [weeks, fielder["sub"]])
+	if not "1B" in fielder["sub"] or weeks > 8:
+		fails.append("포지션 연습 실패")
+	var old_pos: String = fielder["pos"]
+	Lineup.set_main_pos(fielder, "1B")
+	if fielder["pos"] != "1B" or not old_pos in fielder["sub"]:
+		fails.append("주 포지션 변경 실패")
+	# 투타 겸업: 선발 투수가 지명타자로 타석에 서고, 강판 뒤에도 타순에 남는다
+	var tw_team: Dictionary = state["teams"][state["userTeamId"]]
+	var roster2 := WorldGen.team_players(state, tw_team["id"]).filter(func(x): return x["injury"] <= 0)
+	var ace: Dictionary = roster2.filter(func(x): return x["pos"] == "P")[0]
+	ace["twoWay"] = true
+	ace.erase("restUntil")
+	var lu := Lineup.auto_lineup(roster2, [ace["id"]])
+	for sl in lu:
+		if sl["pos"] == "DH":
+			sl["playerId"] = ace["id"]
+	var side := SideBuilder.build(tw_team, roster2, "2026-12-01", {"lineup": lu, "starterId": ace["id"]})
+	var opp_id: String = state["teams"].keys().filter(func(k): return k != tw_team["id"])[0]
+	var opp := SideBuilder.build(state["teams"][opp_id], WorldGen.team_players(state, opp_id), "2026-12-01")
+	var tm := MatchEngine.new(side, opp, Rng.new(4))
+	var us := tm.home
+	var tw_ok: bool = side["pitcherId"] == ace["id"] and ace["id"] in us.order and us.pos_of[ace["id"]] == "DH"
+	for i in 60:
+		if tm.over:
+			break
+		tm.step(MatchAI.orders(tm))
+	var reliever := MatchAI.relievers(us)
+	if not reliever.is_empty():
+		tm.change_pitcher(us, reliever[0].id)
+	tw_ok = tw_ok and ace["id"] in us.order and int(us.box[ace["id"]]["bat"]["pa"]) > 0 and int(us.box[ace["id"]]["pit"]["np"]) > 0
+	if not tw_ok:
+		fails.append("투타 겸업 실패")
+	ace.erase("twoWay")
 	# 비시즌 콘텐츠: 진로 상담·합숙 선택 팝업, 학교 행사 소식
 	if not "3학년 진로 상담" in popups or not "동계 합숙 장소" in popups:
 		fails.append("비시즌 선택 팝업 없음")
