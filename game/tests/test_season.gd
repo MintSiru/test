@@ -130,6 +130,11 @@ func _init() -> void:
 	if not tw_ok:
 		fails.append("투타 겸업 실패")
 	ace.erase("twoWay")
+	# CPU 학교 흥망: 새 시즌에 신흥 강호 1~2곳
+	var risen: int = state["teams"].values().filter(func(t): return t.get("story") != null and t["story"]["tag"] == "신흥 강호").size()
+	print("신흥 강호: ", risen)
+	if risen < 1:
+		fails.append("CPU 학교 흥망 없음")
 	# 비시즌 콘텐츠: 진로 상담·합숙 선택 팝업, 학교 행사 소식
 	if not "3학년 진로 상담" in popups or not "동계 합숙 장소" in popups:
 		fails.append("비시즌 선택 팝업 없음")

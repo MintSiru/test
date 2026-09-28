@@ -51,6 +51,12 @@ func setup(_p := {}) -> void:
 	var theirs := WorldGen.team_players(s, opp["id"])
 	var r := opp["seasonRecord"] as Dictionary
 	rv.add_child(UI.label("%s · 전통 %d · 시즌 %d승 %d패" % [opp["province"], opp["prestige"], r["w"], r["l"]], UI.TEXT, true))
+	# CPU 학교 흥망 소식 (최근 2년)
+	var story = opp.get("story")
+	if story != null and int(st()["year"]) - int(story["year"]) <= 1:
+		rv.add_child(UI.wrap_label("[%s] %s" % [story["tag"], story["text"]], 236, UI.GOOD if story["tag"] == "신흥 강호" else UI.BAD, true))
+	if int(opp.get("facLevel", 0)) > 0:
+		rv.add_child(UI.label("시설 Lv%d (훈련 효과 +%d%%)" % [int(opp["facLevel"]), int(opp["facLevel"]) * 20], UI.DIM, true))
 	var hh := Rival.h2h_of(s, opp["id"])
 	var tst := Rival.team_stats(s, opp["id"])
 	rv.add_child(UI.label("상대 전적 %d승 %d패 %d무" % [hh["w"], hh["l"], hh["d"]], UI.TEXT, true))

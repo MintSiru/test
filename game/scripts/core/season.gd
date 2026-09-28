@@ -289,8 +289,9 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 		if t["isUser"]:
 			continue
 		var card := Training.draw_card(rng, "cpu")
+		var fac = Fortune.cpu_fac(t)
 		for p in WorldGen.team_players(state, t["id"]):
-			Training.train_player(p, card, state["pros"], rng, null, true)
+			Training.train_player(p, card, state["pros"], rng, null, true, fac)
 	if state["news"].size() > 300:
 		state["news"] = state["news"].slice(state["news"].size() - 300)
 
@@ -707,6 +708,8 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 		p["season"] = {"bat": PlayerUtil.empty_bat(), "pit": PlayerUtil.empty_pit()}
 		p["fatigue"] = 0
 		p.erase("restUntil")
+	# CPU 학교 흥망 (지난 시즌 성적이 지워지기 전에)
+	Fortune.season_start(state, rng)
 	for t in state["teams"].values():
 		t["seasonPoints"] = 0
 		t["seasonRecord"] = {"w": 0, "l": 0, "d": 0}
