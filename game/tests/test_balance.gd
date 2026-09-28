@@ -2,8 +2,10 @@ extends SceneTree
 ## godot --headless -s tests/test_balance.gd
 
 
-func run_many(n: int, qa: float, qb: float, seed_val: int, quiet := false) -> Dictionary:
+## team_seed 를 주면 팀은 그 시드로 따로 만든다 (두 조건을 같은 팀들로 비교할 때)
+func run_many(n: int, qa: float, qb: float, seed_val: int, quiet := false, team_seed := -1) -> Dictionary:
 	var rng := Rng.new(seed_val)
+	var trng := rng if team_seed < 0 else Rng.new(team_seed)
 	var bat := PlayerUtil.empty_bat()
 	var runs := 0
 	var wins_a := 0
@@ -12,8 +14,8 @@ func run_many(n: int, qa: float, qb: float, seed_val: int, quiet := false) -> Di
 	var pitches := 0
 	var t0 := Time.get_ticks_msec()
 	for i in n:
-		var a := TestUtil.make_team(rng, "A%d" % i, qa)
-		var b := TestUtil.make_team(rng, "B%d" % i, qb)
+		var a := TestUtil.make_team(trng, "A%d" % i, qa)
+		var b := TestUtil.make_team(trng, "B%d" % i, qb)
 		var m := MatchEngine.new(SideBuilder.build(a["team"], a["players"], "2026-05-01"), SideBuilder.build(b["team"], b["players"], "2026-05-01"), rng)
 		m.quiet = quiet
 		MatchAI.play_out(m)
@@ -36,12 +38,13 @@ func run_many(n: int, qa: float, qb: float, seed_val: int, quiet := false) -> Di
 
 
 ## A 팀 선수(타자 또는 투수) 전원에게 능력을 준 경기 N번. 타자 능력은 A 타격, 투수 능력은 B 타격을 본다
-func run_ability(ability: String, for_pitchers: bool, n := 150, seed_val := 11) -> Dictionary:
+func run_ability(ability: String, for_pitchers: bool, n := 200, seed_val := 11) -> Dictionary:
 	var rng := Rng.new(seed_val)
+	var trng := Rng.new(seed_val + 500) # 모든 능력 비교에 같은 팀들을 쓴다
 	var bat := PlayerUtil.empty_bat()
 	for i in n:
-		var a := TestUtil.make_team(rng, "A%d" % i, 55)
-		var b := TestUtil.make_team(rng, "B%d" % i, 55)
+		var a := TestUtil.make_team(trng, "A%d" % i, 55)
+		var b := TestUtil.make_team(trng, "B%d" % i, 55)
 		for p in a["players"]:
 			p["abilities"] = [ability] if ability != "" and (p["pos"] == "P") == for_pitchers else []
 		for p in b["players"]:
@@ -81,6 +84,23 @@ func ability_checks() -> Array:
 	]
 
 
+## 관전 경기(실황 있음)에서 특수능력 발동 문구가 경기당 몇 번 나오는지
+func ability_notes_per_game(n := 80) -> float:
+	var trng := Rng.new(5)
+	var rng := Rng.new(6)
+	var total := 0
+	for i in n:
+		var a := TestUtil.make_team(trng, "A%d" % i, 55)
+		var b := TestUtil.make_team(trng, "B%d" % i, 55)
+		var m := MatchEngine.new(SideBuilder.build(a["team"], a["players"], "2026-05-01"), SideBuilder.build(b["team"], b["players"], "2026-05-01"), rng)
+		while not m.over:
+			if not MatchAI.pitching_change(m, m.def()):
+				MatchAI.mound_visit(m, m.def())
+			if m.step(MatchAI.orders(m)).get("abilityNote", "") != "":
+				total += 1
+	return total / float(n)
+
+
 func _init() -> void:
 	var fails := 0
 	var even := run_many(150, 55, 55, 1)
@@ -97,8 +117,8 @@ func _init() -> void:
 	checks.append([strong["winA"] > 0.7, "strong wins"])
 	checks.append_array(ability_checks())
 	# CPU끼리 경기 빠른 경로(quiet)는 일반 경로와 같은 분포여야 한다
-	var normal := run_many(400, 55, 55, 5)
-	var fast := run_many(400, 55, 55, 5, true)
+	var normal := run_many(400, 55, 55, 5, false, 99)
+	var fast := run_many(400, 55, 55, 5, true, 99)
 	print("normal ", normal)
 	print("fast   ", fast)
 	checks.append([absf(normal["runsPerTeamGame"] - fast["runsPerTeamGame"]) < 0.4, "fast runs"])
@@ -107,6 +127,9 @@ func _init() -> void:
 	checks.append([absf(normal["bb"] - fast["bb"]) < 0.012, "fast bb"])
 	checks.append([absf(normal["hr"] - fast["hr"]) < 0.06, "fast hr"])
 	checks.append([absf(normal["pitches"] - fast["pitches"]) < 8, "fast pitches"])
+	var notes := ability_notes_per_game()
+	print("특수능력 발동 문구: 경기당 %.1f회" % notes)
+	checks.append([notes >= 2.0 and notes <= 6.0, "ability notes 2~6/game"])
 	for c in checks:
 		if not c[0]:
 			print("FAIL: ", c[1])

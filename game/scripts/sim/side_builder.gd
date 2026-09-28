@@ -3,6 +3,10 @@ extends RefCounted
 ## 팀·선수 데이터 → 경기 입력 (web/src/sim/build.ts 이식)
 
 
+## CPU 팀 자동 오더 캐시: 능력치는 주 1회(월요일 훈련)만 바뀌므로 같은 주(월요일 기준)·같은 출전 가능 선수면 결과가 같다
+static var _lineup_cache := {}
+
+
 static func build(team: Dictionary, roster: Array, date: String, opts: Dictionary = {}) -> Dictionary:
 	var healthy := roster.filter(func(p): return p["injury"] <= 0)
 	var starter = null
@@ -31,7 +35,25 @@ static func build(team: Dictionary, roster: Array, date: String, opts: Dictionar
 		if ids.size() != 9 or poss.size() != 9:
 			valid = false
 	if not valid:
-		lineup = Lineup.auto_lineup(healthy, [starter["id"]])
+		if team.get("isUser", false):
+			lineup = Lineup.auto_lineup(healthy, [starter["id"]])
+		else:
+			var ids := PackedStringArray()
+			for p in healthy:
+				ids.append(p["id"])
+			var key := "%s|%s|%s" % [team["id"], Cal.add_days(date, -((Cal.weekday(date) + 6) % 7)), ",".join(ids)]
+			lineup = _lineup_cache.get(key)
+			# 선발 투수는 타순에서 빠져야 한다 (보통 투수는 타순에 없으므로 대부분 그대로 쓴다)
+			if lineup != null:
+				for sl in lineup:
+					if sl["playerId"] == starter["id"]:
+						lineup = null
+						break
+			if lineup == null:
+				if _lineup_cache.size() > 3000:
+					_lineup_cache.clear()
+				lineup = Lineup.auto_lineup(healthy, [starter["id"]])
+				_lineup_cache[key] = lineup
 	var bonus: int = opts.get("condBonus", 0)
 	var sims := healthy.map(func(p): return SimPlayer.from_player(p, date, bonus))
 	return {

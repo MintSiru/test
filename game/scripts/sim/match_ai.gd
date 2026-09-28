@@ -106,10 +106,11 @@ static func pitching_change(m: MatchEngine, side: MatchEngine.TeamSide) -> bool:
 		return false
 	var p: SimPlayer = side.by_id[side.pitcher_id]
 	var np: int = side.pitch_count.get(p.id, 0)
-	var eff := m.pitcher_eff(p, side)
+	# 피로 = 투구수 - 스태미나 한도 (pitcher_eff 와 같은 계산, 스태미나 능력은 조건 없는 효과)
+	var over_ := maxf(0.0, np - (40.0 + p.sta * 0.85 * (1.0 + p.fx_pit.get("sta", 0.0))))
 	var runs: int = side.box[p.id]["pit"]["r"]
 	var must: bool = np >= m.rules["pitchLimit"]
-	var tired: bool = eff["tired"] > 10 + m.rng.next() * 10
+	var tired: bool = over_ > 10 and over_ > 10 + m.rng.next() * 10
 	var shelled := runs >= 6 and m.inning <= 7
 	if not must and not tired and not shelled:
 		return false

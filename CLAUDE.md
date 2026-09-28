@@ -38,7 +38,7 @@
 
 ```bash
 cd web && npm test                                   # vitest: 밸런스 + 2시즌
-GODOT=/path/to/godot game/tests/run_tests.sh         # Godot 헤드리스: 파스 검사 + 밸런스·특수능력 + 1년 시즌 + 경기 중 저장
+GODOT=/path/to/godot game/tests/run_tests.sh         # Godot 헤드리스: 파스 검사 + 밸런스·특수능력 + 1년 시즌 + 경기 중 저장 + 작전 확률
 # UI 통합 테스트 (화면 필요: xvfb). 주의: 시작할 때 이 컴퓨터의 저장 슬롯 1~3을 지운다
 xvfb-run -a godot --path game --rendering-driver opengl3 -- --uitest
 # 1시즌 전체를 실제 화면으로 자동 플레이 (약 80초, 스크린샷 저장)
@@ -52,6 +52,8 @@ xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/
 # 웹 빌드 성능: godot --headless --path game --export-release "Web" build/web/index.html
 #   node tools/web_bench.mjs build/web [--throttle=4]   (헤드리스 Chromium, 전역 playwright 사용)
 #   데스크톱 비교: godot --headless --path game -- --webbench
+# 모바일 화면 점검: node tools/mobile_check.mjs build/web /tmp/shots  (8개 기종 세로/가로 스크린샷·화면 사용률·터치·이름 입력)
+#   개발용 인자 --choice=camp / --choice=counsel : 비시즌 선택 팝업 보기
 ```
 
 Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip` 에서 받는다.
@@ -87,6 +89,25 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
   `test_balance.gd` 가 두 경로의 통계를 비교한다.
 - 경기 중 저장은 입력 기록 재생 방식이다: 엔진 상태를 바꾸는 공개 함수(`step`, `change_pitcher`, `mound_visit`, `pinch_hit`, `pinch_run`, `def_sub`)는
   맨 앞에서 `_rec()` 로 기록한다. 새 작전 함수를 추가하면 `_rec()` 와 `replay()` 에도 넣고 `tests/test_save.gd` 를 돌린다.
+
+## 모바일 (v0.5)
+
+- 화면 배율은 `Game.fit_screen()` 이 창 크기마다 정한다 (정수 배율로 90% 이상 못 채우면 소수 배율). `project.godot` 의 stretch 설정을 바꾸지 말 것.
+- 휴대폰 브라우저는 LineEdit 에 키보드가 안 뜰 수 있다 → 글자 입력은 `new_game_screen.gd` 의 `_mobile_input()` 처럼 브라우저 입력창으로.
+- 웹 HTML 에 넣는 것(세로 화면 안내 등)은 `export_presets.cfg` 의 `html/head_include`.
+- UI 를 바꾸면 `tools/mobile_check.mjs` 로 휴대폰 크기 스크린샷을 확인한다.
+
+## 선택 팝업 · 비시즌 (v0.5, Godot 전용)
+
+- `state.popups` 에 `{kind: "choice", choice, title, body, options: [[key, 버튼 글자]]}` 를 넣으면 `main.gd` 의 `show_choice()` 가 버튼을 세로로 보여 주고 `Offseason.choose()` 로 반영한다.
+  고르지 않고 넘기는 경우(자동 테스트)를 위해 이벤트 쪽에서 기본값을 먼저 적용해 둔다.
+- 비시즌 데이터는 `data/offseason.json`. 새 일정 이벤트는 `schedule.json` 의 `events` 에 넣고 `Season._day_start_events` 의 `match` 에 연결.
+
+## 작전 확률 (v0.5)
+
+- 도루·번트 판정 공식은 `MatchEngine.steal_prob()`, `bunt_good()`, `safety_hit_prob()`, `pp_mix()` 하나뿐이다. 판정을 바꾸면 화면 안내(`tactic_odds()`)도 같이 바뀐다.
+  `tests/test_tactics.gd` 가 안내값과 실제 성공률(1000회)을 비교한다.
+- `step()` 은 실황용 특수능력 발동 문구(`abilityNote`)를 붙이는 껍데기이고 실제 판정은 `_step()` 이다 (quiet 에서는 바로 `_step()`).
 
 ## UI 규칙
 

@@ -214,8 +214,9 @@ static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 				Idol.pro_season_end(state, rng)
 				_news(state, "idol", "프로야구 시즌이 막을 내렸다.")
 			"camp":
-				state["trainingBonus"] = 1.6
-				state["popups"].append({"kind": "good", "title": "동계 전지훈련", "body": "따뜻한 남쪽으로 전지훈련을 떠났다!\n이번 주 훈련 효과가 크게 오른다."})
+				Offseason.camp_event(state)
+			"counsel":
+				Offseason.counsel_event(state)
 			"graduate":
 				_news(state, "info", "졸업식. 한 시즌이 끝났다.")
 
@@ -261,6 +262,11 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	var ev := WeeklyEvents.roll(state, roster, rng)
 	if ev.has("news"):
 		state["news"].append(ev["news"])
+	# 비시즌(10~2월) 학교 행사
+	if rng.chance(0.45):
+		var se := Offseason.school_event(state, roster, rng)
+		if not se.is_empty():
+			state["news"].append(se)
 	if ev.has("popup"):
 		state["popups"].append(ev["popup"])
 	for p in roster:
@@ -290,9 +296,12 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	var bonus: float = state.get("trainingBonus", 1.0) if state.get("trainingBonus") != null else 1.0
 	var eff := card.duplicate()
 	eff["value"] = card["value"] * bonus
+	if state.get("awakenBonus") != null:
+		eff["awaken"] = float(state["awakenBonus"])
 	for p in WorldGen.team_players(state, state["userTeamId"]):
 		Training.train_player(p, eff, state["pros"], rng, report, false, state.get("facilities"))
 	state.erase("trainingBonus")
+	state.erase("awakenBonus")
 	if card["kind"] == "scout":
 		state["scoutPoints"] = mini(8, int(state["scoutPoints"]) + 2)
 	hand.erase(card)
@@ -586,7 +595,9 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 	var scored := []
 	for p in state["players"].values():
 		if p["teamId"] != "" and PlayerUtil.grade(p, state["year"]) == 3:
-			scored.append({"p": p, "s": PlayerUtil.overall(p) + p["talent"] * 4 + rng.next() * 8 + (3.0 if p["pos"] == "P" else 0.0)})
+			# 진로 상담에서 감독 추천서를 받은 선수는 평가 +
+			var rec: float = float(Offseason.data()["counsel"]["recommendBonus"]) if p.get("recommended", false) else 0.0
+			scored.append({"p": p, "s": PlayerUtil.overall(p) + p["talent"] * 4 + rng.next() * 8 + (3.0 if p["pos"] == "P" else 0.0) + rec})
 	scored.sort_custom(func(a, b): return a["s"] > b["s"])
 	var picks := scored.slice(0, 70)
 	var lines := []

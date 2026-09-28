@@ -21,6 +21,7 @@ var pause_btn: Button
 var waiting := true
 var busy := false
 var quit_after := false
+var gold_seen := {}
 var delegate := false
 var speed_idx := 1
 var off_order := "normal"
@@ -85,6 +86,7 @@ func setup(_p := {}) -> void:
 		if Rival.is_rival_game(st(), fx["f"]):
 			cond_txt += " · [color=#ef6f6c]라이벌전![/color]"
 	field.sync(m)
+	_announce_gold()
 	if m.pitch_no > 0:
 		_add_line("[color=#f4d35e]%s vs %s — 저장한 곳부터 이어서 (%d회%s %d:%d)[/color]%s" % [m.away.name, m.home.name, m.inning, "초" if m.top else "말", m.away.score, m.home.score, cond_txt])
 	else:
@@ -149,6 +151,7 @@ func _loop() -> void:
 		if ev["endHalf"] and not m.over and m.top:
 			Game.save_game()
 		if ev["paResult"] != "":
+			_announce_gold()
 			off_order = "normal"
 			if pitch_order == "ibb":
 				pitch_order = "normal"
@@ -188,6 +191,39 @@ func _cycle_pause() -> void:
 	var i := PAUSE_MODES.find(_pause_mode())
 	st()["settings"]["pauseMode"] = PAUSE_MODES[(i + 1) % PAUSE_MODES.size()]
 	_refresh()
+
+
+## 금특 선수가 처음 타석(마운드)에 서면 알림 (한 경기에 선수마다 한 번)
+func _announce_gold() -> void:
+	if m.over:
+		return
+	for sp in [m.batter(), m.pitcher()]:
+		if gold_seen.has(sp.id):
+			continue
+		for id in sp.abil:
+			if Abilities.tier(id) == "gold":
+				gold_seen[sp.id] = true
+				_add_line("   [color=#f4c542]★ 금특 「%s」 %s 등장![/color]" % [Abilities.name_of(id), sp.name])
+				_banner("★ 금특 「%s」" % Abilities.name_of(id), sp.name)
+				break
+
+
+## 필드 위에 잠깐 띄우는 알림
+func _banner(title: String, sub: String) -> void:
+	var p := UI.panel(Color("#3a2c08"), UI.TIER_COLORS["gold"], 6)
+	var v := UI.vbox(1)
+	p.add_child(v)
+	var t := UI.label(title, Color("#ffe27a"), false, true)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(t)
+	var l := UI.label(sub, UI.TEXT, true)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(l)
+	UI.place(p, 120, 70, 160, 40)
+	add_child(p)
+	get_tree().create_timer(1.6).timeout.connect(func():
+		if is_instance_valid(p):
+			p.queue_free())
 
 
 ## 경기 상황을 저장하고 타이틀로. 다시 불러오면 같은 이닝·점수·주자부터 이어서 한다
@@ -235,6 +271,10 @@ func _log_event(ev: Dictionary, inning_txt: String) -> void:
 		bn = side.by_id[ev["batterId"]].name
 	if ev["paResult"] != "" or ev["runs"] > 0 or SPEEDS[speed_idx] < 8.0:
 		_add_line("[color=#9aa0c0]%s[/color] %s [color=%s]%s[/color]%s" % [inning_txt, bn, col, ev["text"], ("  (+%d점)" % ev["runs"]) if ev["runs"] else ""])
+	# 특수능력 발동 (긍정·금특 파랑/노랑, 부정 빨강)
+	var note: String = ev.get("abilityNote", "")
+	if note != "":
+		_add_line("   [color=%s]▶ %s[/color]" % ["#ef6f6c" if note.contains("흔들렸다") else "#5fa8ff", note])
 	if ev["endHalf"] and not m.over:
 		_add_line("[color=#9aa0c0]── %d회%s  %s %d : %d %s ──[/color]" % [m.inning, "초" if m.top else "말", m.away.name, m.away.score, m.home.score, m.home.name])
 
@@ -316,6 +356,33 @@ func _refresh_info() -> void:
 	_add_active(m.active_abilities(p, false))
 
 
+## 작전에 영향을 주는 특수능력 (주자 도루·주루, 타자 번트, 투수 퀵모션, 포수 어깨)
+func _add_related(odds: Dictionary) -> void:
+	var ids := []
+	var o := m.off()
+	var sb := m.steal_base()
+	if sb >= 0:
+		for id in o.by_id[m.bases[sb]["id"]].abil:
+			if Abilities.info(id).get("group", "") in ["steal", "run"]:
+				ids.append(id)
+		for id in m.pitcher().abil:
+			if Abilities.info(id).get("group", "") == "quick":
+				ids.append(id)
+		for id in m.fielder("C").abil:
+			if Abilities.info(id).get("group", "") == "arm":
+				ids.append(id)
+	for id in m.batter().abil:
+		if Abilities.info(id).get("group", "") in ["bunt", "infield", "twoS"]:
+			ids.append(id)
+	if ids.is_empty():
+		return
+	var h := UI.hbox(2)
+	h.add_child(UI.label("관련", UI.DIM, true))
+	for id in Abilities.sorted(ids).slice(0, 3):
+		h.add_child(UI.ability_chip(id, false))
+	tactic_box.add_child(h)
+
+
 ## 조건이 맞아 발동 중인 특수능력 (색 칩)
 func _add_active(ids: Array) -> void:
 	if ids.is_empty():
@@ -351,6 +418,7 @@ func _refresh_tactics() -> void:
 		var r1: bool = m.bases[0] != null
 		var r2: bool = m.bases[1] != null
 		var r3: bool = m.bases[2] != null
+		var odds := m.tactic_odds()
 		for o in OFF_ORDERS:
 			var key: String = o[0]
 			var ok := true
@@ -358,10 +426,20 @@ func _refresh_tactics() -> void:
 				"squeeze": ok = r3
 				"steal": ok = (r1 and not r2) or (r2 and not r3)
 				"hitRun": ok = r1 and not r2
-			g.add_child(_tb(o[1], off_order == key, func():
+			# 성공 가능성 상·중·하 (경기 판정 공식으로 계산)
+			var label: String = o[1]
+			if ok and odds.has(key):
+				label += " · " + MatchEngine.odds_grade(key, odds[key])
+			var tb := _tb(label, off_order == key, func():
 				off_order = key
-				_refresh_tactics(), ok))
+				_refresh_tactics(), ok)
+			if ok and odds.has(key):
+				tb.tooltip_text = "성공 가능성 약 %d%%" % roundi(odds[key] * 100)
+				if off_order != key:
+					tb.add_theme_color_override("font_color", {"상": UI.GOOD, "중": UI.TEXT, "하": UI.BAD}[MatchEngine.odds_grade(key, odds[key])])
+			g.add_child(tb)
 		tactic_box.add_child(g)
+		_add_related(odds)
 		var sub := UI.grid(2, 2, 2)
 		sub.add_child(UI.button("대타", _pinch_hit, 110, true))
 		sub.add_child(UI.button("대주자", _pinch_run, 110, true))

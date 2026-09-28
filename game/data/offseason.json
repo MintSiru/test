@@ -1,0 +1,23 @@
+{
+ "note": "비시즌 콘텐츠 (Godot 전용). camp: 1월 동계 합숙 장소 선택, counsel: 9월 3학년 진로 상담(드래프트 전 감독 추천서), schoolEvents: 10~2월 학교 행사(주간 이벤트).",
+ "camp": {
+  "default": "school",
+  "options": [
+   {"key": "school", "name": "학교 운동장 합숙", "cost": 0, "bonus": 1.3, "desc": "비용 없음. 이번 주 훈련 효과 ×1.3"},
+   {"key": "south", "name": "남해 전지훈련", "cost": 150, "bonus": 1.6, "fatigue": -20, "desc": "150P. 훈련 효과 ×1.6, 따뜻한 날씨로 피로 회복"},
+   {"key": "abroad", "name": "대만 전지훈련", "cost": 350, "bonus": 1.9, "cond": true, "awaken": 2.0, "desc": "350P. 훈련 효과 ×1.9, 전원 절호조, 특수능력 각성 확률 2배"}
+  ]
+ },
+ "counsel": {
+  "recommendBonus": 6,
+  "grades": [[10, "1라운드 유력"], [70, "지명 가능"], [90, "지명 경계선"], [9999, "지명 어려움"]]
+ },
+ "schoolEvents": [
+  {"key": "sportsDay", "weight": 10, "months": [10], "text": "학교 체육대회! 야구부가 계주에서 압도적 1위. (팀 컨디션 상승, 피로 +5)"},
+  {"key": "festival", "weight": 8, "months": [10, 11], "text": "학교 축제에서 야구부 응원 공연이 화제가 됐다. (명성 +1)"},
+  {"key": "exam", "weight": 8, "months": [12], "text": "기말고사 기간. 공부하느라 운동장이 조용하다... (피로 회복)"},
+  {"key": "volunteer", "weight": 6, "months": [11, 12, 1], "text": "지역 어린이 야구교실 봉사활동을 했다. (명성 +2)"},
+  {"key": "snow", "weight": 6, "months": [12, 1, 2], "text": "첫눈이 내렸다! 눈싸움 한 판에 선수단 분위기가 밝아졌다. (컨디션 상승)"},
+  {"key": "obGame", "weight": 6, "months": [11, 12, 1, 2], "text": "졸업생 선배들과 OB 친선전! 선배들의 조언에 몇몇 선수가 한층 성장했다."}
+ ]
+}

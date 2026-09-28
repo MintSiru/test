@@ -170,6 +170,7 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		awaken_p = 0.03 + card["value"] * 0.006
 	if card["kind"] == "meeting":
 		awaken_p *= 1.0 + 0.25 * Shop.level_of(fac, "analysis")
+	awaken_p *= float(card.get("awaken", 1.0)) # 해외 전지훈련 등
 	if awaken_p > 0 and rng.chance(awaken_p * (0.6 + p["talent"] * 0.15)):
 		var aw := awaken(p, rng)
 		if not aw.is_empty() and report != null:

@@ -30,6 +30,7 @@ class TeamSide:
 	var visits := 0 # 마운드 방문 횟수
 	var visit_pa := 0 # 방문 효과가 남은 타자 수
 	var lead_any := false # 포수 리드 능력을 가진 선수가 있는가 (없으면 계산 생략)
+	var pos_cache := {} # 수비 위치 → 선수 (교체 때 비운다)
 
 	func _init(input: Dictionary) -> void:
 		team_id = input["teamId"]
@@ -91,6 +92,8 @@ var journal: Array = []
 var journal_on := false
 ## 다시 만들 때 필요한 정보 {fixtureId, seed, starterId}
 var save_info := {}
+## 특수능력 발동 문구 횟수 (선수+능력 → 횟수)
+var _note_count := {}
 
 
 func _init(home_input: Dictionary, away_input: Dictionary, rng_: Rng, rules_: Dictionary = DEFAULT_RULES) -> void:
@@ -123,10 +126,16 @@ func fielder(pos: String, side: TeamSide = null) -> SimPlayer:
 		side = def()
 	if pos == "P":
 		return side.by_id[side.pitcher_id]
+	var c = side.pos_cache.get(pos)
+	if c != null:
+		return c
+	var f: SimPlayer = side.by_id[side.pitcher_id]
 	for id in side.order:
 		if side.pos_of.get(id, "") == pos:
-			return side.by_id[id]
-	return side.by_id[side.pitcher_id]
+			f = side.by_id[id]
+			break
+	side.pos_cache[pos] = f
+	return f
 
 
 func def_value(pos: String) -> float:
@@ -217,6 +226,121 @@ static func resume(state: Dictionary, ms: Dictionary) -> MatchEngine:
 	if typeof(ms.get("ai")) == TYPE_DICTIONARY:
 		m.ai_cache = ms["ai"]
 	return m
+
+
+# ───────────── 작전 판정 공식 (경기 판정과 화면 안내가 함께 쓴다) ─────────────
+
+## 도루할 주자의 베이스 (0 = 1루 주자, 1 = 2루 주자). 도루할 수 없으면 -1 (step() 의 도루·히트앤런 규칙과 같다)
+func steal_base() -> int:
+	if bases[1] != null and bases[2] == null:
+		return 1
+	if bases[0] != null and bases[1] == null:
+		return 0
+	return -1
+
+
+## 도루 성공 확률
+func steal_prob(base: int) -> float:
+	var runner: SimPlayer = off().by_id[bases[base]["id"]]
+	var catcher := fielder("C")
+	var arm := catcher.arm + catcher.f_arm * 0.8
+	var pit := pitcher()
+	var hold: float = pit_mods(pit, def()).get("hold", 0.0)
+	var p := 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + runner.f_steal + hold
+	if base == 1:
+		p -= 0.08
+	if pit.throws == "L" and base == 0:
+		p -= 0.05
+	return clampf(p, 0.1, 0.96)
+
+
+## 번트가 제대로 굴러갈 확률 (타구가 앞으로 갔을 때 성공)
+func bunt_good(b: SimPlayer, bm: Dictionary, pp: float, in_zone: bool, shift: String) -> float:
+	var good: float = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + bm.get("bunt", 0.0) - (0.0 if in_zone else 0.15)
+	if shift == "buntShift":
+		good -= 0.12
+	return good
+
+
+## 기습번트가 성공했을 때 내야안타가 될 확률
+func safety_hit_prob(b: SimPlayer, bm: Dictionary, shift: String) -> float:
+	return 0.2 + (b.spd - 50) * 0.009 + bm.get("buntHit", 0.0) - (0.1 if shift == "buntShift" else 0.0)
+
+
+## 지금 투수의 구종별 [비율, 구위] (step() 의 구종 선택·구위 계산과 같다)
+func pp_mix() -> Array:
+	var p := pitcher()
+	var pm := pit_mods(p, def())
+	var eff := pitcher_eff(p, def(), pm)
+	var velo: float = eff["velo"]
+	var base: float = (eff["stuff"] - 40) * 0.08
+	var fb: float = (velo - 115) * 1.2 + pm.get("ppFB", 0.0) + base
+	if p.breaking.is_empty():
+		return [[1.0, fb]]
+	var fb_rate := clampf(0.64 - p.breaking.size() * 0.06 + (0.15 if balls >= 3 else 0.0), 0.35, 0.95)
+	var out := [[fb_rate, fb]]
+	var wsum := 0.0
+	for w in p.breaking_w:
+		wsum += w
+	for i in p.breaking.size():
+		var w: float = p.breaking_w[i]
+		out.append([(1.0 - fb_rate) * w / wsum, int(p.breaking[i]["lv"]) * 5.5 + (velo - 115) * 0.55 + 5 + pm.get("ppBR", 0.0) + base])
+	return out
+
+
+## 지금 투수의 평균 구위
+func avg_pp() -> float:
+	var t := 0.0
+	for x in pp_mix():
+		t += x[0] * x[1]
+	return t
+
+
+## 작전 성공 가능성 (화면 안내용). 쓸 수 없는 작전은 빠진다
+##  steal: 도루 성공 / bunt: 번트가 앞으로 갔을 때 희생번트 성공 / safetyBunt: 앞으로 갔을 때 내야안타
+##  squeeze: 공 하나에 스퀴즈 성공 (헛스윙이면 3루 주자 아웃) / hitRun: 휘둘렀을 때 공을 맞힐 확률
+func tactic_odds() -> Dictionary:
+	var out := {}
+	var b := batter()
+	var bm := bat_mods(b)
+	var pm := pit_mods(pitcher(), def())
+	var mix := pp_mix()
+	var pp := avg_pp()
+	var sb := steal_base()
+	if sb >= 0:
+		out["steal"] = steal_prob(sb)
+	# 번트: 구종마다 성공률이 다르고, 대기 쉬운 공일수록 앞으로 굴러가기도 쉽다 → 앞으로 간 번트 기준으로 가중
+	var hit := clampf(safety_hit_prob(b, bm, "normal"), 0.0, 1.0)
+	var num := 0.0
+	var den := 0.0
+	var sq := 0.0
+	for x in mix:
+		var g := clampf(bunt_good(b, bm, x[1], true, "normal"), 0.0, 1.0)
+		var ip := maxf(0.0, 1.0 - (0.1 + (1.0 - g) * 0.55))
+		num += x[0] * ip * g
+		den += x[0] * ip
+		# 스퀴즈는 볼에도 번트를 댄다 (공이 존 밖일 확률 약 40%), 헛스윙이면 실패
+		var g2 := clampf(g - 0.15 * 0.4, 0.0, 1.0)
+		sq += x[0] * (1.0 - (0.1 + (1.0 - g2) * 0.1)) * g2
+	var bunt := num / maxf(den, 0.001)
+	out["bunt"] = bunt
+	out["safetyBunt"] = bunt * hit
+	if bases[2] != null:
+		out["squeeze"] = sq
+	if bases[0] != null and bases[1] == null:
+		var platoon := 0.01 if b.bats == "S" else (-0.015 if b.bats == pitcher().throws else 0.015)
+		var c: float = 0.87 + (b.con + bm.get("con", 0.0) - 50) * 0.0045 - (pp - 28) * 0.0062 + platoon + bm.get("contact", 0.0) - pm.get("whiff", 0.0) + 0.05
+		# 히트앤런은 존 안 95%, 존 밖 70% 를 휘두른다 (존 안 약 55%)
+		var w_in := 0.55 * 0.95 / (0.55 * 0.95 + 0.45 * 0.7)
+		out["hitRun"] = clampf(c, 0.3, 0.97) * w_in + clampf(c - 0.22, 0.3, 0.97) * (1.0 - w_in)
+	return out
+
+
+## 성공 가능성 → 상·중·하 (기습번트는 원래 낮아서 기준이 다르다)
+static func odds_grade(key: String, p: float) -> String:
+	var hi := 0.35 if key == "safetyBunt" else 0.7
+	var mid := 0.2 if key == "safetyBunt" else 0.45
+	return "상" if p >= hi else ("중" if p >= mid else "하")
 
 
 # ───────────── 특수능력 ─────────────
@@ -315,6 +439,7 @@ func change_pitcher(side: TeamSide, id: String) -> void:
 	side.pitchers.append(id)
 	side.pitch_count[id] = 0
 	side.pos_of[id] = "P"
+	side.pos_cache.clear()
 	side.ensure_box(id)["pit"]["g"] = 1
 	game_log.append("[투수 교체] %s: %s" % [side.name, side.by_id[id].name])
 
@@ -341,6 +466,7 @@ func pinch_hit(side: TeamSide, id: String) -> void:
 	side.order[side.batter_idx] = id
 	side.pos_of[id] = side.pos_of[old]
 	side.pos_of.erase(old)
+	side.pos_cache.clear()
 	side.used.append(id)
 	side.ensure_box(id)["bat"]["g"] = 1
 	game_log.append("[대타] %s → %s" % [side.by_id[old].name, side.by_id[id].name])
@@ -357,6 +483,7 @@ func pinch_run(side: TeamSide, base: int, id: String) -> void:
 	side.order[idx] = id
 	side.pos_of[id] = side.pos_of[r["id"]]
 	side.pos_of.erase(r["id"])
+	side.pos_cache.clear()
 	side.used.append(id)
 	side.ensure_box(id)["bat"]["g"] = 1
 	game_log.append("[대주자] %s → %s" % [side.by_id[r["id"]].name, side.by_id[id].name])
@@ -371,6 +498,7 @@ func def_sub(side: TeamSide, out_id: String, in_id: String) -> void:
 	side.order[idx] = in_id
 	side.pos_of[in_id] = side.pos_of[out_id]
 	side.pos_of.erase(out_id)
+	side.pos_cache.clear()
 	side.used.append(in_id)
 	side.ensure_box(in_id)["bat"]["g"] = 1
 	game_log.append("[수비 교체] %s → %s" % [side.by_id[out_id].name, side.by_id[in_id].name])
@@ -389,25 +517,95 @@ func _new_event(b: SimPlayer, p: SimPlayer) -> Dictionary:
 ## orders: {off, pitch, shift}
 func step(orders: Dictionary = {}) -> Dictionary:
 	assert(not over, "game over")
-	_rec(["step", orders.duplicate()])
-	var o := off()
-	var d := def()
+	if journal_on:
+		_rec(["step", orders.duplicate()])
+	if quiet:
+		return _step(orders)
+	# 실황용: 이 공을 던지기 전에 조건이 맞아 켜져 있던 특수능력 → 타석 결과에 영향을 줬으면 「발동」 문구
 	var b := batter()
 	var p := pitcher()
-	var ev := _new_event(b, p)
+	var act_b := active_abilities(b, true)
+	var act_p := active_abilities(p, false)
+	var risp_before := risp()
+	var ev := _step(orders)
+	ev["rispBefore"] = risp_before
+	if ev["paResult"] != "" or ev.get("steal") != null:
+		ev["abilityNote"] = _ability_note(ev, b, p, act_b, act_p)
+	return ev
+
+
+## 타석 결과에 영향을 준 특수능력 한 줄 (없으면 "")
+##  조건부 능력: 켜진 상태에서 그 능력 주인에게 유리한(긍정)·불리한(부정) 결과가 나왔을 때
+##  상시 능력: 홈런(비거리), 도루 성공, 희생번트 성공처럼 효과가 분명히 드러난 결과일 때
+func _ability_note(ev: Dictionary, b: SimPlayer, p: SimPlayer, act_b: Array, act_p: Array) -> String:
+	var res: String = ev["batted"]["result"] if ev.get("batted") != null else ""
+	var pa: String = ev["paResult"]
+	var bat_good: bool = res in ["1B", "2B", "3B", "HR"] or pa in ["볼넷", "몸에 맞는 공"] or res == "SF"
+	# 아웃은 삼진이거나 득점권 위기였을 때만 (평범한 아웃마다 나오면 지루하다)
+	var bat_bad: bool = pa.ends_with("삼진") or (res in ["OUT", "DP"] and ev.get("rispBefore", false))
+	var pick := func(ids: Array, want_tier_good: bool) -> String:
+		for id in Abilities.sorted(ids):
+			if (Abilities.tier(id) != "bad") == want_tier_good:
+				return id
+		return ""
+	var id := ""
+	var who := ""
+	if bat_good:
+		id = pick.call(act_b, true)
+		who = b.name
+		if id == "":
+			id = pick.call(act_p, false)
+			who = p.name
+	elif bat_bad:
+		id = pick.call(act_p, true)
+		who = p.name
+		if id == "":
+			id = pick.call(act_b, false)
+			who = b.name
+	if id == "":
+		# 상시 능력이 결과에 분명히 드러난 경우
+		var st = ev.get("steal")
+		if st != null and st["success"]:
+			var runner: SimPlayer = (away if ev["top"] else home).by_id.get(st["runnerId"])
+			if runner != null:
+				for x in runner.abil:
+					if Abilities.info(x).get("group", "") == "steal" and not Abilities.is_bad(x):
+						return "%s의 「%s」! 발로 만든 도루" % [runner.name, Abilities.name_of(x)]
+		for x in b.abil:
+			var grp: String = Abilities.info(x).get("group", "")
+			if (res == "HR" and grp == "power") or (pa == "희생번트 성공" and grp == "bunt") or (res == "1B" and pa == "내야 안타" and grp == "infield"):
+				if not Abilities.is_bad(x):
+					return "%s의 「%s」!" % [b.name, Abilities.name_of(x)]
+		return ""
+	# 같은 선수의 같은 능력은 한 경기에 두 번까지
+	var key := who + id
+	var cnt: int = _note_count.get(key, 0)
+	if cnt >= 2:
+		return ""
+	_note_count[key] = cnt + 1
+	return ("%s의 「%s」 발동!" if Abilities.tier(id) != "bad" else "%s, 「%s」… 흔들렸다") % [who, Abilities.name_of(id)]
+
+
+func _step(orders: Dictionary) -> Dictionary:
+	var b := batter()
+	var p := pitcher()
 	var off_order: String = orders.get("off", "normal")
 	var shift: String = orders.get("shift", "normal")
+	var pitch_order: String = orders.get("pitch", "normal")
 
-	if orders.get("pitch", "normal") == "ibb":
+	# CPU끼리 경기의 작전 없는 타석은 빠른 경로로 (확률은 같고 연출용 계산만 생략)
+	if quiet and off_order == "normal" and pitch_order == "normal":
+		return _fast_pa(b, p, shift)
+
+	var o := off()
+	var d := def()
+	var ev := _new_event(b, p)
+	if pitch_order == "ibb":
 		ev["call"] = "ibb"
 		ev["loc"] = Vector2(2.2, 0)
 		_walk(ev, "고의사구")
 		ev["text"] = "%s, 고의사구로 출루" % b.name
 		return _finish(ev)
-
-	# CPU끼리 경기의 작전 없는 타석은 빠른 경로로 (확률은 같고 연출용 계산만 생략)
-	if quiet and off_order == "normal" and orders.get("pitch", "normal") == "normal":
-		return _fast_pa(b, p, shift)
 
 	pitch_no += 1
 	d.pitch_count[p.id] = d.pitch_count.get(p.id, 0) + 1
@@ -441,7 +639,6 @@ func step(orders: Dictionary = {}) -> Dictionary:
 		want_zone += 0.08
 	if strikes == 2 and balls < 2:
 		want_zone -= 0.2
-	var pitch_order: String = orders.get("pitch", "normal")
 	if pitch_order == "zone":
 		want_zone += 0.22
 	if pitch_order == "edge":
@@ -654,6 +851,9 @@ func _fast_pa(b: SimPlayer, p: SimPlayer, shift: String) -> Dictionary:
 			swing_p = 0.34 - (b.eye + (bm.get("eye", 0.0) if bm_on else 0.0)) * 0.0028 + (0.12 if strikes == 2 else 0.0) + (0.06 if is_breaking else 0.0)
 			if balls == 3 and strikes < 2:
 				swing_p *= 0.4
+		# CPU 감독은 3볼 0스트라이크에서 「기다려」 (MatchAI.orders 와 같게)
+		if balls == 3 and strikes == 0:
+			swing_p = 0.03
 		if mistake:
 			swing_p += 0.12
 		if bm_on:
@@ -744,7 +944,6 @@ func _strikeout_bunt(ev: Dictionary, b: SimPlayer, label: String) -> Dictionary:
 
 
 func _resolve_bunt(ev: Dictionary, b: SimPlayer, bm: Dictionary, pp: float, in_zone: bool, order: String, shift: String, squeeze_runner) -> Dictionary:
-	var bm_on := not bm.is_empty()
 	if not in_zone and order != "squeeze" and rng.chance(0.75):
 		balls += 1
 		ev["call"] = "ball"
@@ -754,9 +953,7 @@ func _resolve_bunt(ev: Dictionary, b: SimPlayer, bm: Dictionary, pp: float, in_z
 			return _finish(ev)
 		ev["text"] = _pitch_text(ev) + " (번트 자세에서 배트를 거둠)"
 		return _finish(ev, false)
-	var good: float = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + (bm.get("bunt", 0.0) if bm_on else 0.0) - (0.0 if in_zone else 0.15)
-	if shift == "buntShift":
-		good -= 0.12
+	var good := bunt_good(b, bm, pp, in_zone, shift)
 	var roll := rng.next()
 	if roll < 0.1 + (1 - good) * 0.1:
 		ev["call"] = "buntMiss"
@@ -788,7 +985,7 @@ func _resolve_bunt(ev: Dictionary, b: SimPlayer, bm: Dictionary, pp: float, in_z
 	var bl: Dictionary = o.box[b.id]["bat"]
 	var success: bool = rng.next() < good
 	if order == "safetyBunt" and success:
-		var hit_p: float = 0.2 + (b.spd - 50) * 0.009 + (bm.get("buntHit", 0.0) if bm_on else 0.0) - (0.1 if shift == "buntShift" else 0.0)
+		var hit_p := safety_hit_prob(b, bm, shift)
 		if rng.chance(hit_p):
 			ev["batted"] = {"type": "BUNT", "angle": angle, "dist": 12.0, "result": "1B", "fielder": fpos, "caught": false}
 			bl["pa"] += 1
@@ -983,7 +1180,7 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 				result = "SF"
 
 	ev["batted"] = {"type": type, "angle": angle, "dist": dist, "result": result, "fielder": fpos, "caught": caught}
-	var pos_name: String = PlayerUtil.POS_KO[fpos]
+	var pos_name: String = "" if quiet else PlayerUtil.POS_KO[fpos] # 실황 문구용 (quiet 에서는 만들지 않음)
 	bl["pa"] += 1
 	match result:
 		"HR":
@@ -995,8 +1192,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			pl["hr"] += 1
 			_advance_all(ev, 4, false, b.id)
 			_move_batter(ev, b.id, 4, true)
-			ev["paResult"] = "%s %s" % [_dir_hr(angle), "만루 홈런" if ev["runs"] >= 4 else "홈런"]
-			ev["text"] = "%s!! %s의 한 방!" % [ev["paResult"], b.name]
+			ev["paResult"] = result if quiet else "%s %s" % [_dir_hr(angle), "만루 홈런" if ev["runs"] >= 4 else "홈런"]
+			ev["text"] = "" if quiet else "%s!! %s의 한 방!" % [ev["paResult"], b.name]
 		"3B":
 			bl["ab"] += 1
 			bl["h"] += 1
@@ -1005,8 +1202,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			pl["h"] += 1
 			_advance_all(ev, 3, false, b.id)
 			_move_batter(ev, b.id, 3, true)
-			ev["paResult"] = "%s 3루타" % _dir_xbh(angle)
-			ev["text"] = ev["paResult"] + "!"
+			ev["paResult"] = result if quiet else "%s 3루타" % _dir_xbh(angle)
+			ev["text"] = "" if quiet else ev["paResult"] + "!"
 		"2B":
 			bl["ab"] += 1
 			bl["h"] += 1
@@ -1015,8 +1212,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			pl["h"] += 1
 			_advance_hit(ev, 2, b.id, fpos, stealer != null)
 			_move_batter(ev, b.id, 2, true)
-			ev["paResult"] = "%s 2루타" % _dir_xbh(angle)
-			ev["text"] = ev["paResult"] + "!"
+			ev["paResult"] = result if quiet else "%s 2루타" % _dir_xbh(angle)
+			ev["text"] = "" if quiet else ev["paResult"] + "!"
 		"1B":
 			bl["ab"] += 1
 			bl["h"] += 1
@@ -1025,8 +1222,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			var infield := type == "GB" and dist < 45
 			_advance_hit(ev, 0 if infield else 1, b.id, fpos, stealer != null)
 			_move_batter(ev, b.id, 1, true)
-			ev["paResult"] = "내야 안타" if infield else ("%s 땅볼 안타" % _dir_single(angle) if type == "GB" else "%s 안타" % _dir_single(angle))
-			ev["text"] = ev["paResult"] + "!"
+			ev["paResult"] = result if quiet else "내야 안타" if infield else ("%s 땅볼 안타" % _dir_single(angle) if type == "GB" else "%s 안타" % _dir_single(angle))
+			ev["text"] = "" if quiet else ev["paResult"] + "!"
 		"E":
 			bl["ab"] += 1
 			d.errors += 1
@@ -1034,8 +1231,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			if d.box.has(f.id):
 				d.box[f.id]["bat"]["e"] += 1
 			_advance_forced(ev, b.id, false, false)
-			ev["paResult"] = "%s 실책" % pos_name
-			ev["text"] = "%s 실책! 타자 출루" % pos_name
+			ev["paResult"] = result if quiet else "%s 실책" % pos_name
+			ev["text"] = "" if quiet else "%s 실책! 타자 출루" % pos_name
 		"DP":
 			bl["ab"] += 1
 			var r1: Dictionary = bases[0]
@@ -1045,8 +1242,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			_add_out(ev, b.id, 0)
 			if not _half_over():
 				_advance_others_on_ground(ev, shift)
-			ev["paResult"] = "%s 앞 병살타" % pos_name
-			ev["text"] = ev["paResult"]
+			ev["paResult"] = result if quiet else "%s 앞 병살타" % pos_name
+			ev["text"] = "" if quiet else ev["paResult"]
 		"FC":
 			bl["ab"] += 1
 			var r1f: Dictionary = bases[0]
@@ -1056,8 +1253,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			if not _half_over():
 				_advance_others_on_ground(ev, shift)
 				_move_batter(ev, b.id, 1, false)
-			ev["paResult"] = "%s 땅볼 (선행주자 아웃)" % pos_name
-			ev["text"] = ev["paResult"]
+			ev["paResult"] = result if quiet else "%s 땅볼 (선행주자 아웃)" % pos_name
+			ev["text"] = "" if quiet else ev["paResult"]
 		"SF":
 			bl["sf"] += 1
 			_add_out(ev, b.id, 0)
@@ -1065,8 +1262,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 			bases[2] = null
 			ev["moves"].append({"runnerId": rr["id"], "from": 3, "to": 4})
 			_score_runner(ev, rr, b.id, true)
-			ev["paResult"] = "%s 희생플라이" % pos_name
-			ev["text"] = ev["paResult"] + "! 3루 주자 홈인"
+			ev["paResult"] = result if quiet else "%s 희생플라이" % pos_name
+			ev["text"] = "" if quiet else ev["paResult"] + "! 3루 주자 홈인"
 		_:
 			bl["ab"] += 1
 			_add_out(ev, b.id, 0)
@@ -1079,8 +1276,8 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 					bases[2] = r2
 					ev["moves"].append({"runnerId": r2["id"], "from": 2, "to": 3})
 			var kind := "땅볼" if type == "GB" else ("직선타" if type == "LD" else (("파울플라이" if fpos == "C" else "뜬공") if type == "PU" else "플라이"))
-			ev["paResult"] = "%s %s" % [pos_name, kind]
-			ev["text"] = ev["paResult"]
+			ev["paResult"] = result if quiet else "%s %s" % [pos_name, kind]
+			ev["text"] = "" if quiet else ev["paResult"]
 
 
 # ───────────── 주자 처리 ─────────────
@@ -1263,16 +1460,7 @@ func _resolve_steal(ev: Dictionary, s: Dictionary) -> void:
 		return
 	var o := off()
 	var runner: SimPlayer = o.by_id[s["r"]["id"]]
-	var catcher := fielder("C")
-	var arm := catcher.arm + catcher.f_arm * 0.8
-	var pit := pitcher()
-	var hold: float = pit_mods(pit, def()).get("hold", 0.0)
-	var p := 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + runner.f_steal + hold
-	if base == 1:
-		p -= 0.08
-	if pitcher().throws == "L" and base == 0:
-		p -= 0.05
-	var success := rng.chance(clampf(p, 0.1, 0.96))
+	var success := rng.chance(steal_prob(base))
 	ev["steal"] = {"runnerId": runner.id, "from": base + 1, "success": success}
 	bases[base] = null
 	var prefix: String = (ev["text"] + " / ") if ev["text"] != "" else (_pitch_text(ev) + " / ")

@@ -80,6 +80,36 @@ func _init() -> void:
 		fails.append("연도 %d" % state["year"])
 	if not "KBO 신인 드래프트" in popups:
 		fails.append("드래프트 없음")
+	# 비시즌 콘텐츠: 진로 상담·합숙 선택 팝업, 학교 행사 소식
+	if not "3학년 진로 상담" in popups or not "동계 합숙 장소" in popups:
+		fails.append("비시즌 선택 팝업 없음")
+	var school_news := 0
+	for n in state["news"]:
+		for e in Offseason.data()["schoolEvents"]:
+			if n["text"] == e["text"]:
+				school_news += 1
+	print("학교 행사 소식: ", school_news)
+	if school_news == 0:
+		fails.append("학교 행사 없음")
+	# 합숙 선택: 포인트가 있으면 비용을 내고 효과, 없으면 무료 합숙
+	var pts0 := Shop.points(state)
+	state["points"] = 400
+	Offseason.choose(state, "camp", "south")
+	if Shop.points(state) != 250 or absf(float(state["trainingBonus"]) - 1.6) > 0.001:
+		fails.append("남해 합숙 반영 실패")
+	state["points"] = 100
+	Offseason.choose(state, "camp", "abroad")
+	if Shop.points(state) != 100 or absf(float(state["trainingBonus"]) - 1.3) > 0.001:
+		fails.append("포인트 부족 시 기본 합숙 실패")
+	state["points"] = pts0
+	state.erase("trainingBonus")
+	# 추천서: 드래프트 예상 점수 +
+	var anyp: Dictionary = WorldGen.team_players(state, state["userTeamId"])[0]
+	var before := Offseason.expected_draft_score(anyp)
+	Offseason.choose(state, "counsel", anyp["id"])
+	if absf(Offseason.expected_draft_score(anyp) - before - float(Offseason.data()["counsel"]["recommendBonus"])) > 0.001:
+		fails.append("추천서 반영 실패")
+	anyp.erase("recommended")
 	if user_games < 12:
 		fails.append("경기 수 부족 %d" % user_games)
 	var roster := WorldGen.team_players(state, "user")

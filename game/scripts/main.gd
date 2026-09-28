@@ -73,6 +73,14 @@ func _ready() -> void:
 	if "--night" in OS.get_cmdline_user_args() and current.get("field") != null:
 		current.field.night = true
 		current.field.weather = "가랑비"
+	# 개발용: 비시즌 선택 팝업 보기 (--choice=camp / --choice=counsel)
+	for a2 in OS.get_cmdline_user_args():
+		if a2.begins_with("--choice=") and not Game.state.is_empty():
+			if a2.ends_with("camp"):
+				Offseason.camp_event(Game.state)
+			else:
+				Offseason.counsel_event(Game.state)
+			drain_popups()
 	if "--catalog" in OS.get_cmdline_user_args():
 		show_panel("특수능력 도감", UI.ability_catalog())
 	if "--usecard" in OS.get_cmdline_user_args() and current.has_method("_use_card"):
@@ -227,4 +235,34 @@ func drain_popups(done: Callable = Callable()) -> void:
 			done.call()
 		return
 	var pop: Dictionary = st["popups"].pop_front()
+	if pop.get("kind", "") == "choice":
+		show_choice(pop, func(): drain_popups(done))
+		return
 	show_modal(pop["title"], pop["body"], pop.get("kind", "info"), func(): drain_popups(done))
+
+
+## 선택 팝업 (비시즌 합숙 장소·진로 상담 등): 버튼을 세로로 늘어놓고, 고르면 결과를 보여 준 뒤 done
+func show_choice(pop: Dictionary, done: Callable) -> void:
+	var shade := ColorRect.new()
+	shade.color = Color(0, 0, 0, 0.6)
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	modal_layer.add_child(shade)
+	var p := UI.panel(UI.PANEL, UI.ACCENT, 8)
+	UI.place(p, 110, 30, 420, 300)
+	shade.add_child(p)
+	var v := UI.vbox(5)
+	p.add_child(v)
+	v.add_child(UI.title_label(pop["title"]))
+	v.add_child(UI.scroll(UI.wrap_label(pop["body"], 390, UI.TEXT, true), Vector2(404, 170)))
+	for o in pop["options"]:
+		var key: String = o[0]
+		v.add_child(UI.button(o[1], func():
+			modal_layer.remove_child(shade)
+			shade.queue_free()
+			var msg := Offseason.choose(Game.state, pop["choice"], key)
+			Game.save_game()
+			if msg != "":
+				show_modal(pop["title"], msg, "good", done)
+			else:
+				done.call(), 400, true))
