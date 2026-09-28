@@ -52,7 +52,7 @@ xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/
 #   --trophy : 우승 연출 화면 보기
 #   --screen=records --tab=highlights --replay : 명장면 다시 보기 (가장 최근 홈런)
 #   --splash --shot=game/assets/splash.png : 웹·데스크톱 로딩 이미지 다시 만들기 (버전 올린 뒤)
-# 여러 해 밸런스: godot --headless --path game -s tests/multi_year.gd  (5년 × 3시드, 약 4분)
+# 여러 해 밸런스: godot --headless --path game -s tests/multi_year.gd [-- shop]  (5년 × 3시드, 약 4분. shop 이면 장터를 쓰는 자동 플레이)
 # 성능: godot --headless --path game -s tests/bench.gd
 # 파스 검사만: godot --headless --path game --check-only --script 파일.gd
 # 웹 빌드 성능: godot --headless --path game --export-release "Web" build/web/index.html
