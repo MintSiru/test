@@ -156,6 +156,12 @@
 - **명장면 다시 보기** (`scripts/ui/highlight_replay.gd`): 명장면에 타구(종류·방향·거리·결과)를 저장해 도트 구장 위에 궤적을 다시 그린다.
 - **라이벌 에이스 기록** (`state.rivalAceLog`), 장터 교본 14종 추가, 효과음(파울·사구·슬라이딩).
 
+## 2-10. v0.9 에서 추가된 것 (Godot 전용)
+
+- **우승 연출** (`scripts/ui/celebration_view.gd`, `Records.add_trophy`, `state.trophies`), 결승전 알림·함성.
+- **선수 면담** (`Stories.monthly_talk`): 매달 첫 주. 꾸중은 열혈·노력파에게 컨디션 +2·성장, 소심에게 컨디션 −1·분위기 −2.
+- **졸업 앨범** (`Season.album_entry`, `main.gd show_album`).
+
 ## 3. 유지·축소·제외한 요소 (에이전트 판단)
 
 | 구분 | 요소 | 이유 |
