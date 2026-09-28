@@ -89,6 +89,13 @@ func _ready() -> void:
 			drain_popups()
 	if "--catalog" in dev_args():
 		show_panel("특수능력 도감", UI.ability_catalog())
+	# 개발용: 졸업 앨범 미리보기 (--album, 지금 3학년으로)
+	if "--album" in dev_args() and not Game.state.is_empty():
+		var al := []
+		for p in WorldGen.team_players(Game.state, Game.state["userTeamId"]):
+			if PlayerUtil.grade(p, Game.state["year"]) == 3:
+				al.append(Season.album_entry(Game.state, p, "대학 진학" if al.size() % 2 else "프로 입단", al.size() % 2 == 0))
+		show_album({"title": "졸업 앨범 (미리보기)", "album": al}, Callable())
 	# 개발용: 우승 연출 보기 (--trophy)
 	if "--trophy" in dev_args() and not Game.state.is_empty():
 		show_trophy({"title": "청룡기 우승!", "sub": "결승 vs 남산고 5:3", "body": "한빛고, 청룡기 우승!!\n전국에 이름을 떨쳤다. (명성 +10)"}, Callable())
@@ -341,7 +348,45 @@ func drain_popups(done: Callable = Callable()) -> void:
 	if pop.get("kind", "") == "trophy":
 		show_trophy(pop, func(): drain_popups(done))
 		return
+	if pop.get("kind", "") == "album":
+		show_album(pop, func(): drain_popups(done))
+		return
 	show_modal(pop["title"], pop["body"], pop.get("kind", "info"), func(): drain_popups(done))
+
+
+## 졸업 앨범: 3학년마다 얼굴·포지션·3년 통산·타이틀·금특·진로
+func show_album(pop: Dictionary, done: Callable) -> void:
+	var v := UI.vbox(3)
+	v.add_child(UI.label("3년간 함께한 3학년들이 야구부를 떠난다. 고마웠다!", UI.TEXT, true))
+	var team := WorldGen.user_team(Game.state)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 6)
+	grid.add_theme_constant_override("v_separation", 4)
+	v.add_child(grid)
+	for a in pop.get("album", []):
+		var card := UI.panel(UI.PANEL2, UI.TIER_COLORS["gold"] if a["pro"] else UI.LINE, 3)
+		card.custom_minimum_size = Vector2(266, 58)
+		var h := UI.hbox(4)
+		card.add_child(h)
+		var face := TextureRect.new()
+		face.texture = PixelArt.portrait(int(a["face"]), Color(team["colors"][0]), Color(team["colors"][1]))
+		face.custom_minimum_size = Vector2(24, 24)
+		face.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+		h.add_child(face)
+		var info := UI.vbox(0)
+		h.add_child(info)
+		info.add_child(UI.label("%s %s%s" % [PlayerUtil.POS_KO[a["pos"]], a["name"], "  [주장]" if a.get("captain", false) else ""], UI.ACCENT, true))
+		info.add_child(UI.label(a["line"], UI.TEXT, true))
+		var extra: Array = a.get("titles", [])
+		info.add_child(UI.label("→ " + a["dest"] + (("  · " + ", ".join(extra)) if not extra.is_empty() else ""), UI.GOOD if a["pro"] else UI.DIM, true))
+		if not a.get("gold", []).is_empty():
+			var fl := UI.hbox(2)
+			for id in a["gold"]:
+				fl.add_child(UI.ability_chip(id, false))
+			info.add_child(fl)
+		grid.add_child(card)
+	show_panel(pop["title"], v, done)
 
 
 ## 우승 연출: 헹가래 도트 화면 + 우승 문구, 확인을 누르면 done

@@ -276,6 +276,8 @@ func _init() -> void:
 		if int(tpl["cond"]) != cond0 or absf(tpl["fatigue"] - maxf(0.0, fat0 - 30.0)) > 0.01 or state.has("talkUndo"):
 			fails.append("면담 선택 반영 실패")
 	state["popups"].clear()
+	if popups.filter(func(t): return str(t).begins_with("3학년 은퇴식")).is_empty():
+		fails.append("졸업 앨범 팝업 없음")
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

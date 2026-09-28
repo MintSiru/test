@@ -724,8 +724,16 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 		"body": ("우리 학교에서 프로 선수가 탄생했다!\n\n" + "\n".join(lines)) if not lines.is_empty() else "올해는 우리 학교에서 지명된 선수가 없었다...\n3학년들은 대학 진학을 준비한다."})
 
 
+## 졸업 앨범 한 칸 (main.gd show_album)
+static func album_entry(state: Dictionary, p: Dictionary, dest: String, pro: bool) -> Dictionary:
+	var hs := Records.career_summary(p)
+	return {"name": PlayerUtil.full_name(p), "pos": p["pos"], "face": int(p.get("faceSeed", 0)), "dest": dest, "pro": pro,
+		"line": hs["pit"] if p["pos"] == "P" and hs.has("pit") else hs["bat"], "titles": hs["titles"], "gold": hs["gold"], "captain": state.get("captainId") == p["id"]}
+
+
 static func _retire_seniors(state: Dictionary, rng: Rng) -> void:
 	var names := []
+	var album := []
 	var ranks := {}
 	for x in Offseason.senior_outlook(state):
 		ranks[x["p"]["id"]] = int(x["rank"])
@@ -739,7 +747,9 @@ static func _retire_seniors(state: Dictionary, rng: Rng) -> void:
 				if t["isUser"]:
 					var dr = p.get("draft")
 					var path = null if dr != null else Offseason.after_school(state, p, int(ranks.get(p["id"], 9999)), rng)
-					names.append("%s (%s)" % [PlayerUtil.full_name(p), (pro_team_name(state, dr["teamId"]) + " 입단") if dr != null else Offseason.path_text(path)])
+					var dest: String = (pro_team_name(state, dr["teamId"]) + " 입단") if dr != null else Offseason.path_text(path)
+					names.append("%s (%s)" % [PlayerUtil.full_name(p), dest])
+					album.append(album_entry(state, p, dest, dr != null))
 					state["alumni"].append({"playerId": p["id"], "name": PlayerUtil.full_name(p), "sur": p["sur"], "given": p["given"], "gradYear": state["year"], "pos": p["pos"],
 						"draft": {"teamId": dr["teamId"], "round": dr["round"]} if dr != null else null, "path": path, "hs": Records.career_summary(p)})
 				state["players"].erase(id)
@@ -747,7 +757,8 @@ static func _retire_seniors(state: Dictionary, rng: Rng) -> void:
 				keep.append(id)
 		t["playerIds"] = keep
 	if not names.is_empty():
-		state["popups"].append({"kind": "info", "title": "3학년 은퇴식", "body": "3년간 함께한 3학년들이 야구부를 떠난다. 고마웠다!\n\n" + "\n".join(names)})
+		state["popups"].append({"kind": "album", "title": "3학년 은퇴식 — %d 졸업 앨범" % state["year"], "album": album,
+			"body": "3년간 함께한 3학년들이 야구부를 떠난다. 고마웠다!\n\n" + "\n".join(names)})
 
 
 static func _new_season(state: Dictionary, rng: Rng) -> void:
