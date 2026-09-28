@@ -198,8 +198,12 @@ func play(ev: Dictionary, speed: float) -> void:
 	var call: String = ev["call"]
 	if call in ["ball", "called", "swinging", "buntMiss"]:
 		Game.sfx("mitt", -4.0)
-	elif call in ["foul", "buntFoul", "inplay"]:
+	elif call in ["foul", "buntFoul"]:
+		Game.sfx("foul", -4.0)
+	elif call == "inplay":
 		Game.sfx("hit", -2.0)
+	elif call == "hbp":
+		Game.sfx("hbp", -2.0)
 	match call:
 		"ball":
 			add_text("볼", HOME + Vector2(-8, -30), Color("#7fd0ff"), false, 0.7 * k + 0.2)
@@ -222,6 +226,7 @@ func play(ev: Dictionary, speed: float) -> void:
 	if call != "inplay" and not ev["moves"].is_empty():
 		await _animate_moves(ev, 0.3 * k)
 	if ev.get("steal") != null:
+		Game.sfx("slide", -3.0)
 		add_text("도루 성공!" if ev["steal"]["success"] else "도루 실패", base_pos(ev["steal"]["from"] + 1) + Vector2(-20, -20), Color("#6fd08c") if ev["steal"]["success"] else Color("#ef6f6c"))
 	await get_tree().create_timer(0.18 * k).timeout
 
