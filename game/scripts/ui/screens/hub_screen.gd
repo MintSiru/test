@@ -40,6 +40,14 @@ func _guide_key() -> String:
 		return "firstScout"
 	if s.get("goals") != null and not Help.seen("goals"):
 		return "goals"
+	if not TeamMood.captain(s).is_empty() and not Help.seen("firstMood"):
+		return "firstMood"
+	if int(Manager.info(s)["level"]) >= 2 and not Help.seen("firstManager"):
+		return "firstManager"
+	if Achievements.count(s) >= 1 and not Help.seen("firstAchieve"):
+		return "firstAchieve"
+	if not s.get("highlights", []).is_empty() and not Help.seen("firstHighlight"):
+		return "firstHighlight"
 	return ""
 
 
