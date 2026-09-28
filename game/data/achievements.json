@@ -1,0 +1,29 @@
+{
+ "note": "업적 (Godot 전용). 달성하면 포인트 보상. check 는 상태로 판정(Achievements.check), 나머지는 사건이 일어날 때 Achievements.event(state, key).",
+ "list": [
+  {"key": "firstWin", "name": "첫 승리", "desc": "공식전에서 처음 이기기", "points": 20},
+  {"key": "calledWin", "name": "콜드게임 승리", "desc": "콜드게임으로 이기기", "points": 30},
+  {"key": "streak5", "name": "5연승", "desc": "공식전 5연승", "points": 50, "check": true},
+  {"key": "walkoff", "name": "끝내기!", "desc": "끝내기로 이기기", "points": 30},
+  {"key": "grandSlam", "name": "만루 홈런", "desc": "우리 선수가 만루 홈런", "points": 30},
+  {"key": "leagueFirst", "name": "권역 1위", "desc": "주말리그 권역 1위", "points": 50},
+  {"key": "national8", "name": "전국 8강", "desc": "전국대회 8강 이상", "points": 50},
+  {"key": "nationalFinal", "name": "결승 진출", "desc": "전국대회 결승 진출", "points": 80},
+  {"key": "champion", "name": "전국 제패", "desc": "전국대회 우승", "points": 150},
+  {"key": "doubleCrown", "name": "2관왕", "desc": "한 해에 전국대회 2개 우승", "points": 300},
+  {"key": "draft1", "name": "1라운드 지명", "desc": "우리 선수가 신인 드래프트 1라운드 지명", "points": 80},
+  {"key": "draft3", "name": "프로 사관학교", "desc": "한 해에 3명 이상 프로 지명", "points": 150},
+  {"key": "lateDraft", "name": "늦게 핀 꽃", "desc": "졸업생이 대학·독립리그를 거쳐 프로 지명", "points": 50},
+  {"key": "title", "name": "타이틀 홀더", "desc": "우리 선수가 전국 개인 타이틀 수상", "points": 50},
+  {"key": "rival5", "name": "라이벌 킬러", "desc": "라이벌 학교 상대 통산 5승", "points": 50, "check": true},
+  {"key": "gold", "name": "금빛 재능", "desc": "금특(★) 선수 보유", "points": 40, "check": true},
+  {"key": "catalog30", "name": "특수능력 수집가", "desc": "우리 팀에 나타난 특수능력 30종", "points": 50, "check": true},
+  {"key": "catalog60", "name": "특수능력 박사", "desc": "우리 팀에 나타난 특수능력 60종", "points": 150, "check": true},
+  {"key": "manager5", "name": "중견 감독", "desc": "감독 레벨 5", "points": 50, "check": true},
+  {"key": "manager10", "name": "명장", "desc": "감독 레벨 10", "points": 200, "check": true},
+  {"key": "mood90", "name": "하나 된 팀", "desc": "팀 분위기 90 이상", "points": 40, "check": true},
+  {"key": "facilityMax", "name": "최신식 설비", "desc": "시설 하나를 최고 단계로", "points": 40, "check": true},
+  {"key": "points1000", "name": "알뜰 살림", "desc": "야구부 포인트 1000P 모으기", "points": 50, "check": true},
+  {"key": "rep80", "name": "전국구 명문", "desc": "명성 80 이상", "points": 100, "check": true}
+ ]
+}

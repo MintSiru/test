@@ -262,6 +262,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)
 	TeamMood.week(state, roster, rng)
+	Achievements.check(state)
 	var dorm := Shop.level(state, "dorm")
 	if dorm > 0:
 		for p in roster:
@@ -434,6 +435,16 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 		TeamMood.after_match(state, m.winner == u, m.winner == null, official)
 		Manager.exp_for_match(state, m.winner == u, m.winner == null, official)
 		Records.add_highlights(state, comp, f, m)
+		if official and m.winner == u:
+			Achievements.event(state, "firstWin")
+			if m.called:
+				Achievements.event(state, "calledWin")
+		for h in m.highlights:
+			if h["kind"] == "walkoff":
+				Achievements.event(state, "walkoff")
+			if str(h["text"]).contains("만루 홈런"):
+				Achievements.event(state, "grandSlam")
+		Achievements.check(state)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]
@@ -515,6 +526,18 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 				var def := Cal.comp_def(comp["key"])
 				Shop.earn(state, Shop.placing_points(r), "%s %s" % [def["short"], r])
 				Manager.add_exp(state, Shop.placing_points(r) / int(Manager.data()["exp"]["placingDiv"]))
+				if r in ["8강", "4강", "준우승", "우승"]:
+					Achievements.event(state, "national8")
+				if r in ["준우승", "우승"]:
+					Achievements.event(state, "nationalFinal")
+				if r == "우승":
+					Achievements.event(state, "champion")
+					var wins := 0
+					for c2 in state["competitions"]:
+						if c2.get("userResult") == "우승" and int(c2.get("year", state["year"])) == int(state["year"]):
+							wins += 1
+					if wins >= 2:
+						Achievements.event(state, "doubleCrown")
 				if r == "우승":
 					state["reputation"] = clampi(state["reputation"] + int(def["repWin"]), 0, 100)
 					state["popups"].append({"kind": "good", "title": "%s 우승!" % def["short"], "body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
@@ -583,6 +606,7 @@ static func _finish_league(state: Dictionary, c: Dictionary, rng: Rng) -> void:
 				if rank == 1:
 					state["reputation"] = clampi(state["reputation"] + 3, 0, 100)
 					Shop.earn(state, int(Shop.data()["earn"]["leagueFirst"]), "%s 권역 1위" % g["name"])
+					Achievements.event(state, "leagueFirst")
 	if c["key"] == "league1":
 		state["competitions"].append(Competition.create_tournament(state, "hwanggeum", hw, rng))
 		state["competitions"].append(Competition.create_tournament(state, "cheongryong", cr, rng))
@@ -651,12 +675,16 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 				line += "\n   ★ 동경하던 %s 같은 유니폼을 입게 됐다! \"%s 선배, 이제 동료예요!\"" % [Text.josa(Idol.pro_name(idol), "과/와"), idol["given"]]
 			lines.append(line)
 			state["reputation"] = clampi(state["reputation"] + (6 if rnd == 1 else (4 if rnd <= 3 else 2)), 0, 100)
+			if rnd == 1:
+				Achievements.event(state, "draft1")
 			state["points"] = Shop.points(state) + int(Shop.data()["earn"]["draftRound1"] if rnd == 1 else Shop.data()["earn"]["draftOther"])
 			state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": p["sur"], "given": p["given"], "teamId": team["id"], "pos": p["pos"],
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 	if not lines.is_empty():
 		Goals.event(state, "draft", lines.size())
 		Manager.add_exp(state, int(Manager.data()["exp"]["draft"]) * lines.size())
+		if lines.size() >= 3:
+			Achievements.event(state, "draft3")
 	Offseason.college_draft(state, rng)
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
 	var added := 0

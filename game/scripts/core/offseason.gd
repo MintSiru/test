@@ -256,6 +256,7 @@ static func college_draft(state: Dictionary, rng: Rng) -> Array:
 		lines.append("%s (%s) — %s %d라운드 지명!" % [al["name"], path_text(path), team["name"], rnd])
 		state["reputation"] = clampi(int(state["reputation"]) + 2, 0, 100)
 	if not lines.is_empty():
+		Achievements.event(state, "lateDraft")
 		state["popups"].append({"kind": "good", "title": "졸업생 프로 지명!",
 			"body": "고교 졸업 뒤 %d년, 포기하지 않은 졸업생이 프로에 지명됐다!\n\n%s\n\n(명성 +%d)" % [years, "\n".join(lines), 2 * lines.size()]})
 	return lines

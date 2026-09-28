@@ -1,7 +1,7 @@
 extends BaseScreen
 ## 기록실: 연도별 성적 · 개인 타이틀 · 학교 기록 · 명예의 전당(졸업생) · 프로야구(가상 리그)
 
-const TABS := [["years", "연도별 성적"], ["titles", "개인 타이틀"], ["school", "학교 기록"], ["highlights", "명장면"], ["hall", "명예의 전당"], ["pro", "프로야구"]]
+const TABS := [["years", "연도별 성적"], ["titles", "개인 타이틀"], ["school", "학교 기록"], ["highlights", "명장면"], ["achieve", "업적"], ["hall", "명예의 전당"], ["pro", "프로야구"]]
 
 var tab := "years"
 var body: VBoxContainer
@@ -40,6 +40,7 @@ func _fill() -> void:
 		"school": _school()
 		"hall": _hall()
 		"highlights": _highlights()
+		"achieve": _achieve()
 		"pro": _pro()
 
 
@@ -118,6 +119,20 @@ func _school() -> void:
 				best_v = v
 		if best != null:
 			body.add_child(UI.label("  %s  %s %s" % [t["name"].replace("왕", ""), PlayerUtil.full_name(best), Records.fmt(t, best_v)], UI.TEXT, true))
+
+
+func _achieve() -> void:
+	var s := st()
+	var all_: Array = Achievements.data()["list"]
+	body.add_child(UI.title_label("업적 %d/%d" % [Achievements.count(s), all_.size()]))
+	var cat := UI.hbox(6)
+	cat.add_child(UI.label("특수능력 수집 %d/%d" % [Achievements.seen_count(s), Abilities.all().size()], UI.TEXT, true))
+	cat.add_child(UI.button("도감 보기", func(): Game.main.show_panel("특수능력 도감", UI.ability_catalog()), 0, true))
+	body.add_child(cat)
+	for a in all_:
+		var got: bool = Achievements.done(s, a["key"])
+		body.add_child(UI.label("%s %s — %s  (+%dP)%s" % ["■" if got else "□", a["name"], a["desc"], a["points"], ("  " + Cal.short(s["achievements"][a["key"]])) if got else ""],
+			UI.GOOD if got else UI.DIM, true))
 
 
 func _highlights() -> void:

@@ -215,6 +215,17 @@ func _init() -> void:
 	print("명장면 %d개 %s 예: %s" % [hl.size(), kinds, hl[0]["text"] if not hl.is_empty() else "-"])
 	if hl.size() < 3:
 		fails.append("명장면이 너무 적음 %d" % hl.size())
+	# 업적 · 특수능력 수집
+	print("업적 %d개 %s, 수집 %d종" % [Achievements.count(state), state.get("achievements", {}).keys(), Achievements.seen_count(state)])
+	if not Achievements.done(state, "firstWin") or Achievements.seen_count(state) < 5:
+		fails.append("업적·수집 없음")
+	var pa := Shop.points(state)
+	Achievements.event(state, "rep80")
+	Achievements.event(state, "rep80")
+	if Shop.points(state) != pa + 100:
+		fails.append("업적 보상 중복·누락 %d" % (Shop.points(state) - pa))
+	state["achievements"].erase("rep80")
+	state["points"] = pa
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

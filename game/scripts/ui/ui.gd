@@ -220,6 +220,7 @@ static func ability_chip(id: String, clickable := true) -> Button:
 	var col: Color = TIER_COLORS[t]
 	var b := Button.new()
 	b.text = ("★" if t == "gold" else "") + a.get("name", id)
+	b.set_meta("abilityId", id)
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_override("font", font_small)
 	b.add_theme_font_size_override("font_size", 10)
@@ -274,6 +275,10 @@ static func ability_catalog() -> VBoxContainer:
 	var top := hbox(8)
 	top.add_child(tier_legend())
 	top.add_child(label("칩을 누르면 설명", DIM, true))
+	# 게임 중이면 우리 팀에 나타난 적 있는 능력만 또렷하게 (수집률)
+	var seen = Game.state.get("seenAbilities") if not Game.state.is_empty() else null
+	if seen != null:
+		top.add_child(label("수집 %d/%d (흐린 칩은 아직 우리 팀에 없던 능력)" % [seen.size(), Abilities.all().size()], ACCENT, true))
 	v.add_child(top)
 	for f in [["bat", "타자 (타격·주루·수비)"], ["pit", "투수"], ["all", "공통 (훈련·부상·피로·컨디션)"]]:
 		var ids := []
@@ -281,5 +286,9 @@ static func ability_catalog() -> VBoxContainer:
 			if a["for"] == f[0]:
 				ids.append(a["id"])
 		v.add_child(label("%s  %d종" % [f[1], ids.size()], ACCENT, true))
-		v.add_child(ability_flow(ids, 540))
+		var fl := ability_flow(ids, 540)
+		if seen != null:
+			for chip in fl.get_children():
+				chip.modulate.a = 1.0 if seen.has(chip.get_meta("abilityId", "")) else 0.4
+		v.add_child(fl)
 	return v
