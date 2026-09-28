@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { advance, autoPlayUserMatch, rngOf, startNewGame, useCard } from '../src/core/season';
-import { buyFacility, buyItem, cannotUse, itemDef, marketOpen, useItem } from '../src/core/shop';
+import { buyFacility, buyItem, cannotUse, itemDef, marketOpen, openMarket, slotPrice, useItem } from '../src/core/shop';
+import { Rng } from '../src/core/rng';
 import { teamPlayers } from '../src/core/world';
 import type { GameState } from '../src/core/types';
 
@@ -66,5 +67,33 @@ describe('포인트 · 장터', () => {
   it('가상 선수 명단 선택', () => {
     const s = startNewGame({ schoolName: '한빛고', managerName: 't', groupId: 'seoulA', seed: 24, prosMode: 'fictional' });
     expect(s.pros.some((p) => p.sur + p.given === '강도윤')).toBe(true);
+  });
+
+  it('시기 한정 상품 · 연말 대바겐 · 복주머니', () => {
+    const s = startNewGame({ schoolName: '한빛고', managerName: 't', groupId: 'seoulA', seed: 23 });
+    const keys = () => s.shop!.stock.map((x) => x.key);
+    s.date = '2026-04-01';
+    openMarket(s, new Rng(1));
+    expect(keys().some((k) => ['icevest', 'samgyetang', 'luckybag'].includes(k))).toBe(false);
+    expect(s.shop!.stock.length).toBe(7);
+    s.date = '2026-06-01';
+    openMarket(s, new Rng(1));
+    expect(keys()).toContain('icevest');
+    expect(keys()).toContain('samgyetang');
+    expect(s.shop!.stock.length).toBe(9);
+    s.date = '2026-12-01';
+    openMarket(s, new Rng(1));
+    expect(keys()).toContain('luckybag');
+    expect(s.shop!.stock.length).toBe(10);
+    const bag = s.shop!.stock.find((x) => x.key === 'luckybag')!;
+    expect(slotPrice(bag)).toBe(55); // 80P 의 30% 할인 (5P 단위)
+    s.points = 55;
+    expect(buyItem(s, 'luckybag')).toBeNull();
+    expect(s.points).toBe(0);
+    const r = useItem(s, 'luckybag', null, new Rng(2));
+    expect(r.ok).toBe(true);
+    const n = Object.values(s.inventory!).reduce((a, b) => a + b, 0);
+    expect(n).toBe(2);
+    expect(s.inventory!.luckybag).toBeUndefined();
   });
 });

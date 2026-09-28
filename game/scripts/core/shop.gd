@@ -108,19 +108,62 @@ static func next_market(state: Dictionary) -> String:
 	return "%04d-%02d-01" % [y, m]
 
 
+static func _in_months(arr, m: int) -> bool:
+	for x in arr:
+		if int(x) == m:
+			return true
+	return false
+
+
+## 이번 달 장터 행사 (없으면 빈 Dictionary). 여름 대회 대비 특가 · 연말 대바겐
+static func sale_of(date: String) -> Dictionary:
+	var m := Cal.month_of(date)
+	for sl in data()["market"].get("sales", []):
+		if _in_months(sl["months"], m):
+			return sl
+	return {}
+
+
+## 이 달에 진열될 수 있는 아이템 (시기 한정 아이템은 그 달에만)
+static func month_pool(date: String) -> Array:
+	var m := Cal.month_of(date)
+	return items().filter(func(x): return not x.has("months") or _in_months(x["months"], m))
+
+
 static func open_market(state: Dictionary, rng: Rng) -> void:
 	var mk: Dictionary = data()["market"]
+	var sale := sale_of(state["date"])
+	var discount: float = float(sale.get("discount", 0.0))
+	var size := int(mk["stockSize"]) + int(sale.get("extra", 0))
 	var stock := []
-	var pool: Array = items().duplicate()
-	for i in int(mk["stockSize"]):
-		if pool.is_empty():
-			break
+	var pool: Array = month_pool(state["date"])
+	# 행사 달에는 시기 한정 상품을 먼저 진열
+	if not sale.is_empty():
+		for it in pool.filter(func(x): return x.has("months")):
+			pool.erase(it)
+			stock.append(_slot(it, discount, rng))
+	while stock.size() < size and not pool.is_empty():
 		var it: Dictionary = rng.weighted(pool, pool.map(func(x): return x["weight"]))
 		pool.erase(it)
-		stock.append({"key": it["key"], "qty": 1 if it["type"] == "ability" else rng.irange(1, 3)})
-	state["shop"] = {"openUntil": Cal.add_days(state["date"], int(mk["days"]) - 1), "stock": stock}
+		stock.append(_slot(it, discount, rng))
+	state["shop"] = {"openUntil": Cal.add_days(state["date"], int(mk["days"]) - 1), "stock": stock, "sale": sale.get("name", "")}
+	var extra := ""
+	if not sale.is_empty():
+		extra = " · %s! %s" % [sale["name"], sale["desc"]]
 	state["news"].append({"date": state["date"], "kind": "good",
-		"text": "장터가 열렸다! (%d일간%s)" % [mk["days"], " · 이번 달은 시설 기물 설치 가능" if facility_month(state) else ""]})
+		"text": "장터가 열렸다! (%d일간%s)%s" % [mk["days"], " · 이번 달은 시설 기물 설치 가능" if facility_month(state) else "", extra]})
+
+
+static func _slot(it: Dictionary, discount: float, rng: Rng) -> Dictionary:
+	var sl := {"key": it["key"], "qty": 1 if it["type"] in ["ability", "gold"] else rng.irange(1, 3)}
+	if discount > 0.0:
+		sl["price"] = int(round(float(it["price"]) * (1.0 - discount) / 5.0)) * 5
+	return sl
+
+
+## 진열 상품의 가격 (할인 반영)
+static func slot_price(sl: Dictionary) -> int:
+	return int(sl["price"]) if sl.has("price") else int(item_def(sl["key"]).get("price", 0))
 
 
 ## 구매. 실패하면 이유, 성공하면 ""
@@ -134,9 +177,10 @@ static func buy_item(state: Dictionary, key: String) -> String:
 	var def := item_def(key)
 	if slot == null or def.is_empty() or int(slot["qty"]) <= 0:
 		return "품절이다."
-	if points(state) < int(def["price"]):
+	var price := slot_price(slot)
+	if points(state) < price:
 		return "포인트가 부족하다."
-	state["points"] = points(state) - int(def["price"])
+	state["points"] = points(state) - price
 	slot["qty"] = int(slot["qty"]) - 1
 	if state.get("inventory") == null:
 		state["inventory"] = {}
@@ -283,8 +327,61 @@ static func use_item(state: Dictionary, key: String, target_id: String, rng: Rng
 					c["value"] = maxi(3, int(c["value"]))
 					c["age"] = 0
 				msg = "훈련 카드가 모두 좋은 카드로 바뀌었다!"
+			"lucky":
+				# 이 달 진열 가능한 일반 아이템 중에서 (복주머니·시기 한정 제외)
+				var pool: Array = items().filter(func(x): return not x.has("months"))
+				var got := []
+				for i in int(def["amount"]):
+					var it: Dictionary = rng.weighted(pool, pool.map(func(x): return x["weight"]))
+					inv[it["key"]] = int(inv.get(it["key"], 0)) + 1
+					got.append(it["name"])
+				msg = "복주머니를 열었더니 %s이(가) 나왔다!" % ", ".join(got)
 	inv[key] = have - 1
 	if inv[key] <= 0:
 		inv.erase(key)
 	state["news"].append({"date": state["date"], "kind": "good", "text": msg})
 	return {"ok": true, "msg": msg}
+
+
+# ───────────── 일괄 사용 ─────────────
+
+## 한 번에 여러 선수에게 쓸 수 있는 아이템 (부적·구급 상자·사인볼)
+const BULK_TYPES := ["cond", "heal", "idol"]
+
+
+## 일괄 사용 대상 (효과가 있는 선수, 우선순위 순, 가진 개수만큼)
+static func bulk_targets(state: Dictionary, key: String) -> Array:
+	var def := item_def(key)
+	var inv = state.get("inventory")
+	var have := 0 if inv == null else int(inv.get(key, 0))
+	if def.is_empty() or not def["type"] in BULK_TYPES or have <= 0:
+		return []
+	var ps: Array = WorldGen.team_players(state, state["userTeamId"]).filter(func(p):
+		if cannot_use(def, p) != "":
+			return false
+		match def["type"]:
+			"cond": return int(p["cond"]) < 2 and int(p["injury"]) <= 0
+			"idol": return int(p["idolBond"]) < 100
+		return true)
+	match def["type"]:
+		"heal": ps.sort_custom(func(a, b): return int(a["injury"]) > int(b["injury"]))
+		"cond": ps.sort_custom(func(a, b): return PlayerUtil.overall(a) > PlayerUtil.overall(b))
+		"idol": ps.sort_custom(func(a, b): return int(a["idolBond"]) > int(b["idolBond"]))
+	return ps.slice(0, have)
+
+
+## 일괄 사용. {ok, msg, n}
+static func use_bulk(state: Dictionary, key: String, rng: Rng) -> Dictionary:
+	var targets := bulk_targets(state, key)
+	if targets.is_empty():
+		return {"ok": false, "msg": "지금 쓸 만한 선수가 없다.", "n": 0}
+	var news_n: int = state["news"].size()
+	var names := []
+	for p in targets:
+		if use_item(state, key, p["id"], rng)["ok"]:
+			names.append(PlayerUtil.full_name(p))
+	# 선수마다 쌓인 소식은 한 줄로 합친다
+	state["news"].resize(news_n)
+	var msg := "%s ×%d 사용: %s" % [item_def(key)["name"], names.size(), ", ".join(names)]
+	state["news"].append({"date": state["date"], "kind": "good", "text": msg})
+	return {"ok": true, "msg": msg, "n": names.size()}

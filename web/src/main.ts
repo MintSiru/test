@@ -5,7 +5,7 @@ import { roundName, standings } from './core/competition';
 import { LEAGUE_GROUPS } from './core/data';
 import { COND_KO, POS_KO, PITCH_KO, avg, era, grade, letter, name, overall, statValue } from './core/player';
 import { visitProspect } from './core/scouting';
-import { FACILITIES, ITEMS, buyFacility, buyItem, cannotUse, facLevel, facilityCost, facilityMonth, itemDef, marketOpen, needsPlayer, useItem } from './core/shop';
+import { FACILITIES, ITEMS, buyFacility, buyItem, cannotUse, facLevel, facilityCost, facilityMonth, itemDef, marketOpen, needsPlayer, slotPrice, useItem } from './core/shop';
 import { FAN_MADE_NOTICE } from './core/data';
 import {
   advance, autoPlayUserMatch, createMatch, finishUserMatch, findFixture, idolLabel, rngOf, startNewGame, upcomingSchedule, useCard, userFixtures,
@@ -217,7 +217,7 @@ function renderShop(body: HTMLElement, s: GameState) {
   const players = teamPlayers(s, s.userTeamId);
   const inv = Object.entries(s.inventory ?? {});
   body.innerHTML = `<div class="panel">포인트 <b>${s.points ?? 0}P</b> — 경기 결과로 얻는다. 장터는 매월 1~7일, 시설 기물은 1·2·7·8·12월 장터에서만. ${open ? '<span class="good">장터 영업 중</span>' : '<span class="dim">장터 닫힘</span>'}</div>
-    <div class="panel"><h2>이번 장터</h2><table>${(s.shop?.stock ?? []).map((st) => { const d = itemDef(st.key)!; return `<tr><td>${esc(d.name)}</td><td class="dim">${esc(d.desc)}</td><td>${d.price}P</td><td>남은 ${st.qty}</td><td><button data-buy="${st.key}" ${!open || st.qty <= 0 || (s.points ?? 0) < d.price ? 'disabled' : ''}>구매</button></td></tr>`; }).join('') || '<tr><td class="dim">없음</td></tr>'}</table></div>
+    <div class="panel"><h2>이번 장터</h2><table>${(s.shop?.stock ?? []).map((st) => { const d = itemDef(st.key)!; return `<tr><td>${esc(d.name)}</td><td class="dim">${esc(d.desc)}</td><td>${slotPrice(st)}P</td><td>남은 ${st.qty}</td><td><button data-buy="${st.key}" ${!open || st.qty <= 0 || (s.points ?? 0) < slotPrice(st) ? 'disabled' : ''}>구매</button></td></tr>`; }).join('') || '<tr><td class="dim">없음</td></tr>'}</table></div>
     <div class="panel"><h2>시설 기물</h2><table>${FACILITIES.map((f) => { const c = facilityCost(s, f.key); return `<tr><td>${esc(f.name)}</td><td>Lv${facLevel(s.facilities, f.key)}</td><td class="dim">${esc(f.desc)}</td><td><button data-fac="${f.key}" ${c === null || !open || !facilityMonth(s) || (s.points ?? 0) < c ? 'disabled' : ''}>${c === null ? '최고' : `설치 ${c}P`}</button></td></tr>`; }).join('')}</table></div>
     <div class="panel"><h2>가방</h2><table>${inv.map(([k, n]) => { const d = itemDef(k)!; const opts = needsPlayer(d) ? players.map((p) => `<option value="${p.id}" ${cannotUse(d, p) ? 'disabled' : ''}>${esc(name(p))}${cannotUse(d, p) ? ' (' + cannotUse(d, p) + ')' : ''}</option>`).join('') : d.type === 'prospect' ? s.prospects.map((x) => `<option value="${x.id}">${esc(name(x.player))} ${x.interest}%</option>`).join('') : ''; return `<tr><td>${esc(d.name)} ×${n}</td><td class="dim">${esc(d.desc)}</td><td>${opts ? `<select id="t-${k}">${opts}</select>` : ''}</td><td><button data-use="${k}">사용</button></td></tr>`; }).join('') || '<tr><td class="dim">비어 있음</td></tr>'}</table></div>
     <div class="panel dim">아이템 ${ITEMS.length}종 · 시설 ${FACILITIES.length}종</div>`;

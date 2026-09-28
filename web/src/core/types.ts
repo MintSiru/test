@@ -337,7 +337,7 @@ export interface GameState {
   /** 가방: 아이템 key → 개수 */
   inventory?: Record<string, number>;
   /** 이번 달 장터 */
-  shop?: { openUntil: string; stock: { key: string; qty: number }[] };
+  shop?: { openUntil: string; stock: { key: string; qty: number; price?: number }[]; sale?: string };
   /** 프로 선수 명단: 실명(real) / 가상(fictional) */
   prosMode?: 'real' | 'fictional';
   /** 시설 레벨 */

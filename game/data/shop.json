@@ -29,7 +29,31 @@
    7,
    8,
    12
-  ]
+  ],
+  "sales": [
+   {
+    "key": "summer",
+    "months": [
+     6,
+     7
+    ],
+    "name": "여름 대회 대비 특가",
+    "desc": "여름 대회를 앞두고 더위 대비 상품이 들어왔다",
+    "extra": 2,
+    "discount": 0.0
+   },
+   {
+    "key": "yearEnd",
+    "months": [
+     12
+    ],
+    "name": "연말 대바겐",
+    "desc": "모든 물건 30% 할인, 물건 수 +3",
+    "extra": 3,
+    "discount": 0.3
+   }
+  ],
+  "note_sales": "sales: 해당 달의 장터는 물건 수 +extra, 가격 ×(1-discount). months 가 있는 아이템은 그 달에만 나오고, 행사 달에는 반드시 진열된다."
  },
  "facilities": [
   {
@@ -551,6 +575,46 @@
    "price": 60,
    "weight": 5,
    "desc": "훈련 손패 5장을 모두 숫자 3 이상 카드로 교체"
+  },
+  {
+   "key": "icevest",
+   "name": "아이스 조끼 세트",
+   "type": "teamFatigue",
+   "amount": 40,
+   "price": 45,
+   "weight": 6,
+   "months": [
+    6,
+    7,
+    8
+   ],
+   "desc": "(여름 한정) 선수단 전원 피로 -40"
+  },
+  {
+   "key": "samgyetang",
+   "name": "삼계탕 회식",
+   "type": "teamCond",
+   "price": 40,
+   "weight": 6,
+   "months": [
+    6,
+    7,
+    8
+   ],
+   "desc": "(여름 한정) 선수단 전원 컨디션 한 단계 상승"
+  },
+  {
+   "key": "luckybag",
+   "name": "야구부 복주머니",
+   "type": "lucky",
+   "amount": 2,
+   "price": 80,
+   "weight": 5,
+   "months": [
+    12,
+    1
+   ],
+   "desc": "(연말연시 한정) 장터 물건 두 개가 무작위로 들어 있다 (교본이 나올 수도!)"
   }
  ]
 }

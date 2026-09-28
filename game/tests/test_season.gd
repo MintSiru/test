@@ -204,6 +204,48 @@ func _init() -> void:
 	state["shop"]["openUntil"] = "2027-07-07"
 	if Shop.buy_facility(state, "weight") != "" or Shop.level(state, "weight") != 1:
 		fails.append("7월 시설 설치 실패")
+	# 시기 한정 상품 · 연말 대바겐 · 복주머니 · 일괄 사용
+	state["date"] = "2027-04-01"
+	Shop.open_market(state, Rng.new(1))
+	for sl in state["shop"]["stock"]:
+		if sl["key"] in ["icevest", "samgyetang", "luckybag"]:
+			fails.append("한정 상품이 4월에 나옴")
+	state["date"] = "2027-06-01"
+	Shop.open_market(state, Rng.new(1))
+	var keys6: Array = state["shop"]["stock"].map(func(x): return x["key"])
+	if not "icevest" in keys6 or state["shop"]["stock"].size() != 9:
+		fails.append("여름 특가 진열 실패 %s" % [keys6])
+	state["date"] = "2027-12-01"
+	Shop.open_market(state, Rng.new(1))
+	var bag_slot = null
+	for sl in state["shop"]["stock"]:
+		if sl["key"] == "luckybag":
+			bag_slot = sl
+	if bag_slot == null or Shop.slot_price(bag_slot) != 55 or state["shop"]["stock"].size() != 10:
+		fails.append("연말 대바겐 실패")
+	state["inventory"] = {}
+	state["points"] = 55
+	if Shop.buy_item(state, "luckybag") != "" or Shop.points(state) != 0:
+		fails.append("할인가 구매 실패")
+	if not Shop.use_item(state, "luckybag", "", Rng.new(2))["ok"]:
+		fails.append("복주머니 사용 실패")
+	var n_items := 0
+	for k in state["inventory"]:
+		n_items += int(state["inventory"][k])
+	if n_items != 2 or state["inventory"].has("luckybag"):
+		fails.append("복주머니 내용물 %s" % [state["inventory"]])
+	state["inventory"] = {"charm": 3}
+	for p in WorldGen.team_players(state, "user"):
+		p["cond"] = 0
+	var nn: int = state["news"].size()
+	var bulk := Shop.use_bulk(state, "charm", Rng.new(3))
+	var n_cond := 0
+	for p in WorldGen.team_players(state, "user"):
+		if int(p["cond"]) == 2:
+			n_cond += 1
+	if not bulk["ok"] or int(bulk["n"]) != 3 or n_cond != 3 or state["inventory"].has("charm") or state["news"].size() != nn + 1:
+		fails.append("일괄 사용 실패 %s" % [bulk])
+	print("일괄 사용: ", bulk["msg"])
 	state["date"] = saved_date
 	# 세이브/로드 왕복
 	var json := JSON.stringify(state)

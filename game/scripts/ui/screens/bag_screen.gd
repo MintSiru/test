@@ -39,7 +39,15 @@ func _fill() -> void:
 		v.add_child(nr)
 		v.add_child(UI.label(def["desc"], UI.DIM, true))
 		var k: String = key
-		row.add_child(UI.button("사용", func(): _use(k), 80, true))
+		var bt := UI.vbox(1)
+		bt.add_child(UI.button("사용", func(): _use(k), 80, true))
+		if def["type"] in Shop.BULK_TYPES and int(inv[key]) >= 2:
+			var nb := Shop.bulk_targets(st(), key).size()
+			var bb := UI.button("일괄 %d명" % nb, func(): _bulk(k), 80, true)
+			bb.disabled = nb == 0
+			bb.tooltip_text = "효과가 있는 선수에게 한 번에 (부적: 종합 높은 순 · 구급 상자: 부상 긴 순 · 사인볼: 동경도 높은 순)"
+			bt.add_child(bb)
+		row.add_child(bt)
 		list.add_child(row)
 
 
@@ -68,6 +76,15 @@ func _use(key: String) -> void:
 		_choose("추천서를 보낼 유망주", items2, func(id): _apply(key, id))
 	else:
 		_apply(key, "")
+
+
+func _bulk(key: String) -> void:
+	var rng := Season.rng_of(st())
+	var r := Shop.use_bulk(st(), key, rng)
+	Season.save_rng(st(), rng)
+	Game.save_game()
+	Game.main.show_modal("일괄 사용" if r["ok"] else "사용할 수 없음", r["msg"], "good" if r["ok"] else "bad", func(): Game.main.drain_popups(_fill))
+	_fill()
 
 
 func _apply(key: String, target: String) -> void:

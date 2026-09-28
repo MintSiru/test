@@ -19,7 +19,7 @@ import { checkIdolMilestones } from './idol';
 export interface FacilityDef { key: string; name: string; desc: string; stats: string[]; growth: number; costs: number[] }
 export interface ItemDef {
   key: string; name: string; type: string; desc: string; price: number; weight: number;
-  stat?: string; amount?: number; ability?: string; pitcher?: boolean;
+  stat?: string; amount?: number; ability?: string; pitcher?: boolean; months?: number[];
 }
 
 export const SHOP = data;
@@ -82,28 +82,56 @@ export function facilityMonth(state: GameState): boolean {
 }
 
 /** 매월 1일: 장터 열기 (물건 구성 무작위) */
+function inMonths(arr: number[] | undefined, m: number): boolean {
+  return !!arr && arr.some((x) => x === m);
+}
+export interface SaleDef { key: string; months: number[]; name: string; desc: string; extra: number; discount: number }
+/** 이번 달 장터 행사 (여름 대회 대비 특가 · 연말 대바겐) */
+export function saleOf(date: string): SaleDef | null {
+  const m = monthOf(date);
+  return ((data.market as { sales?: SaleDef[] }).sales ?? []).find((s) => inMonths(s.months, m)) ?? null;
+}
+/** 이 달에 진열될 수 있는 아이템 (시기 한정 아이템은 그 달에만) */
+export function monthPool(date: string): ItemDef[] {
+  const m = monthOf(date);
+  return ITEMS.filter((x) => !x.months || inMonths(x.months, m));
+}
+function makeSlot(it: ItemDef, discount: number, rng: Rng): { key: string; qty: number; price?: number } {
+  const sl: { key: string; qty: number; price?: number } = { key: it.key, qty: it.type === 'ability' || it.type === 'gold' ? 1 : rng.int(1, 3) };
+  if (discount > 0) sl.price = Math.round((it.price * (1 - discount)) / 5) * 5;
+  return sl;
+}
+/** 진열 상품의 가격 (할인 반영) */
+export function slotPrice(sl: { key: string; price?: number }): number {
+  return sl.price ?? itemDef(sl.key)?.price ?? 0;
+}
 export function openMarket(state: GameState, rng: Rng) {
-  const stock: { key: string; qty: number }[] = [];
-  const pool = [...ITEMS];
-  for (let i = 0; i < data.market.stockSize && pool.length; i++) {
+  const sale = saleOf(state.date);
+  const discount = sale?.discount ?? 0;
+  const size = data.market.stockSize + (sale?.extra ?? 0);
+  const stock: { key: string; qty: number; price?: number }[] = [];
+  const pool = monthPool(state.date);
+  // 행사 달에는 시기 한정 상품을 먼저 진열
+  if (sale) for (const it of pool.filter((x) => x.months)) { pool.splice(pool.indexOf(it), 1); stock.push(makeSlot(it, discount, rng)); }
+  while (stock.length < size && pool.length) {
     const it = rng.weighted(pool, pool.map((x) => x.weight));
     pool.splice(pool.indexOf(it), 1);
-    stock.push({ key: it.key, qty: it.type === 'ability' ? 1 : rng.int(1, 3) });
+    stock.push(makeSlot(it, discount, rng));
   }
-  state.shop = { openUntil: addDays(state.date, data.market.days - 1), stock };
+  state.shop = { openUntil: addDays(state.date, data.market.days - 1), stock, sale: sale?.name ?? '' };
   state.news.push({
     date: state.date, kind: 'good',
-    text: `장터가 열렸다! (${data.market.days}일간${facilityMonth(state) ? ' · 이번 달은 시설 기물 설치 가능' : ''})`,
+    text: `장터가 열렸다! (${data.market.days}일간${facilityMonth(state) ? ' · 이번 달은 시설 기물 설치 가능' : ''})${sale ? ` · ${sale.name}! ${sale.desc}` : ''}`,
   });
 }
-
 export function buyItem(state: GameState, key: string): string | null {
   if (!marketOpen(state)) return '장터가 열려 있지 않다.';
   const slot = state.shop!.stock.find((s) => s.key === key);
   const def = itemDef(key);
   if (!slot || !def || slot.qty <= 0) return '품절이다.';
-  if ((state.points ?? 0) < def.price) return '포인트가 부족하다.';
-  state.points = (state.points ?? 0) - def.price;
+  const price = slotPrice(slot);
+  if ((state.points ?? 0) < price) return '포인트가 부족하다.';
+  state.points = (state.points ?? 0) - price;
   slot.qty--;
   state.inventory = state.inventory ?? {};
   state.inventory[key] = (state.inventory[key] ?? 0) + 1;
@@ -245,6 +273,18 @@ export function useItem(state: GameState, key: string, targetId: string | null, 
         state.hand = state.hand.map((c) => ({ ...c, value: Math.max(3, c.value), age: 0 }));
         msg = '훈련 카드가 모두 좋은 카드로 바뀌었다!';
         break;
+      case 'lucky': {
+        // 일반 아이템 중에서 (복주머니·시기 한정 제외)
+        const pool = ITEMS.filter((x) => !x.months);
+        const got: string[] = [];
+        for (let i = 0; i < def.amount!; i++) {
+          const it = rng.weighted(pool, pool.map((x) => x.weight));
+          state.inventory![it.key] = (state.inventory![it.key] ?? 0) + 1;
+          got.push(it.name);
+        }
+        msg = `복주머니를 열었더니 ${got.join(', ')}이(가) 나왔다!`;
+        break;
+      }
     }
   }
   state.inventory![key] = have - 1;

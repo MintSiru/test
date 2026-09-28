@@ -34,7 +34,10 @@ func setup(_p := {}) -> void:
 func _fill() -> void:
 	var s := st()
 	var open := Shop.market_open(s)
-	head.text = "보유 %dP   ·   %s" % [Shop.points(s), ("장터 영업 중 (~%s)" % Cal.short(s["shop"]["openUntil"])) if open else ("장터 닫힘 — 다음 장터 %s" % Cal.pretty(Shop.next_market(s)))]
+	var sale_name: String = s["shop"].get("sale", "") if s.get("shop") != null else ""
+	var next_sale := Shop.sale_of(Shop.next_market(s))
+	head.text = "보유 %dP   ·   %s" % [Shop.points(s), ("장터 영업 중 (~%s)%s" % [Cal.short(s["shop"]["openUntil"]), ("  ★ " + sale_name) if sale_name != "" else ""]) if open
+		else ("장터 닫힘 — 다음 장터 %s%s" % [Cal.pretty(Shop.next_market(s)), ("  (★ %s)" % next_sale["name"]) if not next_sale.is_empty() else ""])]
 	refresh_top_bar()
 	UI.clear(stock_box)
 	stock_box.add_child(UI.label("이번 장터 물건", UI.ACCENT, true))
@@ -55,8 +58,11 @@ func _fill() -> void:
 		v.add_child(nr)
 		v.add_child(UI.wrap_label(def["desc"], 250, UI.DIM, true))
 		var key: String = sl["key"]
-		var b := UI.button("%dP 구매" % def["price"], func(): _buy(key), 90, true)
-		b.disabled = not open or int(sl["qty"]) <= 0 or Shop.points(s) < int(def["price"])
+		var price := Shop.slot_price(sl)
+		var b := UI.button(("%dP 구매" % price) if price == int(def["price"]) else ("%d→%dP" % [def["price"], price]), func(): _buy(key), 90, true)
+		b.disabled = not open or int(sl["qty"]) <= 0 or Shop.points(s) < price
+		if def.has("months"):
+			b.add_theme_color_override("font_color", UI.TIER_COLORS["gold"])
 		row.add_child(b)
 		stock_box.add_child(row)
 
