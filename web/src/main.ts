@@ -15,6 +15,16 @@ import type { Focus, GameState, Player, StatKey } from './core/types';
 import { teamPlayers, userTeam } from './core/world';
 import { aiOrders, aiPitchingChange, relievers } from './sim/ai';
 import type { Match } from './sim/engine';
+
+/** 기반 시스템(웹)에는 없고 Godot 게임에만 있는 기능 — 규칙·밸런스 원형은 웹, 연출·이벤트는 Godot */
+const GODOT_ONLY = [
+  '도트 야구장 관전 · 작전 성공 가능성 안내 · 특수능력 발동 실황 · 명장면',
+  '비시즌: 동계 합숙(에피소드·마지막 밤), 진로 상담, 학교 행사, 졸업생 진로·대졸 드래프트',
+  '기록실: 개인 타이틀, 학교 기록, 명예의 전당, 업적 24개, 특수능력 수집률',
+  '주장·팀 분위기, 감독 성장(특기), 선수 이야기(불방망이·슬럼프·재활)',
+  '포지션 연습·투타 겸업, CPU 학교 흥망(신흥 강호·명문의 위기)',
+  '장터 가방 일괄 사용, 저장 슬롯 3개와 경기 중 저장, 배경음악·응원가, 홈 화면 앱(PWA)',
+];
 import type { OffOrder, PitchOrder, ShiftOrder } from './sim/types';
 
 // ─────────────────────────────────────────────────────────────
@@ -52,6 +62,9 @@ function renderTitle() {
     <h1>⚾ 청춘나인 — 한국 고교야구부 육성 시뮬레이션</h1>
     <p class="dim">웹 기반 시스템 확인용 화면입니다. 본 게임은 Godot 프로젝트(game/)에서 개발합니다.</p>
     <p class="dim">${FAN_MADE_NOTICE}</p>
+    <details class="panel"><summary>이 화면에 없는 기능 (Godot 게임 전용)</summary>
+      <ul class="dim">${GODOT_ONLY.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+    </details>
     <div class="panel">
       <div class="row">학교 이름 <input id="school" value="한빛고" maxlength="8"></div>
       <div class="row">감독 이름 <input id="mgr" value="김감독" maxlength="8"></div>
