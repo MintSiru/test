@@ -46,7 +46,8 @@ func setup(_p := {}) -> void:
 	UI.place(rp, 388, 60, 248, 270)
 	add_child(rp)
 	var rv := UI.vbox(2)
-	rp.add_child(rv)
+	# 전력 분석·라이벌 정보가 많아지면 넘치지 않게 스크롤
+	rp.add_child(UI.scroll(rv))
 	rv.add_child(UI.title_label("상대 전력: " + opp["name"]))
 	var theirs := WorldGen.team_players(s, opp["id"])
 	var r := opp["seasonRecord"] as Dictionary
@@ -68,7 +69,7 @@ func setup(_p := {}) -> void:
 			rv.add_child(UI.label("경계 대상: 에이스 %s (%d학년 %s, 종합 %d)" % [PlayerUtil.full_name(ace), PlayerUtil.grade(ace, s["year"]), PlayerUtil.POS_KO[ace["pos"]], PlayerUtil.overall(ace)], UI.BAD, true))
 			var ar := Stories.ace_record_text(s, ace)
 			if ar != "":
-				rv.add_child(UI.label("  " + ar, UI.DIM, true))
+				rv.add_child(UI.wrap_label("  " + ar, 236, UI.DIM, true))
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))
