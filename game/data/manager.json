@@ -1,13 +1,76 @@
 {
  "note": "감독 성장 (Godot 전용). 경기·대회·드래프트로 경험치를 얻어 레벨이 오르면 특기를 하나 고른다. 특기는 max 번까지 겹친다. value 는 한 번당 효과.",
- "levels": [0, 60, 150, 270, 420, 600, 820, 1080, 1380, 1720, 2100],
- "exp": {"win": 10, "draw": 4, "loss": 2, "placingDiv": 4, "draft": 20, "title": 10},
+ "levels": [
+  0,
+  60,
+  150,
+  270,
+  420,
+  600,
+  820,
+  1080,
+  1380,
+  1720,
+  2100
+ ],
+ "exp": {
+  "win": 10,
+  "draw": 4,
+  "loss": 2,
+  "placingDiv": 4,
+  "draft": 20,
+  "title": 10
+ },
  "default": "trainer",
  "perks": [
-  {"key": "trainer", "name": "훈련 전문가", "max": 3, "value": 0.06, "desc": "주간 훈련 효과 +6%"},
-  {"key": "motivator", "name": "분위기 메이커", "max": 3, "value": 3, "desc": "팀 분위기 기준점 +3"},
-  {"key": "scout", "name": "스카우트 인맥", "max": 3, "value": 1, "desc": "스카우트 행동력 최대치 +1"},
-  {"key": "earner", "name": "살림꾼", "max": 3, "value": 0.1, "desc": "경기·대회로 얻는 포인트 +10%"},
-  {"key": "tactician", "name": "작전가", "max": 3, "value": 0.03, "desc": "우리 팀 도루·번트·스퀴즈·히트앤런 성공 확률 +3%p"}
+  {
+   "key": "trainer",
+   "name": "훈련 전문가",
+   "max": 3,
+   "value": 0.06,
+   "desc": "주간 훈련 효과 +6%"
+  },
+  {
+   "key": "motivator",
+   "name": "분위기 메이커",
+   "max": 3,
+   "value": 3,
+   "desc": "팀 분위기 기준점 +3"
+  },
+  {
+   "key": "scout",
+   "name": "스카우트 인맥",
+   "max": 3,
+   "value": 1,
+   "desc": "스카우트 행동력 최대치 +1"
+  },
+  {
+   "key": "earner",
+   "name": "살림꾼",
+   "max": 3,
+   "value": 0.1,
+   "desc": "경기·대회로 얻는 포인트 +10%"
+  },
+  {
+   "key": "tactician",
+   "name": "작전가",
+   "max": 3,
+   "value": 0.03,
+   "desc": "우리 팀 도루·번트·스퀴즈·히트앤런 성공 확률 +3%p"
+  },
+  {
+   "key": "pitchCoach",
+   "name": "투수 코치",
+   "max": 3,
+   "value": 0.08,
+   "desc": "투수의 구속·제구·변화구·스태미나 훈련 성장 +8%"
+  },
+  {
+   "key": "defCoach",
+   "name": "수비 코치",
+   "max": 3,
+   "value": 0.1,
+   "desc": "우리 팀 수비 실책 확률 -10%"
+  }
  ]
 }

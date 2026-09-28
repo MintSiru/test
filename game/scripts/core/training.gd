@@ -151,6 +151,9 @@ static func apply_exp(p: Dictionary, k: String, pts: float, mult: float, rng: Rn
 
 
 ## 한 주 훈련 적용. report: {gains, injuries, awakenings} (없으면 null)
+const PIT_STATS := ["velo", "control", "breaking", "stamina"]
+
+
 static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng, report = null, cpu := false, fac = null) -> void:
 	var info: Dictionary = CARD_INFO[card["kind"]]
 	var is_p: bool = p["pos"] == "P"
@@ -160,10 +163,12 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		p["fatigue"] = clampf(p["fatigue"] - 15, 0, 100)
 		return
 	var base := growth_base(p)
+	# 감독 특기 「투수 코치」: 투수 능력치 성장 배율 (card.pitMult, 우리 팀만)
+	var pit_mult: float = float(card.get("pitMult", 1.0)) if is_p else 1.0
 	var idol_stats: Array = _idol_stats(pros, p["idolId"]) if p.get("idolId") != null else []
 	var idol_mul: float = 1.4 if p["idolBond"] >= 50 else 1.25
 	for k in dist:
-		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k), rng)
+		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k) * (pit_mult if k in PIT_STATS else 1.0), rng)
 		if g:
 			gains[k] = gains.get(k, 0) + g
 	var focus_mul := 1.0
@@ -173,7 +178,7 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		focus_mul = 0.2
 	var fs := focus_stats(p)
 	for k in fs:
-		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k), rng)
+		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k) * (pit_mult if k in PIT_STATS else 1.0), rng)
 		if g2:
 			gains[k] = gains.get(k, 0) + g2
 	var fat_mul: float = 1.0 + Abilities.season_fx(p, "recover") if card["kind"] == "rest" else 0.6 + card["value"] * 0.12

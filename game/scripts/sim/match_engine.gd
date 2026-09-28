@@ -32,6 +32,7 @@ class TeamSide:
 	var lead_any := false # 포수 리드 능력을 가진 선수가 있는가 (없으면 계산 생략)
 	var pos_cache := {} # 수비 위치 → 선수 (교체 때 비운다)
 	var tac := 0.0 # 감독 특기 「작전가」: 도루·번트·스퀴즈·히트앤런 성공 확률 보정
+	var err_mul := 1.0 # 감독 특기 「수비 코치」: 이 팀이 수비할 때 실책 확률 배율
 
 	func _init(input: Dictionary) -> void:
 		team_id = input["teamId"]
@@ -1152,7 +1153,7 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 		if rng.chance(clampf(hit_p, 0.05, 0.6)):
 			result = "2B" if absf(angle) > 36 and evel > 140 and rng.chance(0.4) else "1B"
 			dist = 80.0 if result == "2B" else 55.0
-		elif rng.chance(clampf(0.05 + (55 - dv) * 0.001 + fielder(fpos).f_err, 0.01, 0.14)):
+		elif rng.chance(clampf(0.05 + (55 - dv) * 0.001 + fielder(fpos).f_err, 0.01, 0.14) * def().err_mul):
 			result = "E"
 		elif bases[0] != null and outs < 2 and not runner_on_first_stealing and rng.chance(clampf(0.42 - (b.spd - 50) * 0.004 + (dv - 50) * 0.003 + (bm.get("dp", 0.0) if bm_on else 0.0), 0.05, 0.75)):
 			result = "DP"
@@ -1166,7 +1167,7 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 		else: fpos = "1B"
 		dist = rng.frange(10, 35)
 		caught = true
-		if rng.chance(0.02 + fielder(fpos).f_err * 0.5):
+		if rng.chance((0.02 + fielder(fpos).f_err * 0.5) * def().err_mul):
 			result = "E"
 			caught = false
 	else:
@@ -1203,7 +1204,7 @@ func _resolve_in_play(ev: Dictionary, b: SimPlayer, pw: float, pp: float, in_zon
 				catch_p -= 0.04
 			if rng.chance(clampf(catch_p, 0.2, 0.97)):
 				caught = true
-				if rng.chance(clampf(0.02 + (50 - dv) * 0.0006 + fielder(fpos).f_err, 0.003, 0.08)):
+				if rng.chance(clampf(0.02 + (50 - dv) * 0.0006 + fielder(fpos).f_err, 0.003, 0.08) * def().err_mul):
 					result = "E"
 					caught = false
 			elif dist > 88:

@@ -96,5 +96,21 @@ func _init() -> void:
 		fails += 1
 	for key in ["steal", "bunt", "hitRun"]:
 		check(m2, key, [true, false, false], "(작전가 +0.09)")
+	# 감독 특기 「수비 코치」: 실책 배율 0 이면 그 팀 실책 0, 상대는 그대로
+	var he := 0
+	var ae := 0
+	for g in 60:
+		var a3 := TestUtil.make_team(trng, "A", 45)
+		var b3 := TestUtil.make_team(trng, "B", 45)
+		var m3 := MatchEngine.new(SideBuilder.build(a3["team"], a3["players"], "2026-05-01"), SideBuilder.build(b3["team"], b3["players"], "2026-05-01"), Rng.new(100 + g))
+		m3.quiet = true
+		m3.home.err_mul = 0.0
+		MatchAI.play_out(m3)
+		he += m3.home.errors
+		ae += m3.away.errors
+	print("  수비 코치(실책 배율 0) 60경기 실책: 적용 %d / 상대 %d" % [he, ae])
+	if he != 0 or ae == 0:
+		print("  FAIL 수비 코치 실책 배율")
+		fails += 1
 	print("TACTICS ", "OK" if fails == 0 else "FAILED")
 	quit(1 if fails else 0)

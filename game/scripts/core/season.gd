@@ -317,6 +317,8 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	eff["value"] = card["value"] * bonus * (1.0 + Manager.bonus(state, "trainer"))
 	if state.get("awakenBonus") != null:
 		eff["awaken"] = float(state["awakenBonus"])
+	if Manager.perk(state, "pitchCoach") > 0:
+		eff["pitMult"] = 1.0 + Manager.bonus(state, "pitchCoach")
 	for p in WorldGen.team_players(state, state["userTeamId"]):
 		Training.train_player(p, eff, state["pros"], rng, report, false, state.get("facilities"))
 	state.erase("trainingBonus")
@@ -407,6 +409,7 @@ static func create_match(state: Dictionary, f: Dictionary, rng: Rng, user_opts :
 	var us := m.home if home["isUser"] else (m.away if away["isUser"] else null)
 	if us != null:
 		us.tac = Manager.bonus(state, "tactician")
+		us.err_mul = 1.0 - Manager.bonus(state, "defCoach")
 	return m
 
 
