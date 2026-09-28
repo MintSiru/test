@@ -37,6 +37,9 @@ func setup(_p := {}) -> void:
 		Game.goto("hub")
 		return
 	speed_idx = clampi(int(st()["settings"].get("speed", 2)) - 1, 0, 3)
+	# 찬스 응원가는 경기 중에 처음 만들면 잠깐 멈추므로 미리 합성
+	if Game.sound_on() and DisplayServer.get_name() != "headless":
+		Music.get_stream("chance")
 	board = Control.new()
 	UI.place(board, 0, 0, 640, 35)
 	board.draw.connect(_draw_board)
@@ -163,6 +166,7 @@ func _loop() -> void:
 				pitch_order = "normal"
 		field.sync(m, shift_order if m.def() == user else "normal")
 		board.queue_redraw()
+		_update_bgm()
 		if m.over:
 			break
 		if _should_pause(ev):
@@ -288,11 +292,18 @@ func _log_event(ev: Dictionary, inning_txt: String) -> void:
 # ───────────── 화면 갱신 ─────────────
 
 func _refresh() -> void:
+	_update_bgm()
 	board.queue_redraw()
 	_refresh_info()
 	_refresh_tactics()
 	play_btn.text = "❚❚ 일시정지" if busy and not waiting else ("결과 보기" if m.over else "▶ 플레이")
 	pause_btn.text = "지시 타이밍: " + PAUSE_KO[_pause_mode()]
+
+
+## 우리 공격 득점권 찬스에는 찬스 응원가
+func _update_bgm() -> void:
+	if not m.over:
+		Game.bgm("chance" if m.off() == _user() and (m.bases[1] != null or m.bases[2] != null) else "match")
 
 
 func _portrait(sp: SimPlayer, side: MatchEngine.TeamSide) -> TextureRect:

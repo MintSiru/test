@@ -91,7 +91,7 @@ func _build() -> void:
 	menu.add_child(sys_row)
 	sys_row.add_child(UI.expand(UI.button("소리 켬" if snd else "소리 끔", func():
 		st()["settings"]["sound"] = not st()["settings"].get("sound", true)
-		Game.bgm("title")
+		Game.bgm(Game.main.bgm_for("hub"))
 		_build(), 0, true)))
 	sys_row.add_child(UI.expand(UI.button("저장", func():
 		Game.save_game()

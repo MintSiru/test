@@ -222,7 +222,17 @@ func show_screen(screen: String, params := {}) -> void:
 	host.add_child(s)
 	if s.has_method("setup"):
 		s.setup(params)
-	Game.bgm("match" if screen == "match" else "title")
+	Game.bgm(bgm_for(screen))
+
+
+## 화면별 배경음악: 경기 · 경기 전 · 비시즌(11~2월) · 기본
+static func bgm_for(screen: String) -> String:
+	match screen:
+		"match": return "match"
+		"prematch": return "pregame"
+	if not Game.state.is_empty() and Cal.month_of(Game.state["date"]) in [11, 12, 1, 2]:
+		return "offseason"
+	return "title"
 
 
 ## 모달 대화상자. on_close 는 닫힐 때 호출

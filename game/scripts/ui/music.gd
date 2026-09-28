@@ -1,7 +1,9 @@
 class_name Music
 extends RefCounted
 ## 코드로 합성하는 칩튠 배경음악 (외부 음원·라이선스 없음)
-## 곡: "title" (메뉴 행진곡), "match" (응원가풍 경기 음악)
+## 곡: "title" (메뉴 행진곡), "match" (응원가풍 경기 음악), "chance" (득점권 찬스 응원가),
+##     "offseason" (비시즌 11~2월 잔잔한 곡), "pregame" (경기 전 긴장감)
+## lead: 멜로디 음색 (pulse25 · pulse50 · tri), drums: full · clap(박수 응원) · soft
 
 const RATE := 22050
 static var _cache := {}
@@ -24,6 +26,26 @@ const SONGS := {
 			[69, 1], [71, 1], [72, 1], [69, 1], [67, 2], [74, 2]],
 		"bass": [43, 43, 48, 50, 52, 48, 50, 43],
 	},
+	"chance": {
+		"bpm": 160, "lead": "pulse50", "drums": "clap",
+		"melody": [[72, 0.5], [72, 0.5], [74, 1], [76, 1], [72, 1], [79, 1], [79, 1], [76, 2],
+			[77, 0.5], [77, 0.5], [76, 1], [74, 1], [72, 1], [74, 1], [76, 1], [74, 2],
+			[72, 0.5], [72, 0.5], [74, 1], [76, 1], [79, 1], [81, 1], [79, 1], [76, 2],
+			[77, 1], [76, 1], [74, 1], [71, 1], [72, 2], [0, 1], [67, 1]],
+		"bass": [48, 48, 53, 55, 48, 53, 55, 48],
+	},
+	"offseason": {
+		"bpm": 92, "lead": "tri", "drums": "soft",
+		"melody": [[65, 2], [69, 1], [72, 1], [70, 2], [69, 1], [67, 1], [65, 1], [67, 1], [69, 1], [72, 1], [74, 3], [72, 1],
+			[70, 2], [69, 1], [67, 1], [69, 2], [65, 1], [62, 1], [64, 1], [65, 1], [67, 1], [64, 1], [65, 4]],
+		"bass": [41, 46, 41, 50, 46, 41, 48, 41],
+	},
+	"pregame": {
+		"bpm": 132, "lead": "pulse25",
+		"melody": [[69, 1], [72, 1], [76, 1], [72, 1], [74, 1], [77, 1], [81, 2], [79, 1], [77, 1], [76, 1], [74, 1], [76, 3], [0, 1],
+			[69, 1], [72, 1], [76, 1], [79, 1], [81, 1], [79, 1], [77, 1], [76, 1], [74, 1], [76, 1], [77, 1], [74, 1], [76, 2], [69, 2]],
+		"bass": [45, 45, 50, 52, 45, 53, 50, 52],
+	},
 }
 
 
@@ -40,6 +62,8 @@ static func get_stream(name: String) -> AudioStreamWAV:
 	var total := int(RATE * beat * 4 * bars)
 	var buf := PackedFloat32Array()
 	buf.resize(total)
+	var lead: String = song.get("lead", "pulse25")
+	var drums: String = song.get("drums", "full")
 	# 멜로디 (25% 펄스파)
 	var t0 := 0.0
 	for n in song["melody"]:
@@ -53,7 +77,12 @@ static func get_stream(name: String) -> AudioStreamWAV:
 					break
 				var ph := fmod(i * f / RATE, 1.0)
 				var env := minf(1.0, i / 200.0) * (1.0 - 0.5 * float(i) / cnt)
-				buf[start + i] += (0.16 if ph < 0.25 else -0.16) * env
+				var wv := 0.0
+				match lead:
+					"tri": wv = (4.0 * absf(ph - 0.5) - 1.0) * 0.26
+					"pulse50": wv = 0.13 if ph < 0.5 else -0.13
+					_: wv = 0.16 if ph < 0.25 else -0.16
+				buf[start + i] += wv * env
 		t0 += len_s
 	# 베이스 (삼각파, 8분음표로 근음-5도)
 	for b in bars:
@@ -74,15 +103,23 @@ static func get_stream(name: String) -> AudioStreamWAV:
 		var start := int(b * beat * RATE)
 		var kick := b % 2 == 0
 		var cnt := int(0.12 * RATE)
+		var kick_v := 0.12 if drums == "soft" else 0.3
 		for i in cnt:
 			var t := float(i) / RATE
 			var v := 0.0
 			if kick:
-				v = sin(TAU * (60 + 90 * exp(-t * 30)) * t) * exp(-t * 18) * 0.3
-			else:
+				v = sin(TAU * (60 + 90 * exp(-t * 30)) * t) * exp(-t * 18) * kick_v
+			elif drums != "soft":
 				v = r.randf_range(-1, 1) * exp(-t * 25) * 0.12
 			buf[start + i] += v
-		for h in 2:
+		# 박수 응원: 매 박 짝, 4박째는 짝짝
+		if drums == "clap":
+			for c in ([0.0, 0.5] if b % 4 == 3 else [0.0]):
+				var cs := start + int(c * beat * RATE)
+				for i in int(0.05 * RATE):
+					if cs + i < total:
+						buf[cs + i] += r.randf_range(-1, 1) * 0.1 * exp(-float(i) / RATE * 60)
+		for h in (0 if drums == "soft" else 2):
 			var hs := start + int(h * 0.5 * beat * RATE)
 			for i in int(0.03 * RATE):
 				if hs + i < total:
