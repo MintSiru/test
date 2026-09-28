@@ -119,6 +119,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 주장·팀 분위기는 `TeamMood` (`state.teamMood`, `state.captainId`, `state.streak`). 경기 뒤 `after_match`, 매주 `week`, 은퇴식 직후 `captain_event`.
 - 감독 성장은 `Manager` (`data/manager.json`, `state.manager`). 특기 효과는 `Manager.bonus(state, key)`. 「작전가」는 우리 팀 `TeamSide.tac` 으로 작전 공식(`steal_prob` 등)에 더해져 안내와 판정이 함께 바뀐다.
 - 업적은 `data/achievements.json` + `Achievements` (사건형은 `Achievements.event(state, key)`, 상태형은 `check` 가 우리 경기 뒤·매주 판정). 명장면은 엔진 `highlights` → `Records.add_highlights`.
+- 선수 이야기는 `Stories` (우리 경기 뒤 `after_match` 가 선수의 `recent` 최근 5경기로 불방망이·슬럼프, 매일 `daily` 재활 복귀, 매주 `monthly_rival_news`).
 - 배경음악은 `Music.SONGS` 에 곡을 추가하고 `main.gd` 의 `bgm_for()` 나 화면에서 `Game.bgm(이름)`.
 
 ## 작전 확률 (v0.5)

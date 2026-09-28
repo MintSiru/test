@@ -32,6 +32,10 @@ static func weekday(s: String) -> int:
 	return Time.get_date_dict_from_unix_time(to_unix(s))["weekday"]
 
 
+static func day_of(s: String) -> int:
+	return s.substr(8, 2).to_int()
+
+
 static func month_of(s: String) -> int:
 	return s.substr(5, 2).to_int()
 

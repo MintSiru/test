@@ -245,6 +245,7 @@ static func _end_of_day(state: Dictionary, rng: Rng) -> void:
 			p["injury"] -= 1
 		if p["fatigue"] > 0:
 			p["fatigue"] = maxf(0.0, p["fatigue"] - 2.0 * (1.0 + Abilities.season_fx(p, "recover")))
+	Stories.daily(state)
 	for c in state["competitions"].duplicate():
 		if c["kind"] != "league" or c["status"] == "done":
 			continue
@@ -258,6 +259,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	if (m >= 9 or m <= 2) and not state["prospects"].is_empty():
 		state["scoutPoints"] = mini(6 + int(Manager.bonus(state, "scout")), int(state["scoutPoints"]) + 1)
 	Idol.weekly_pro_news(state, rng)
+	Stories.monthly_rival_news(state)
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
 		Training.weekly_condition(p, rng)
@@ -445,6 +447,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			if str(h["text"]).contains("만루 홈런"):
 				Achievements.event(state, "grandSlam")
 		Achievements.check(state)
+		Stories.after_match(state, m.home if f["home"] == u else m.away)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]

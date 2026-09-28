@@ -226,6 +226,26 @@ func _init() -> void:
 		fails.append("업적 보상 중복·누락 %d" % (Shop.points(state) - pa))
 	state["achievements"].erase("rep80")
 	state["points"] = pa
+	# 선수 이야기: 불방망이·슬럼프·재활·라이벌 에이스 소식
+	var story_n := {"hot": 0, "slump": 0, "escape": 0, "rival": 0}
+	for n in state["news"]:
+		var tx: String = n["text"]
+		if tx.contains("불방망이"): story_n["hot"] += 1
+		if tx.contains("슬럼프에 빠졌다"): story_n["slump"] += 1
+		if tx.contains("슬럼프 탈출"): story_n["escape"] += 1
+		if tx.begins_with("[라이벌]"): story_n["rival"] += 1
+	print("선수 이야기 (소식은 최근 300개만): ", story_n)
+	var rp: Dictionary = WorldGen.team_players(state, "user")[1]
+	rp["injury"] = 15
+	Stories.daily(state)
+	rp["injury"] = 0
+	var pops_before: int = state["popups"].size()
+	Stories.daily(state)
+	if state["popups"].size() != pops_before + 1 or int(rp["cond"]) != 2 or rp.has("rehab"):
+		fails.append("재활 복귀 이야기 실패")
+	state["popups"].clear()
+	if Stories.rival_ace(state).is_empty():
+		fails.append("라이벌 에이스 없음")
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

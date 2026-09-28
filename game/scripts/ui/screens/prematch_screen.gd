@@ -63,6 +63,9 @@ func setup(_p := {}) -> void:
 	rv.add_child(UI.label("팀 타율 %s · 홈런 %d · 도루 %d · ERA %.2f" % [("%.3f" % tst["avg"]).trim_prefix("0"), tst["hr"], tst["sb"], tst["era"]], UI.TEXT, true))
 	if Rival.is_rival_game(s, fixture):
 		rv.add_child(UI.label("★ 라이벌전! 선수들의 투지가 불탄다 (컨디션 +1)", UI.BAD, true))
+		var ace := Stories.rival_ace(s)
+		if not ace.is_empty():
+			rv.add_child(UI.label("경계 대상: 에이스 %s (%d학년 %s, 종합 %d)" % [PlayerUtil.full_name(ace), PlayerUtil.grade(ace, s["year"]), PlayerUtil.POS_KO[ace["pos"]], PlayerUtil.overall(ace)], UI.BAD, true))
 	var ts = Lineup.pick_starter(theirs, fixture["date"], [])
 	if ts != null:
 		rv.add_child(UI.label("예상 선발: %s %dkm 제구 %s" % [PlayerUtil.full_name(ts), ts["r"]["velo"], PlayerUtil.letter(ts["r"]["control"])], UI.TEXT, true))
