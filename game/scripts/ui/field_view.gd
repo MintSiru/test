@@ -64,6 +64,19 @@ func _team_colors(side: MatchEngine.TeamSide, is_home: bool) -> Array:
 	return [jersey, cap, acc]
 
 
+## 관중 함성 크기: 후반(7회 이후) 접전이면 크게, 큰 점수 차면 작게
+func crowd_db(base: float) -> float:
+	if m == null:
+		return base
+	var diff := absi(m.home.score - m.away.score)
+	var db := base
+	if m.inning >= 7 and diff <= 2:
+		db += 3.0 + (2.0 if m.inning >= 9 and diff <= 1 else 0.0)
+	elif diff >= 6:
+		db -= 5.0
+	return minf(db, 4.0)
+
+
 func sync(match_: MatchEngine, shift := "normal") -> void:
 	m = match_
 	off_colors = _team_colors(m.off(), m.off() == m.home)
@@ -163,7 +176,7 @@ func _run(move: Dictionary, dur_per_base: float) -> void:
 		add_text("OUT", r["pos"] + Vector2(-8, -18), Color("#ef6f6c"), false, 0.8)
 	elif to == 4:
 		add_text("+1", r["pos"] + Vector2(-6, -18), Color("#f4d35e"), false, 0.8)
-		Game.sfx("cheer", -6.0)
+		Game.sfx("cheer", crowd_db(-6.0))
 
 
 func play(ev: Dictionary, speed: float) -> void:
@@ -237,9 +250,12 @@ func _animate_batted(ev: Dictionary, k: float) -> void:
 	match b["result"]:
 		"HR":
 			add_text("홈런!!", Vector2(160, 70), Color("#f4d35e"), true, 1.6)
-			Game.sfx("cheer")
+			Game.sfx("cheer", crowd_db(0.0))
 		"1B", "2B", "3B":
 			add_text({"1B": "안타!", "2B": "2루타!", "3B": "3루타!"}[b["result"]], land + Vector2(-16, -24), Color("#6fd08c"))
+			# 장타는 관중이 들썩인다 (접전·후반일수록 크게)
+			if b["result"] != "1B" and crowd_db(0.0) > 0.0:
+				Game.sfx("cheer", crowd_db(-10.0))
 			# 굴러가는 공 → 야수 송구
 			var roll := land + (land - HOME).normalized() * 12.0
 			await _tween_ball(land, roll, 0.2 * k, 0.0)
