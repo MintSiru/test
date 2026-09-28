@@ -91,6 +91,10 @@ jobs:
           npm i -g playwright@1.56.1 > /dev/null && npx playwright install --with-deps chromium > /dev/null
           node tools/web_bench.mjs build/web
           node tools/web_bench.mjs build/web --throttle=4
+      # 참고용: 여러 휴대폰 크기(세로/가로)에서 화면 사용률·터치·이름 입력 점검
+      - name: 모바일 화면 점검 (참고)
+        continue-on-error: true
+        run: node tools/mobile_check.mjs build/web mobile_shots
       - name: 기반 시스템(웹) 빌드 → /foundation
         run: |
           cd web && npm ci && npx vite build --outDir ../build/web/foundation --emptyOutDir

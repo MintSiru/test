@@ -32,6 +32,9 @@ func setup(_p := {}) -> void:
 		v.add_child(UI.button("이어하기", _continue, 140))
 	v.add_child(UI.button("새 게임", func(): Game.goto("new_game"), 140))
 	v.add_child(UI.button("도움말", func(): Help.index_panel(), 140))
+	# 안드로이드 브라우저: 주소창을 없애 화면을 넓게 (iPhone Safari 는 전체 화면을 지원하지 않는다)
+	if OS.has_feature("web_android"):
+		v.add_child(UI.button("전체 화면", func(): Game.toggle_fullscreen(), 140))
 	if OS.get_name() != "Web":
 		v.add_child(UI.button("종료", func(): get_tree().quit(), 140))
 	var note := UI.label("주말리그 · 이마트배 · 황금사자기 · 청룡기 · 대통령배 · 봉황대기 · 전국체전", UI.DIM, true)

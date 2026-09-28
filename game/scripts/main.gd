@@ -136,6 +136,7 @@ func show_screen(screen: String, params := {}) -> void:
 	s.set_anchors_preset(Control.PRESET_FULL_RECT)
 	current = s
 	current_name = screen
+	print("SCREEN ", screen) # 자동 점검 도구(tools/mobile_check.mjs)가 화면 전환을 읽는다
 	host.add_child(s)
 	if s.has_method("setup"):
 		s.setup(params)

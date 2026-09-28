@@ -28,6 +28,39 @@ func _ready() -> void:
 	_bgm = AudioStreamPlayer.new()
 	_bgm.volume_db = -13.0
 	add_child(_bgm)
+	# 화면 배율: 창(휴대폰 화면) 크기가 바뀔 때마다 다시 정한다
+	get_tree().root.size_changed.connect(fit_screen)
+	fit_screen.call_deferred()
+
+
+## 640×360 화면을 창에 맞춘다.
+## 정수 배율(도트가 고르게 보임)로 창을 90% 이상 채우면 정수 배율, 아니면 소수 배율로 꽉 채운다.
+## 휴대폰 가로 화면(예: 2250×1026)은 정수 2배면 57% 만 쓰므로 소수 배율(2.85배)이 된다.
+func fit_screen() -> void:
+	var root := get_tree().root
+	var win := DisplayServer.window_get_size()
+	if win.x <= 0 or win.y <= 0:
+		return
+	var f := minf(win.x / 640.0, win.y / 360.0)
+	var k := floorf(f)
+	var integer := k >= 1.0 and k / f >= 0.9
+	root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER if integer else Window.CONTENT_SCALE_STRETCH_FRACTIONAL
+	var scale := k if integer else f
+	var cover := (640.0 * scale) * (360.0 * scale) / (win.x * win.y)
+	print("LAYOUT %dx%d %s %.2fx 화면 사용 %d%%" % [win.x, win.y, "정수" if integer else "소수", scale, roundi(cover * 100)])
+
+
+## 웹 모바일 여부 (안드로이드·iOS 브라우저)
+func is_mobile_web() -> bool:
+	return OS.has_feature("web_android") or OS.has_feature("web_ios")
+
+
+## 전체 화면 전환 (웹은 사용자 터치 안에서만 가능. 안드로이드는 가로 고정도 시도)
+func toggle_fullscreen() -> void:
+	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
+	if not full and OS.get_name() == "Web":
+		JavaScriptBridge.eval("try { screen.orientation.lock('landscape').catch(function(){}); } catch (e) {}")
 
 
 func sound_on() -> bool:

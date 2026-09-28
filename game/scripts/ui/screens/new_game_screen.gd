@@ -25,11 +25,13 @@ func setup(_p := {}) -> void:
 	school.max_length = 8
 	school.custom_minimum_size.x = 160
 	g.add_child(school)
+	_mobile_input(school, "학교 이름 (8자 이내)")
 	g.add_child(UI.label("감독 이름"))
 	manager = LineEdit.new()
 	manager.text = "김감독"
 	manager.max_length = 8
 	g.add_child(manager)
+	_mobile_input(manager, "감독 이름 (8자 이내)")
 	g.add_child(UI.label("주말리그 권역"))
 	var names := groups.map(func(x): return x["name"])
 	g.add_child(UI.option(names, 0, func(i): group_idx = i, false))
@@ -64,3 +66,20 @@ func _start() -> void:
 	for n in range(1, Game.SLOT_COUNT + 1):
 		v.add_child(TitleScreen.slot_row(n, false, start))
 	Game.main.show_panel("저장 슬롯 선택", v)
+
+
+## 휴대폰 브라우저는 게임 화면의 입력칸에서 키보드가 뜨지 않는 경우가 있다 → 누르면 브라우저 입력창으로 받는다
+func _mobile_input(edit: LineEdit, title: String) -> void:
+	if not Game.is_mobile_web():
+		return
+	edit.editable = false
+	# 읽기 전용이지만 평소 입력칸처럼 보이게
+	edit.add_theme_color_override("font_uneditable_color", UI.TEXT)
+	edit.add_theme_stylebox_override("read_only", UI.sb(UI.PANEL2, UI.LINE))
+	edit.gui_input.connect(func(e: InputEvent):
+		if (e is InputEventMouseButton or e is InputEventScreenTouch) and e.pressed:
+			var cur := edit.text.replace("\\", "").replace("'", "")
+			var r = JavaScriptBridge.eval("(function(){ var v = window.prompt('%s', '%s'); return v === null ? '' : v; })()" % [title, cur])
+			var t := str(r).strip_edges().left(edit.max_length)
+			if t != "":
+				edit.text = t)
