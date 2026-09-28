@@ -82,5 +82,19 @@ func _init() -> void:
 		check(m, "safetyBunt", [false, false, false], lbl)
 		check(m, "squeeze", [false, false, true], lbl)
 		check(m, "hitRun", [true, false, false], lbl)
+	# 감독 특기 「작전가」 3단계(+0.09): 안내와 실제가 함께 오른다
+	var a2 := TestUtil.make_team(trng, "A", 55)
+	var b2 := TestUtil.make_team(trng, "B", 55)
+	var m2 := MatchEngine.new(SideBuilder.build(b2["team"], b2["players"], "2026-05-01"), SideBuilder.build(a2["team"], a2["players"], "2026-05-01"), Rng.new(9))
+	m2.quiet = true
+	setup(m2, [true, false, false])
+	var base_odds: float = m2.tactic_odds()["steal"]
+	m2.off().tac = 0.09
+	setup(m2, [true, false, false])
+	if m2.tactic_odds()["steal"] <= base_odds:
+		print("  FAIL 작전가 특기가 도루 안내에 반영 안 됨")
+		fails += 1
+	for key in ["steal", "bunt", "hitRun"]:
+		check(m2, key, [true, false, false], "(작전가 +0.09)")
 	print("TACTICS ", "OK" if fails == 0 else "FAILED")
 	quit(1 if fails else 0)

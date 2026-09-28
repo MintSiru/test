@@ -147,6 +147,11 @@ func _fill_left() -> void:
 	ml.tooltip_text = "팀 분위기: 이기면 오르고 지면 내려갑니다. 70 이상이면 선수 컨디션이 오르기 쉽고, 30 이하면 떨어지기 쉽습니다. 주장이 기준점을 올려 줍니다."
 	ml.mouse_filter = Control.MOUSE_FILTER_STOP
 	left_box.add_child(ml)
+	var mgr := Manager.info(s)
+	var mgl := UI.label("감독 Lv%d%s" % [mgr["level"], ("  (다음까지 %d)" % (Manager.next_exp(s) - int(mgr["exp"]))) if Manager.next_exp(s) >= 0 else ""], UI.IDOL, true)
+	mgl.tooltip_text = Manager.summary(s) + "\n경기 승리·대회 성적·프로 지명·개인 타이틀로 경험치를 얻습니다."
+	mgl.mouse_filter = Control.MOUSE_FILTER_STOP
+	left_box.add_child(mgl)
 	var rid = s.get("rivalId")
 	if rid != null:
 		var hh := Rival.h2h_of(s, rid)

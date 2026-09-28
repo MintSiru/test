@@ -301,6 +301,8 @@ static func choose(state: Dictionary, choice: String, key: String) -> String:
 			return _camp_night(state, key)
 		"captain":
 			return TeamMood.set_captain(state, key)
+		"managerPerk":
+			return Manager.choose_perk(state, key)
 	return ""
 
 

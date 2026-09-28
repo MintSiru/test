@@ -66,6 +66,7 @@ static func points(state: Dictionary) -> int:
 static func earn(state: Dictionary, pts: int, reason: String) -> void:
 	if pts <= 0:
 		return
+	pts = roundi(pts * (1.0 + Manager.bonus(state, "earner")))
 	state["points"] = points(state) + pts
 	state["news"].append({"date": state["date"], "kind": "good", "text": "%s +%dP (보유 %dP)" % [reason, pts, state["points"]]})
 

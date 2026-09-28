@@ -256,7 +256,7 @@ static func _week_start(state: Dictionary, rng: Rng) -> void:
 	state["weekTrained"] = false
 	var m := Cal.month_of(state["date"])
 	if (m >= 9 or m <= 2) and not state["prospects"].is_empty():
-		state["scoutPoints"] = mini(6, int(state["scoutPoints"]) + 1)
+		state["scoutPoints"] = mini(6 + int(Manager.bonus(state, "scout")), int(state["scoutPoints"]) + 1)
 	Idol.weekly_pro_news(state, rng)
 	var roster := WorldGen.team_players(state, state["userTeamId"])
 	for p in state["players"].values():
@@ -311,7 +311,7 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	var report := {"gains": {}, "injuries": [], "awakenings": []}
 	var bonus: float = state.get("trainingBonus", 1.0) if state.get("trainingBonus") != null else 1.0
 	var eff := card.duplicate()
-	eff["value"] = card["value"] * bonus
+	eff["value"] = card["value"] * bonus * (1.0 + Manager.bonus(state, "trainer"))
 	if state.get("awakenBonus") != null:
 		eff["awaken"] = float(state["awakenBonus"])
 	for p in WorldGen.team_players(state, state["userTeamId"]):
@@ -323,7 +323,7 @@ static func use_card(state: Dictionary, card_id: String) -> Dictionary:
 	for n in Lineup.weekly_position_practice(state, card):
 		state["news"].append(n)
 	if card["kind"] == "scout":
-		state["scoutPoints"] = mini(8, int(state["scoutPoints"]) + 2)
+		state["scoutPoints"] = mini(8 + int(Manager.bonus(state, "scout")), int(state["scoutPoints"]) + 2)
 	hand.erase(card)
 	hand.append(Training.draw_card(rng, WorldGen.uid(state, "c")))
 	state["weekTrained"] = true
@@ -400,7 +400,11 @@ static func create_match(state: Dictionary, f: Dictionary, rng: Rng, user_opts :
 		uo["condBonus"] = 1 # 라이벌전 투지
 	var hs := SideBuilder.build(home, WorldGen.team_players(state, home["id"]), f["date"], uo if home["isUser"] else {})
 	var as_ := SideBuilder.build(away, WorldGen.team_players(state, away["id"]), f["date"], uo if away["isUser"] else {})
-	return MatchEngine.new(hs, as_, rng, rules_for(comp))
+	var m := MatchEngine.new(hs, as_, rng, rules_for(comp))
+	var us := m.home if home["isUser"] else (m.away if away["isUser"] else null)
+	if us != null:
+		us.tac = Manager.bonus(state, "tactician")
+	return m
 
 
 ## 투구수에 따른 의무 휴식일 (대한야구소프트볼협회 투구수 제한 규정)
@@ -428,6 +432,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	var official: bool = comp["kind"] != "friendly"
 	if is_user_game:
 		TeamMood.after_match(state, m.winner == u, m.winner == null, official)
+		Manager.exp_for_match(state, m.winner == u, m.winner == null, official)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]
@@ -508,6 +513,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 				Goals.event(state, "nationalBest", Goals.placing_rank(r))
 				var def := Cal.comp_def(comp["key"])
 				Shop.earn(state, Shop.placing_points(r), "%s %s" % [def["short"], r])
+				Manager.add_exp(state, Shop.placing_points(r) / int(Manager.data()["exp"]["placingDiv"]))
 				if r == "우승":
 					state["reputation"] = clampi(state["reputation"] + int(def["repWin"]), 0, 100)
 					state["popups"].append({"kind": "good", "title": "%s 우승!" % def["short"], "body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
@@ -649,6 +655,7 @@ static func run_draft(state: Dictionary, rng: Rng) -> void:
 				"style": _style_from_player(p), "number": rng.irange(1, 99), "birthYear": int(state["year"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 	if not lines.is_empty():
 		Goals.event(state, "draft", lines.size())
+		Manager.add_exp(state, int(Manager.data()["exp"]["draft"]) * lines.size())
 	Offseason.college_draft(state, rng)
 	# 다른 학교 상위 지명자도 프로 리그에 합류 → 은퇴로 동경 대상이 줄어드는 것을 막는다
 	var added := 0

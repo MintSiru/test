@@ -31,6 +31,7 @@ class TeamSide:
 	var visit_pa := 0 # 방문 효과가 남은 타자 수
 	var lead_any := false # 포수 리드 능력을 가진 선수가 있는가 (없으면 계산 생략)
 	var pos_cache := {} # 수비 위치 → 선수 (교체 때 비운다)
+	var tac := 0.0 # 감독 특기 「작전가」: 도루·번트·스퀴즈·히트앤런 성공 확률 보정
 
 	func _init(input: Dictionary) -> void:
 		team_id = input["teamId"]
@@ -249,7 +250,7 @@ func steal_prob(base: int) -> float:
 	var arm := catcher.arm + catcher.f_arm * 0.8
 	var pit := pitcher()
 	var hold: float = pit_mods(pit, def()).get("hold", 0.0)
-	var p := 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + runner.f_steal + hold
+	var p := 0.62 + (runner.spd - 50) * 0.009 - (arm - 50) * 0.005 + runner.f_steal + hold + off().tac
 	if base == 1:
 		p -= 0.08
 	if pit.throws == "L" and base == 0:
@@ -259,7 +260,7 @@ func steal_prob(base: int) -> float:
 
 ## 번트가 제대로 굴러갈 확률 (타구가 앞으로 갔을 때 성공)
 func bunt_good(b: SimPlayer, bm: Dictionary, pp: float, in_zone: bool, shift: String) -> float:
-	var good: float = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + bm.get("bunt", 0.0) - (0.0 if in_zone else 0.15)
+	var good: float = 0.6 + (b.con - 50) * 0.004 - (pp - 28) * 0.004 + bm.get("bunt", 0.0) - (0.0 if in_zone else 0.15) + off().tac
 	if shift == "buntShift":
 		good -= 0.12
 	return good
@@ -267,7 +268,7 @@ func bunt_good(b: SimPlayer, bm: Dictionary, pp: float, in_zone: bool, shift: St
 
 ## 기습번트가 성공했을 때 내야안타가 될 확률
 func safety_hit_prob(b: SimPlayer, bm: Dictionary, shift: String) -> float:
-	return 0.2 + (b.spd - 50) * 0.009 + bm.get("buntHit", 0.0) - (0.1 if shift == "buntShift" else 0.0)
+	return 0.2 + (b.spd - 50) * 0.009 + bm.get("buntHit", 0.0) - (0.1 if shift == "buntShift" else 0.0) + off().tac
 
 
 ## 지금 투수의 구종별 [비율, 구위] (step() 의 구종 선택·구위 계산과 같다)
@@ -332,7 +333,7 @@ func tactic_odds() -> Dictionary:
 		out["squeeze"] = sq
 	if bases[0] != null and bases[1] == null:
 		var platoon := 0.01 if b.bats == "S" else (-0.015 if b.bats == pitcher().throws else 0.015)
-		var c: float = 0.87 + (b.con + bm.get("con", 0.0) - 50) * 0.0045 - (pp - 28) * 0.0062 + platoon + bm.get("contact", 0.0) - pm.get("whiff", 0.0) + 0.05
+		var c: float = 0.87 + (b.con + bm.get("con", 0.0) - 50) * 0.0045 - (pp - 28) * 0.0062 + platoon + bm.get("contact", 0.0) - pm.get("whiff", 0.0) + 0.05 + off().tac
 		# 히트앤런은 존 안 95%, 존 밖 70% 를 휘두른다 (존 안 약 55%)
 		var w_in := 0.55 * 0.95 / (0.55 * 0.95 + 0.45 * 0.7)
 		out["hitRun"] = clampf(c, 0.3, 0.97) * w_in + clampf(c - 0.22, 0.3, 0.97) * (1.0 - w_in)
@@ -726,7 +727,7 @@ func _step(orders: Dictionary) -> Dictionary:
 		var contact_p := 0.87 + (con - 50) * 0.0045 - (pp - 28) * 0.0062 + platoon - (0.0 if in_zone else 0.22) + (0.08 if mistake else 0.0)
 		contact_p += (bm.get("contact", 0.0) if bm_on else 0.0) - (pm.get("whiff", 0.0) if pm_on else 0.0)
 		if off_order == "hitRun":
-			contact_p += 0.05
+			contact_p += 0.05 + off().tac
 		if not rng.chance(clampf(contact_p, 0.3, 0.97)):
 			strikes += 1
 			ev["call"] = "swinging"

@@ -60,7 +60,7 @@ static func after_match(state: Dictionary, won: bool, drew: bool, official: bool
 
 ## 주간: 기준점으로 돌아가기, 컨디션 영향
 static func week(state: Dictionary, roster: Array, rng: Rng) -> void:
-	var target := 50 + captain_bonus(captain(state))
+	var target := 50 + captain_bonus(captain(state)) + int(Manager.bonus(state, "motivator"))
 	var m := mood(state)
 	state["teamMood"] = clampi(m + roundi((target - m) * 0.15), 0, 100)
 	for p in roster:

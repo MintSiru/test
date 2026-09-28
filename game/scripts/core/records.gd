@@ -79,6 +79,7 @@ static func season_end(state: Dictionary) -> void:
 					p["titles"] = []
 				p["titles"].append("%s %s" % [year, x["title"]])
 		state["points"] = Shop.points(state) + TITLE_POINTS * mine.size()
+		Manager.add_exp(state, int(Manager.data()["exp"]["title"]) * mine.size())
 		state["reputation"] = clampi(int(state["reputation"]) + mine.size(), 0, 100)
 		state["popups"].append({"kind": "good", "title": "개인 타이틀 수상!",
 			"body": "올 시즌 전국 개인 타이틀을 우리 선수가 차지했다!\n\n%s\n\n(+%dP, 명성 +%d)" % ["\n".join(lines), TITLE_POINTS * mine.size(), mine.size()]})

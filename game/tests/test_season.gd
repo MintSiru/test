@@ -183,6 +183,30 @@ func _init() -> void:
 	state["alumni"].erase(fake)
 	state["pros"] = state["pros"].filter(func(x): return x != late)
 	state["popups"].clear()
+	# 감독 성장: 1년 경험치로 레벨이 오르고, 레벨마다 특기 하나 (기본값 → 선택으로 교체)
+	var mg := Manager.info(state)
+	var perks_n := 0
+	for k in mg["perks"]:
+		perks_n += int(mg["perks"][k])
+	print("감독: ", Manager.summary(state).replace("\n", " / "))
+	if int(mg["level"]) < 2 or perks_n != int(mg["level"]) - 1:
+		fails.append("감독 성장 실패 (레벨 %d, 특기 %d)" % [mg["level"], perks_n])
+	var tr0 := Manager.perk(state, "trainer")
+	var tac0 := Manager.perk(state, "tactician")
+	Manager.add_exp(state, Manager.next_exp(state) - int(mg["exp"]))
+	var lv_key := str(mg["level"])
+	if Manager.perk(state, "trainer") != tr0 + 1 and tr0 < 3:
+		fails.append("레벨 업 기본 특기 미적용")
+	Manager.choose_perk(state, lv_key + ":tactician")
+	if Manager.perk(state, "tactician") != tac0 + 1 or (tr0 < 3 and Manager.perk(state, "trainer") != tr0):
+		fails.append("특기 선택 교체 실패 %s" % [mg["perks"]])
+	var pts_e := Shop.points(state)
+	mg["perks"]["earner"] = 1
+	Shop.earn(state, 100, "테스트")
+	if Shop.points(state) != pts_e + 110:
+		fails.append("살림꾼 특기 실패")
+	mg["perks"].erase("earner")
+	state["points"] = pts_e
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])
