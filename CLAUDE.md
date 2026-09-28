@@ -113,6 +113,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 
 - 화면은 코드로 조립한다 (`scripts/ui/ui.gd` 헬퍼, `BaseScreen`). 640×360 좌표를 `UI.place()` 로 직접 배치.
 - 폰트: Galmuri11(12px) 기본, Galmuri9(10px) 작은 글씨. 이모지는 폰트에 없으니 쓰지 않는다.
+  웹 로딩을 줄이려고 한자·일본어 가나를 뺀 서브셋이다 (`tools/subset_fonts.py`, 한글 11,172자·기호는 전부 있음). 한자를 화면에 쓰지 말 것.
 - 도트 그래픽은 `PixelArt` 에서 코드로 생성·캐시한다. 외부 이미지를 추가하면 `default_texture_filter=0`(Nearest) 유지.
 - 새 화면: `scripts/ui/screens/xxx_screen.gd` (extends BaseScreen, `setup(params)`) + `main.gd` 의 `SCREENS` 에 등록.
   `data/help.json` 의 `topics` 에 화면 이름과 같은 키로 도움말을 넣으면 상단 「?」 버튼이 그 도움말을 보여 준다.
