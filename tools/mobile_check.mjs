@@ -85,6 +85,33 @@ for (const [name, dev] of CASES) {
   rows.push(`이름 입력 (iPhone 가로): ${asked ? `입력창 뜸 「${asked}」` : '입력창 안 뜸'}`);
   await ctx.close();
 }
+// 게임 속 화면 (주소 뒤 개발용 인자): 홈·경기 화면을 휴대폰 가로에서 찍고, 길게 누르기 설명을 시험
+for (const [name, q] of [['홈', '?newgame&notut&days=3&screen=hub'], ['경기', '?newgame&notut&days=5&pitches=26&screen=match']]) {
+  const dev = devices['iPhone 13 landscape'];
+  const ctx = await browser.newContext({ ...dev });
+  const page = await ctx.newPage();
+  const logs = [];
+  page.on('console', (m) => logs.push(m.text()));
+  await page.goto(`http://localhost:${port}/index.html${q}`);
+  for (let i = 0; i < 90 && !logs.some((l) => l.startsWith(`SCREEN ${name === '홈' ? 'hub' : 'match'}`)); i++) await page.waitForTimeout(500);
+  await page.waitForTimeout(2000);
+  await page.screenshot({ path: path.join(outDir, `화면-${name}.png`) });
+  if (name === '경기') {
+    // 「희생 번트」 작전 버튼(게임 좌표 약 571,153)을 0.8초 누르고 있으면 설명(성공 가능성)이 떠야 한다
+    const vp = page.viewportSize();
+    const s = Math.min(vp.width / 640, vp.height / 360);
+    const x = (vp.width - 640 * s) / 2 + 571 * s;
+    const y = (vp.height - 360 * s) / 2 + 153 * s;
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    await page.waitForTimeout(800);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: path.join(outDir, '길게누르기.png') });
+  }
+  rows.push(`게임 화면 (${name}, iPhone 가로): ${logs.filter((l) => l.startsWith('SCREEN')).pop() ?? '열리지 않음'}`);
+  await ctx.close();
+}
 await browser.close();
 server.close();
 console.log(rows.join('\n'));

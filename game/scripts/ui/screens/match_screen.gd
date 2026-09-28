@@ -53,18 +53,20 @@ func setup(_p := {}) -> void:
 	rv.add_child(info_box)
 	tactic_box = UI.vbox(2)
 	rv.add_child(tactic_box)
+	# 터치 화면: 실황 창을 조금 줄이고 아래 조작 버튼을 크게 (손가락으로 누르기 쉽게)
+	var touch := DisplayServer.is_touchscreen_available()
 	var lp := UI.panel(UI.PANEL, UI.LINE, 3)
-	UI.place(lp, 2, 287, 636, 52)
+	UI.place(lp, 2, 287, 636, 36 if touch else 52)
 	add_child(lp)
 	log_label = RichTextLabel.new()
 	log_label.bbcode_enabled = true
 	log_label.scroll_following = true
 	log_label.add_theme_font_override("normal_font", UI.font_small)
 	log_label.add_theme_font_size_override("normal_font_size", 10)
-	log_label.custom_minimum_size = Vector2(628, 44)
+	log_label.custom_minimum_size = Vector2(628, 28 if touch else 44)
 	lp.add_child(log_label)
 	var row := UI.hbox(4)
-	UI.place(row, 2, 341, 636, 18)
+	UI.place(row, 2, 325 if touch else 341, 636, 33 if touch else 18)
 	add_child(row)
 	play_btn = UI.button("▶ 플레이", _toggle_play, 90)
 	row.add_child(play_btn)
@@ -75,6 +77,10 @@ func setup(_p := {}) -> void:
 	row.add_child(UI.expand(UI.spacer()))
 	row.add_child(UI.button("저장 후 나가기", _save_quit, 0, true))
 	row.add_child(UI.button("위임 (끝까지 자동)", _delegate_all, 0, true))
+	if touch:
+		for b in row.get_children():
+			if b is Button:
+				b.custom_minimum_size.y = 31
 	var fx := Season.find_fixture(st(), st().get("pendingFixture", ""))
 	var cond_txt := ""
 	if not fx.is_empty():
