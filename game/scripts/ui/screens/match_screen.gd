@@ -36,6 +36,8 @@ func setup(_p := {}) -> void:
 	if m == null:
 		Game.goto("hub")
 		return
+	# 불러온 경기는 이미 나온 명장면을 다시 알리지 않는다
+	_hl_seen = m.highlights.size()
 	speed_idx = clampi(int(st()["settings"].get("speed", 2)) - 1, 0, 3)
 	# 찬스 응원가는 경기 중에 처음 만들면 잠깐 멈추므로 미리 합성
 	if Game.sound_on() and DisplayServer.get_name() != "headless":
@@ -161,6 +163,7 @@ func _loop() -> void:
 			Game.save_match()
 		if ev["paResult"] != "":
 			_announce_gold()
+			_announce_highlight()
 			off_order = "normal"
 			if pitch_order == "ibb":
 				pitch_order = "normal"
@@ -219,6 +222,22 @@ func _announce_gold() -> void:
 
 
 ## 필드 위에 잠깐 띄우는 알림
+## 우리 팀 명장면이 방금 나왔으면 큰 알림 + 함성 (홈런은 필드에서 이미 함성)
+var _hl_seen := 0
+
+
+func _announce_highlight() -> void:
+	if m.highlights.size() <= _hl_seen:
+		return
+	var h: Dictionary = m.highlights[m.highlights.size() - 1]
+	_hl_seen = m.highlights.size()
+	_add_line("[color=#f4d35e]★ 명장면! %s[/color]" % h["text"])
+	if SPEEDS[speed_idx] < 8.0:
+		_banner({"walkoff": "끝내기!!", "hr": "명장면!", "clutch": "승부처!", "escape": "위기 탈출!"}.get(h["kind"], "명장면!"), h["text"])
+		if h["kind"] != "hr":
+			Game.sfx("cheer", field.crowd_db(0.0))
+
+
 func _banner(title: String, sub: String) -> void:
 	var p := UI.panel(Color("#3a2c08"), UI.TIER_COLORS["gold"], 6)
 	var v := UI.vbox(1)
