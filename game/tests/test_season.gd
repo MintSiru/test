@@ -80,6 +80,15 @@ func _init() -> void:
 		fails.append("연도 %d" % state["year"])
 	if not "KBO 신인 드래프트" in popups:
 		fails.append("드래프트 없음")
+	# 기록: 2026 전국 개인 타이틀 7개, 학교 기록, 졸업생 고교 통산
+	var t26 = state.get("titles", {}).get("2026")
+	print("2026 타이틀: ", t26.map(func(x): return "%s %s(%s) %s" % [x["title"], x["name"], x["school"], x["value"]]) if t26 != null else null)
+	if t26 == null or t26.size() != Records.TITLES.size():
+		fails.append("개인 타이틀 결산 실패")
+	if state.get("schoolRecords") == null or state["schoolRecords"].is_empty():
+		fails.append("학교 기록 없음")
+	if state["alumni"].is_empty() or not state["alumni"][0].has("hs"):
+		fails.append("졸업생 고교 통산 없음")
 	# 비시즌 콘텐츠: 진로 상담·합숙 선택 팝업, 학교 행사 소식
 	if not "3학년 진로 상담" in popups or not "동계 합숙 장소" in popups:
 		fails.append("비시즌 선택 팝업 없음")

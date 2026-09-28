@@ -331,7 +331,8 @@ func _process(delta: float) -> void:
 				Game.main.drain_popups(_after_popups)
 			return
 	if status_label:
-		status_label.text = "진행 중... %s" % Cal.pretty(s["date"])
+		var pr := Season.day_progress(s)
+		status_label.text = "진행 중... %s%s" % [Cal.pretty(s["date"]), ("  (오늘 경기 %d/%d)" % pr) if int(pr[1]) >= 6 else ""]
 
 
 func _after_popups() -> void:

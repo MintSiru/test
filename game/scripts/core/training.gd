@@ -54,6 +54,14 @@ static func auto_focus(p: Dictionary) -> String:
 
 
 static func growth_mult(p: Dictionary, k: String, pros: Array) -> float:
+	var m := growth_base(p)
+	if p.get("idolId") != null and k in _idol_stats(pros, p["idolId"]):
+		m *= 1.4 if p["idolBond"] >= 50 else 1.25
+	return m
+
+
+## 능력치와 상관없는 성장 배율 (재능·성격·피로·컨디션·특수능력). 한 선수의 여러 능력치에 같이 쓴다
+static func growth_base(p: Dictionary) -> float:
 	var m: float = (0.6 + p["talent"] * 0.18) * 0.9
 	match p["personality"]:
 		"노력파": m *= 1.15
@@ -63,13 +71,24 @@ static func growth_mult(p: Dictionary, k: String, pros: Array) -> float:
 		m *= 0.7
 	m *= 1.0 + p["cond"] * 0.05
 	m *= 1.0 + Abilities.season_fx(p, "growth")
-	if p.get("idolId") != null:
-		for pro in pros:
-			if pro["id"] == p["idolId"]:
-				if k in GameData.styles()[pro["style"]]["stats"]:
-					m *= 1.4 if p["idolBond"] >= 50 else 1.25
-				break
 	return m
+
+
+## 프로 선수 id → 동경 보너스 능력치 목록 (주간 훈련 때 전국 선수마다 명단을 훑지 않도록 색인)
+static var _pro_src: Array = []
+static var _pro_n := -1
+static var _pro_idx := {}
+
+
+static func _idol_stats(pros: Array, idol_id) -> Array:
+	if not is_same(_pro_src, pros) or _pro_n != pros.size():
+		_pro_src = pros
+		_pro_n = pros.size()
+		_pro_idx = {}
+		var styles := GameData.styles()
+		for pro in pros:
+			_pro_idx[pro["id"]] = styles[pro["style"]]["stats"]
+	return _pro_idx.get(idol_id, [])
 
 
 ## 경험치 적용. 오른 수치 반환
@@ -140,8 +159,11 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 	if p["injury"] > 0:
 		p["fatigue"] = clampf(p["fatigue"] - 15, 0, 100)
 		return
+	var base := growth_base(p)
+	var idol_stats: Array = _idol_stats(pros, p["idolId"]) if p.get("idolId") != null else []
+	var idol_mul: float = 1.4 if p["idolBond"] >= 50 else 1.25
 	for k in dist:
-		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, growth_mult(p, k, pros) * Shop.growth(fac, k), rng)
+		var g := apply_exp(p, k, card["value"] * dist[k] * 1.1, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k), rng)
 		if g:
 			gains[k] = gains.get(k, 0) + g
 	var focus_mul := 1.0
@@ -151,7 +173,7 @@ static func train_player(p: Dictionary, card: Dictionary, pros: Array, rng: Rng,
 		focus_mul = 0.2
 	var fs := focus_stats(p)
 	for k in fs:
-		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, growth_mult(p, k, pros) * Shop.growth(fac, k), rng)
+		var g2 := apply_exp(p, k, 1.3 * fs[k] * focus_mul, base * (idol_mul if k in idol_stats else 1.0) * Shop.growth(fac, k), rng)
 		if g2:
 			gains[k] = gains.get(k, 0) + g2
 	var fat_mul: float = 1.0 + Abilities.season_fx(p, "recover") if card["kind"] == "rest" else 0.6 + card["value"] * 0.12

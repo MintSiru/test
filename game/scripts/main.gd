@@ -66,7 +66,11 @@ func _ready() -> void:
 		_debug_advance(days)
 	if pitches >= 0:
 		_debug_match(pitches)
-	show_screen(start)
+	var params := {}
+	for a3 in dev_args():
+		if a3.begins_with("--tab="):
+			params["tab"] = a3.substr(6)
+	show_screen(start, params)
 	if "--boxscore" in dev_args() and Game.current_match != null:
 		MatchAI.play_out(Game.current_match)
 		show_panel("박스스코어", BoxScore.build(Game.current_match))

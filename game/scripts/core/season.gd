@@ -147,6 +147,16 @@ static func step_day(state: Dictionary, budget := 8) -> String:
 	return ""
 
 
+## 오늘 경기 진행 [끝난 경기 수, 전체 경기 수] (경기가 많은 날 진행 표시용)
+static func day_progress(state: Dictionary) -> Array:
+	var today := fixtures_on(state, state["date"])
+	var done := 0
+	for x in today:
+		if x["f"].get("result") != null:
+			done += 1
+	return [done, today.size()]
+
+
 ## budget > 0 이면 CPU 경기를 그 수만큼만 처리하고 "partial" 을 돌려준다 (날짜는 그대로)
 static func _process_day(state: Dictionary, rng: Rng, budget := -1) -> String:
 	var d: String = state["date"]
@@ -209,6 +219,8 @@ static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 				Scouting.generate_prospects(state, rng)
 				_news(state, "info", "중학 유망주 명단이 공개됐다. 스카우트 활동을 시작하자.")
 			"retire":
+				# 은퇴 전에 올해 개인 타이틀·학교 기록 결산 (3학년 기록이 사라지기 전)
+				Records.season_end(state)
 				_retire_seniors(state)
 			"proSeason":
 				Idol.pro_season_end(state, rng)
@@ -422,10 +434,13 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 				continue
 			var box: Dictionary = side.box[id]
 			if official:
-				PlayerUtil.add_line(p["season"]["bat"], box["bat"])
-				PlayerUtil.add_line(p["career"]["bat"], box["bat"])
-				PlayerUtil.add_line(p["season"]["pit"], box["pit"])
-				PlayerUtil.add_line(p["career"]["pit"], box["pit"])
+				# 빈 기록(타석에 안 선 투수의 타격, 던지지 않은 야수의 투구)은 더하지 않는다
+				if int(box["bat"]["g"]) > 0 or int(box["bat"]["e"]) > 0:
+					PlayerUtil.add_line(p["season"]["bat"], box["bat"])
+					PlayerUtil.add_line(p["career"]["bat"], box["bat"])
+				if int(box["pit"]["g"]) > 0:
+					PlayerUtil.add_line(p["season"]["pit"], box["pit"])
+					PlayerUtil.add_line(p["career"]["pit"], box["pit"])
 			p["fatigue"] = clampf(p["fatigue"] + 4 + box["pit"]["np"] / 4.0, 0, 100)
 			if box["pit"]["np"] > 0:
 				p["restUntil"] = Cal.add_days(f["date"], rest_days(box["pit"]["np"]) + 1)
@@ -655,7 +670,7 @@ static func _retire_seniors(state: Dictionary) -> void:
 					var dr = p.get("draft")
 					names.append("%s (%s)" % [PlayerUtil.full_name(p), (pro_team_name(state, dr["teamId"]) + " 입단") if dr != null else "대학 진학"])
 					state["alumni"].append({"playerId": p["id"], "name": PlayerUtil.full_name(p), "gradYear": state["year"], "pos": p["pos"],
-						"draft": {"teamId": dr["teamId"], "round": dr["round"]} if dr != null else null})
+						"draft": {"teamId": dr["teamId"], "round": dr["round"]} if dr != null else null, "hs": Records.career_summary(p)})
 				state["players"].erase(id)
 			else:
 				keep.append(id)
