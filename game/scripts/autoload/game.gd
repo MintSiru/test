@@ -235,6 +235,11 @@ func load_game(n := slot) -> bool:
 		state["prosMode"] = "fictional"
 	if state.get("facilities") == null:
 		state["facilities"] = {}
+	# v0.6 대졸 지명 버그: 프로 스타일이 목록에 없는 값이면 고친다
+	var styles := GameData.styles()
+	for pro in state.get("pros", []):
+		if not styles.has(pro["style"]):
+			pro["style"] = "제구파" if pro["pos"] == "P" else "교타자"
 	if not state.has("rivalId"):
 		Rival.init_rival(state)
 	# v0.4 튜토리얼: 이전 세이브는 첫 안내를 이미 본 것으로

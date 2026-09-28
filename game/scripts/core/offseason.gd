@@ -211,6 +211,11 @@ static func after_school(state: Dictionary, p: Dictionary, rank: int, rng: Rng) 
 	return {"kind": "work", "chance": chance * 0.5}
 
 
+## 대졸·독립리그 지명 선수의 프로 스타일 (GameData.styles 의 키여야 동경 선수로 쓸 수 있다)
+static func late_style(pos: String, rng: Rng) -> String:
+	return rng.pick(["제구파", "변화구", "철완"] if pos == "P" else ["교타자", "준족", "명수비", "강견"])
+
+
 static func path_text(path) -> String:
 	if path == null:
 		return ""
@@ -252,7 +257,7 @@ static func college_draft(state: Dictionary, rng: Rng) -> Array:
 		al["draft"] = {"teamId": team["id"], "round": rnd, "late": true}
 		var sur: String = al.get("sur", al["name"].substr(0, 1))
 		state["pros"].append({"id": "pro" + WorldGen.uid(state, "x"), "sur": sur, "given": al.get("given", al["name"].substr(sur.length())), "teamId": team["id"], "pos": al["pos"],
-			"style": "대졸 신인" if path["kind"] == "uni" else "독립리그 출신", "number": rng.irange(1, 99), "birthYear": int(al["gradYear"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
+			"style": late_style(al["pos"], rng), "number": rng.irange(1, 99), "birthYear": int(al["gradYear"]) - 18, "line": "신인", "alumniOf": state["userTeamId"]})
 		lines.append("%s (%s) — %s %d라운드 지명!" % [al["name"], path_text(path), team["name"], rnd])
 		state["reputation"] = clampi(int(state["reputation"]) + 2, 0, 100)
 	if not lines.is_empty():

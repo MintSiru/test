@@ -176,7 +176,7 @@ func _init() -> void:
 	var npros: int = state["pros"].size()
 	var cl := Offseason.college_draft(state, Rng.new(5))
 	var late := Records.pro_of(state, fake)
-	if cl.size() < 1 or fake.get("draft") == null or state["pros"].size() != npros + cl.size() or late.is_empty() or late["sur"] != "남궁":
+	if cl.size() < 1 or fake.get("draft") == null or state["pros"].size() != npros + cl.size() or late.is_empty() or late["sur"] != "남궁" or not GameData.styles().has(late.get("style", "")):
 		fails.append("대졸 드래프트 실패 %s" % [cl])
 	if not Offseason.college_draft(state, Rng.new(5)).is_empty():
 		fails.append("대졸 드래프트 중복")
