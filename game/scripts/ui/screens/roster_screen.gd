@@ -257,7 +257,19 @@ func _fill_detail() -> void:
 	rec.add_child(UI.label("타격 %d경기 타율 %s %d안타 %d홈런 %d타점 %d도루" % [b["g"], PlayerUtil.avg_str(b), b["h"], b["hr"], b["rbi"], b["sb"]], UI.TEXT, true))
 	var c: Dictionary = p["career"]["bat"]
 	var cp: Dictionary = p["career"]["pit"]
-	rec.add_child(UI.label("통산", UI.DIM, true))
+	# 통산 제목 줄에 성장 기록 (시즌 시작마다 종합 능력치)
+	var oh: Array = p.get("ovrHist", [])
+	var grow_txt := ""
+	if not oh.is_empty():
+		var parts := []
+		for e in oh:
+			parts.append("%d년 %d" % [int(e[0]) % 100, int(e[1])])
+		parts.append("지금 %d" % PlayerUtil.overall(p))
+		grow_txt = "   성장: " + " → ".join(parts)
+	var ct := UI.label("통산" + grow_txt, UI.DIM, true)
+	if grow_txt != "" and PlayerUtil.overall(p) > int(oh[0][1]):
+		ct.add_theme_color_override("font_color", UI.GOOD)
+	rec.add_child(ct)
 	if p["pos"] == "P" or cp["outs"] > 0:
 		rec.add_child(UI.label("투구 %s이닝 %d승 %d패 ERA %s" % [PlayerUtil.ip_str(cp["outs"]), cp["w"], cp["l"], PlayerUtil.era_str(cp)], UI.TEXT, true))
 	rec.add_child(UI.label("타격 타율 %s %d홈런 %d타점" % [PlayerUtil.avg_str(c), c["hr"], c["rbi"]], UI.TEXT, true))

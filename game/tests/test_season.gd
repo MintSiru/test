@@ -278,6 +278,14 @@ func _init() -> void:
 	state["popups"].clear()
 	if popups.filter(func(t): return str(t).begins_with("3학년 은퇴식")).is_empty():
 		fails.append("졸업 앨범 팝업 없음")
+	# 연말 결산 · 성장 기록
+	var rv = state.get("reviews", {}).get("2026")
+	print("2026 결산: ", " / ".join(rv) if rv != null else "없음")
+	if rv == null or not "2026년 시즌 결산" in popups:
+		fails.append("연말 결산 없음")
+	var hist_n: int = WorldGen.team_players(state, "user").filter(func(p): return p.get("ovrHist", []).size() >= 1).size()
+	if hist_n != WorldGen.team_players(state, "user").size():
+		fails.append("성장 기록 누락 %d" % hist_n)
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])

@@ -61,6 +61,12 @@ func _years() -> void:
 			body.add_child(UI.label("  %s: %s" % [r["comp"], r["result"]], UI.TEXT, true))
 		if not y.get("drafted", []).is_empty():
 			body.add_child(UI.label("  프로 지명: " + ", ".join(y["drafted"]), UI.GOOD, true))
+		# 연말 결산 중 성장·MVP 줄
+		var rvw = s.get("reviews", {}).get(str(y["year"]))
+		if rvw != null:
+			for line in rvw:
+				if str(line).contains("MVP") or str(line).begins_with("가장 많이"):
+					body.add_child(UI.label("  " + line, UI.DIM, true))
 	var h2h = s.get("h2h")
 	if h2h != null and not h2h.is_empty():
 		body.add_child(UI.spacer(0, 4))

@@ -22,6 +22,7 @@ static func start_new_game(o: Dictionary) -> Dictionary:
 	create_season_competitions(state, rng)
 	Goals.set_goals(state)
 	TeamMood.captain_event(state, 3)
+	Records.snapshot_growth(state)
 	save_rng(state, rng)
 	return state
 
@@ -227,6 +228,7 @@ static func _day_start_events(state: Dictionary, rng: Rng) -> void:
 			"retire":
 				# 은퇴 전에 올해 개인 타이틀·학교 기록 결산 (3학년 기록이 사라지기 전)
 				Records.season_end(state)
+				Records.season_review(state)
 				_retire_seniors(state, rng)
 				TeamMood.captain_event(state, 2)
 			"proSeason":
@@ -795,6 +797,7 @@ static func _new_season(state: Dictionary, rng: Rng) -> void:
 	Rival.season_update(state)
 	Offseason.alumni_news(state, rng)
 	var joined := Scouting.enroll(state, rng)
+	Records.snapshot_growth(state)
 	WorldGen.user_team(state).erase("lineup")
 	state["reputation"] = clampi(roundi(state["reputation"] * 0.92 + 1.6), 0, 100)
 	create_season_competitions(state, rng)

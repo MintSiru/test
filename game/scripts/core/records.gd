@@ -108,6 +108,79 @@ static func _update_school_records(state: Dictionary) -> void:
 		state["news"].append({"date": state["date"], "kind": "good", "text": "학교 신기록! 한 시즌 %s" % n})
 
 
+## 선수 성장 기록: 시즌 시작마다 우리 선수의 종합 능력치를 p.ovrHist = [[연도, 종합], ...] 에 (같은 해는 한 번)
+static func snapshot_growth(state: Dictionary) -> void:
+	var y := int(state["year"])
+	for p in WorldGen.team_players(state, state["userTeamId"]):
+		var h: Array = p.get("ovrHist", [])
+		if h.is_empty() or int(h[h.size() - 1][0]) != y:
+			h.append([y, PlayerUtil.overall(p)])
+		p["ovrHist"] = h
+
+
+## 올해 시작 때 대비 성장 (기록 없으면 0)
+static func growth_this_year(state: Dictionary, p: Dictionary) -> int:
+	var h: Array = p.get("ovrHist", [])
+	for e in h:
+		if int(e[0]) == int(state["year"]):
+			return PlayerUtil.overall(p) - int(e[1])
+	return 0
+
+
+## 연말 결산 (은퇴식 직전, 3학년 기록이 남아 있을 때): 대회 성적·목표·성장 TOP3·팀 MVP·명장면
+static func season_review(state: Dictionary) -> void:
+	var y := int(state["year"])
+	var lines := []
+	var rec: Dictionary = WorldGen.user_team(state)["seasonRecord"]
+	lines.append("공식전 %d승 %d패 %d무 · 명성 %d · 감독 Lv%d" % [rec["w"], rec["l"], rec["d"], state["reputation"], Manager.info(state)["level"]])
+	for c in state["competitions"]:
+		if int(c.get("year", y)) == y and c.get("userResult") != null:
+			lines.append("· %s: %s" % [Cal.comp_def(c["key"])["short"], c["userResult"]])
+	var gs = state.get("goals")
+	if gs != null:
+		var done: int = gs["list"].filter(func(g): return g["done"]).size()
+		lines.append("후원회 목표 %d/%d 달성" % [done, gs["list"].size()])
+	var roster := WorldGen.team_players(state, state["userTeamId"])
+	var grow := roster.duplicate()
+	grow.sort_custom(func(a, b): return growth_this_year(state, a) > growth_this_year(state, b))
+	var gl := []
+	for p in grow.slice(0, 3):
+		if growth_this_year(state, p) > 0:
+			gl.append("%s +%d" % [PlayerUtil.full_name(p), growth_this_year(state, p)])
+	if not gl.is_empty():
+		lines.append("")
+		lines.append("가장 많이 성장: " + ", ".join(gl))
+	# 팀 MVP: 타자는 (안타 + 홈런×2 + 타점 + 도루×0.5), 투수는 (아웃 ÷ 3 + 승×3 + 탈삼진×0.3 − 자책×1)
+	var bat_mvp = null
+	var bat_v := -1.0
+	var pit_mvp = null
+	var pit_v := -1.0
+	for p in roster:
+		var b: Dictionary = p["season"]["bat"]
+		var bv := float(b["h"]) + float(b["hr"]) * 2.0 + float(b["rbi"]) + float(b["sb"]) * 0.5
+		if bv > bat_v:
+			bat_v = bv
+			bat_mvp = p
+		var pt: Dictionary = p["season"]["pit"]
+		var pv := float(pt["outs"]) / 3.0 + float(pt["w"]) * 3.0 + float(pt["so"]) * 0.3 - float(pt["er"])
+		if int(pt["outs"]) > 0 and pv > pit_v:
+			pit_v = pv
+			pit_mvp = p
+	if bat_mvp != null and bat_v > 0:
+		var bb: Dictionary = bat_mvp["season"]["bat"]
+		lines.append("타선 MVP: %s (타율 %s %d홈런 %d타점)" % [PlayerUtil.full_name(bat_mvp), PlayerUtil.avg_str(bb), bb["hr"], bb["rbi"]])
+	if pit_mvp != null:
+		var pp: Dictionary = pit_mvp["season"]["pit"]
+		lines.append("마운드 MVP: %s (%d승 %d패 평균자책점 %s)" % [PlayerUtil.full_name(pit_mvp), pp["w"], pp["l"], PlayerUtil.era_str(pp)])
+	var hl: Array = state.get("highlights", []).filter(func(h): return str(h["date"]).begins_with(str(y)))
+	var tro: Array = state.get("trophies", []).filter(func(t): return int(t["year"]) == y)
+	lines.append("")
+	lines.append("명장면 %d개 · 업적 %d개 · 우승 %d회" % [hl.size(), Achievements.count(state), tro.size()])
+	state["reviews"] = state.get("reviews", {})
+	state["reviews"][str(y)] = lines
+	state["popups"].append({"kind": "good", "title": "%d년 시즌 결산" % y, "body": "\n".join(lines)})
+
+
 ## 전국대회 우승 기록 + 우승 연출 팝업 (main.gd show_trophy)
 static func add_trophy(state: Dictionary, def: Dictionary, opp_name: String, us: int, them: int, date: String) -> void:
 	if state.get("trophies") == null:
