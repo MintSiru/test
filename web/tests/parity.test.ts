@@ -19,10 +19,10 @@ const r4 = (v: number) => Math.round(v * 10000) / 10000;
 function fixturePlayers(): Player[] {
   const out: Player[] = [];
   for (let i = 0; i < 12; i++) {
-    const p = genPlayer(new Rng(1000 + i), { id: `fx${i}`, teamId: 't', enrollYear: 2026 - (i % 3), year: 2026, quality: 20 + i * 6 });
+    const p = genPlayer(new Rng(1000 + i), { id: `fx${i}`, teamId: 't', enrollYear: 2026 - (i % 3), year: 2026, quality: 20 + i * 6, province: '서울' });
     p.cond = (i % 5) - 2;
     p.fatigue = (i * 13) % 90;
-    p.idolId = i % 2 === 0 ? `pro${i % 4}` : null;
+    p.idolId = i % 2 === 0 ? `pro${i % 4}` : undefined;
     p.idolBond = (i * 17) % 100;
     out.push(p);
   }
