@@ -52,6 +52,16 @@ func _init() -> void:
 			var d := Cal.comp_dates(c["key"], y)
 			cd.append("%s:%s~%s" % [c["key"], d["start"], d["end"]])
 	act["compDates"] = cd
+	act["captainBonus"] = players.map(func(p): return TeamMood.captain_bonus(p))
+	var mst := {"teamMood": 50, "streak": 0, "players": {}, "userTeamId": "u"}
+	var mseq := []
+	for r in [[1, 0, 1], [1, 0, 1], [1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 0]]:
+		TeamMood.after_match(mst, r[0] == 1, r[1] == 1, r[2] == 1)
+		mseq.append(TeamMood.mood(mst))
+	for i in 3:
+		TeamMood.week(mst, [], Rng.new(1))
+		mseq.append(TeamMood.mood(mst))
+	act["moodSeq"] = mseq
 	var sp := []
 	for d in ["2026-06-01", "2026-12-01", "2026-04-01"]:
 		var sale := Shop.sale_of(d)

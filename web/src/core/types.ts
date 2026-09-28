@@ -302,6 +302,11 @@ export interface Settings {
 }
 
 export interface GameState {
+  /** 팀 분위기 0~100 (core/mood.ts) */
+  teamMood?: number;
+  /** 연승(+)·연패(-) */
+  streak?: number;
+  captainId?: string;
   version: number;
   seed: number;
   rngState: number;

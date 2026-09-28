@@ -14,6 +14,7 @@ import { josa } from './names';
 import { addBat, addPit, emptyBat, emptyPit, grade, name, overall, statValue } from './player';
 import { Rng, clamp } from './rng';
 import { enrollNewPlayers, generateProspects } from './scouting';
+import { electCaptain, moodAfterMatch, moodWeek } from './mood';
 import { CARD_INFO, applyExp, awakeningText, drawCard, growthMult, trainPlayer, weeklyCondition, type TrainingReport } from './training';
 import type { Card, Competition, Fixture, GameState, MatchResult, Player, ProStyle, StatKey } from './types';
 import { intakeFor, newGame, teamPlayers, uid, userTeam, type NewGameOpts } from './world';
@@ -43,6 +44,7 @@ export function startNewGame(o: NewGameOpts): GameState {
   const rng = rngOf(state);
   createSeasonCompetitions(state, rng);
   setGoals(state);
+  electCaptain(state, 3);
   state.rngState = rng.state;
   state.dayEventsDone = undefined;
   return state;
@@ -162,6 +164,7 @@ function dayStartEvents(state: GameState, rng: Rng) {
         break;
       case 'retire':
         retireSeniors(state);
+        electCaptain(state, 2);
         break;
       case 'proSeason':
         proSeasonEnd(state, rng);
@@ -198,6 +201,7 @@ function weekStart(state: GameState, rng: Rng) {
   weeklyProNews(state, rng);
   const roster = teamPlayers(state, state.userTeamId);
   for (const p of Object.values(state.players)) weeklyCondition(p, rng);
+  moodWeek(state, roster, rng);
   const dorm = facLevel(state.facilities, 'dorm');
   if (dorm) for (const p of roster) p.fatigue = Math.max(0, p.fatigue - 5 * dorm);
   // 4주 동안 쓰지 않은 훈련 카드는 새 카드로 교체
@@ -375,6 +379,7 @@ export function applyResult(state: GameState, comp: Competition, f: Fixture, m: 
   if (isUserGame) {
     state.pendingFixture = undefined;
     const u = state.userTeamId;
+    moodAfterMatch(state, res.winner === u, res.winner == null, official);
     const opp = state.teams[f.home === u ? f.away : f.home];
     if (official) recordH2H(state, opp.id, res.winner);
     if (official && res.winner === u) {

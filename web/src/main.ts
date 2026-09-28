@@ -7,6 +7,7 @@ import { COND_KO, POS_KO, PITCH_KO, avg, era, grade, letter, name, overall, stat
 import { visitProspect } from './core/scouting';
 import { FACILITIES, ITEMS, buyFacility, buyItem, cannotUse, facLevel, facilityCost, facilityMonth, itemDef, marketOpen, needsPlayer, slotPrice, useItem } from './core/shop';
 import { FAN_MADE_NOTICE } from './core/data';
+import { captainOf, mood } from './core/mood';
 import {
   advance, autoPlayUserMatch, createMatch, finishUserMatch, findFixture, idolLabel, rngOf, startNewGame, upcomingSchedule, useCard, userFixtures,
 } from './core/season';
@@ -21,7 +22,7 @@ const GODOT_ONLY = [
   '도트 야구장 관전 · 작전 성공 가능성 안내 · 특수능력 발동 실황 · 명장면',
   '비시즌: 동계 합숙(에피소드·마지막 밤), 진로 상담, 학교 행사, 졸업생 진로·대졸 드래프트',
   '기록실: 개인 타이틀, 학교 기록, 명예의 전당, 업적 24개, 특수능력 수집률',
-  '주장·팀 분위기, 감독 성장(특기), 선수 이야기(불방망이·슬럼프·재활)',
+  '주장 선출 팝업, 감독 성장(특기), 선수 이야기(불방망이·슬럼프·재활)·선수 면담 (팀 분위기 규칙은 웹에도 있음)',
   '포지션 연습·투타 겸업, CPU 학교 흥망(신흥 강호·명문의 위기)',
   '장터 가방 일괄 사용, 저장 슬롯 3개와 경기 중 저장, 배경음악·응원가, 홈 화면 앱(PWA)',
 ];
@@ -98,6 +99,7 @@ function render() {
       <b style="color:var(--accent)">${esc(t.name)}</b>
       <span>${prettyDate(s.date, true)}</span>
       <span>명성 ${s.reputation}</span>
+      <span>분위기 ${mood(s)}${captainOf(s) ? ` · 주장 ${esc(name(captainOf(s)!))}` : ''}</span>
       <span>시즌 ${t.seasonRecord.w}승 ${t.seasonRecord.l}패 ${t.seasonRecord.d}무</span>
       <span>스카우트 행동력 ${s.scoutPoints}</span>
       <span>${s.points ?? 0}P${marketOpen(s) ? ' <span class="good">장터 영업 중</span>' : ''}</span>

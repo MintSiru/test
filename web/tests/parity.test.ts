@@ -6,8 +6,9 @@ import { growthMult } from '../src/core/training';
 import { COMP_DEFS, compDates } from '../src/core/calendar';
 import { FACILITIES, ITEMS, facilityGrowth, matchPoints, placingPoints, saleOf, SHOP } from '../src/core/shop';
 import { toSim } from '../src/sim/build';
+import { captainBonus, moodAfterMatch, moodWeek } from '../src/core/mood';
 import { Rng } from '../src/core/rng';
-import type { Player, ProPlayer, StatKey } from '../src/core/types';
+import type { GameState, Player, ProPlayer, StatKey } from '../src/core/types';
 
 // 웹 ↔ Godot 동등성: 난수를 쓰지 않는 규칙 함수들의 결과를 game/tests/parity.json 에 고정하고
 // 양쪽 테스트(이 파일, game/tests/test_parity.gd)가 같은 값을 내는지 본다.
@@ -42,6 +43,18 @@ function compute(players: Player[], pros: ProPlayer[]) {
     placing: Object.keys(SHOP.earn.placing).map((k) => placingPoints(k)),
     facilityGrowth: [0, 1, 2, 3].map((lv) => STATS.map((k) => r4(facilityGrowth(Object.fromEntries(FACILITIES.map((f) => [f.key, lv])), k)))),
     compDates: [2026, 2027, 2028, 2029].flatMap((y) => COMP_DEFS.map((c) => { const d = compDates(c.key, y); return `${c.key}:${d.start}~${d.end}`; })),
+    captainBonus: players.map((p) => captainBonus(p)),
+    moodSeq: (() => {
+      // 승승승패무패패패 (공식전) → 연습 경기 패 → 주간 복귀 3번 (주장 없음)
+      const st = { teamMood: 50, streak: 0, players: {}, userTeamId: 'u' } as unknown as GameState;
+      const out: number[] = [];
+      for (const [w, d, o] of [[1, 0, 1], [1, 0, 1], [1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 0]]) {
+        moodAfterMatch(st, !!w, !!d, !!o);
+        out.push(st.teamMood!);
+      }
+      for (let i = 0; i < 3; i++) { moodWeek(st, [], null); out.push(st.teamMood!); }
+      return out;
+    })(),
     salePrices: ['2026-06-01', '2026-12-01', '2026-04-01'].map((d) => { const s = saleOf(d); return ITEMS.map((it) => (s && s.discount > 0 ? Math.round((it.price * (1 - s.discount)) / 5) * 5 : it.price)); }),
   };
 }

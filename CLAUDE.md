@@ -27,6 +27,7 @@
 | core/goals.ts | core/goals.gd |
 | core/weather.ts | core/weather.gd |
 | core/season.ts | core/season.gd |
+| core/mood.ts | core/team_mood.gd (주장 선택 팝업·감독 특기 보정은 Godot 전용) |
 | sim/engine.ts | sim/match_engine.gd |
 | sim/ai.ts | sim/match_ai.gd |
 | sim/build.ts | sim/side_builder.gd + sim/sim_player.gd |
