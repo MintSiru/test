@@ -99,6 +99,8 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 휴대폰 브라우저는 LineEdit 에 키보드가 안 뜰 수 있다 → 글자 입력은 `new_game_screen.gd` 의 `_mobile_input()` 처럼 브라우저 입력창으로.
 - 웹 HTML 에 넣는 것(세로 화면 안내 등)은 `export_presets.cfg` 의 `html/head_include`.
 - UI 를 바꾸면 `tools/mobile_check.mjs` 로 휴대폰 크기 스크린샷을 확인한다.
+- 웹 빌드는 홈 화면 앱(PWA)이다: 서비스 워커가 엔진·데이터를 캐시해 두 번째부터 오프라인으로도 열린다. 새 버전을 받아 두면 타이틀에만 「새 버전으로 업데이트」 버튼이 뜬다
+  (경기 중 새로고침으로 진행을 잃지 않도록). `export_presets.cfg` 의 `progressive_web_app/*`, `html/head_include` 의 `__cnUpdate`. 점검: `node tools/pwa_check.mjs build/web`.
 
 ## 선택 팝업 · 비시즌 (v0.5, Godot 전용)
 

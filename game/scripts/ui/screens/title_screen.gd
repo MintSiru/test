@@ -4,6 +4,8 @@ extends BaseScreen
 
 var t := 0.0
 var sky: Control
+var update_btn: Button
+var _upd_check := 0.0
 
 
 func setup(_p := {}) -> void:
@@ -35,6 +37,9 @@ func setup(_p := {}) -> void:
 	v.add_child(UI.button("새 게임", func(): Game.goto("new_game"), 140))
 	v.add_child(UI.button("도움말", func(): Help.index_panel(), 140))
 	# 안드로이드 브라우저: 주소창을 없애 화면을 넓게 (iPhone Safari 는 전체 화면을 지원하지 않는다)
+	# 휴대폰 브라우저: 홈 화면에 추가하면 주소창 없이 꽉 찬 화면으로, 다음부터 빨리 열린다
+	if Game.is_mobile_web() and not _installed():
+		v.add_child(UI.button("앱처럼 설치", _install_help, 140))
 	if OS.has_feature("web_android"):
 		v.add_child(UI.button("전체 화면", func(): Game.toggle_fullscreen(), 140))
 	if OS.get_name() != "Web":
@@ -88,9 +93,30 @@ static func slot_row(n: int, load_mode: bool, on_pick: Callable = Callable()) ->
 	return row
 
 
+static func _installed() -> bool:
+	return bool(JavaScriptBridge.eval("window.matchMedia('(display-mode: fullscreen)').matches || window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true", true))
+
+
+func _install_help() -> void:
+	var ios := OS.has_feature("web_ios")
+	Game.main.show_modal("앱처럼 설치", ("아이폰 Safari:\n1. 아래(또는 위)의 공유 버튼(네모에 화살표)을 누릅니다.\n2. 「홈 화면에 추가」를 누릅니다.\n" if ios
+		else "안드로이드 Chrome:\n1. 오른쪽 위 점 세 개 메뉴를 누릅니다.\n2. 「홈 화면에 추가」 또는 「앱 설치」를 누릅니다.\n")
+		+ "\n홈 화면의 「청춘나인」 아이콘으로 열면 주소창 없이 화면이 꽉 차고, 두 번째부터는 인터넷이 없어도 빨리 열립니다.\n저장된 진행은 그대로 이어집니다 (같은 브라우저 기준).")
+
+
 func _process(delta: float) -> void:
 	t += delta
 	sky.queue_redraw()
+	# 웹(홈 화면 앱): 새 버전을 받아 두었으면 타이틀에서만 「새 버전」 버튼 (경기 중 새로고침으로 진행을 잃지 않도록)
+	_upd_check += delta
+	if OS.get_name() == "Web" and update_btn == null and _upd_check > 2.0:
+		_upd_check = 0.0
+		if JavaScriptBridge.eval("window.__cnUpdate === true", true):
+			update_btn = UI.button("새 버전으로 업데이트", func(): JavaScriptBridge.eval("window.__cnApplyUpdate()", true), 150)
+			update_btn.tooltip_text = "게임이 업데이트됐어요. 누르면 새로 불러옵니다. (저장된 진행은 그대로)"
+			update_btn.add_theme_color_override("font_color", UI.ACCENT)
+			UI.place(update_btn, 480, 8, 150, 18)
+			add_child(update_btn)
 
 
 func _draw_bg() -> void:

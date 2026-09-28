@@ -95,6 +95,9 @@ jobs:
       - name: 모바일 화면 점검 (참고)
         continue-on-error: true
         run: node tools/mobile_check.mjs build/web mobile_shots
+      - name: 홈 화면 앱(PWA) 점검 (참고)
+        continue-on-error: true
+        run: node tools/pwa_check.mjs build/web mobile_shots
       - name: 기반 시스템(웹) 빌드 → /foundation
         run: |
           cd web && npm ci && npx vite build --outDir ../build/web/foundation --emptyOutDir
