@@ -47,7 +47,7 @@ func setup(_p := {}) -> void:
 	var note := UI.label("주말리그 · 이마트배 · 황금사자기 · 청룡기 · 대통령배 · 봉황대기 · 전국체전", UI.DIM, true)
 	UI.place(note, 150, 320, 400, 12)
 	add_child(note)
-	var ver := UI.label("v0.6  폰트: Galmuri (OFL)", UI.DIM, true)
+	var ver := UI.label("v0.7  폰트: Galmuri (OFL)", UI.DIM, true)
 	UI.place(ver, 6, 344, 200, 12)
 	add_child(ver)
 	var notice := UI.wrap_label(GameData.FAN_MADE_NOTICE, 620, Color("#c8c8d8"), true)

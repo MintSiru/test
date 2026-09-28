@@ -1,7 +1,7 @@
 {
   "name": "cheongchun-nine",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "청춘나인 - 한국 고교야구부 육성 시뮬레이션",
   "type": "module",
   "scripts": {
