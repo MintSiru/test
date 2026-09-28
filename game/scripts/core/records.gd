@@ -107,6 +107,27 @@ static func _update_school_records(state: Dictionary) -> void:
 		state["news"].append({"date": state["date"], "kind": "good", "text": "학교 신기록! 한 시즌 %s" % n})
 
 
+## 명장면 앨범: 우리 경기의 명장면을 state.highlights 에 (최근 60개)
+const HIGHLIGHT_MAX := 60
+const HIGHLIGHT_KO := {"walkoff": "끝내기", "hr": "홈런", "clutch": "승부처", "escape": "위기 탈출"}
+
+
+static func add_highlights(state: Dictionary, comp: Dictionary, f: Dictionary, m: MatchEngine) -> void:
+	if m.highlights.is_empty():
+		return
+	if state.get("highlights") == null:
+		state["highlights"] = []
+	var u: String = state["userTeamId"]
+	var opp: String = state["teams"][f["away"] if f["home"] == u else f["home"]]["name"]
+	var label: String = Cal.comp_def(comp["key"])["short"] if comp["kind"] != "friendly" else "연습 경기"
+	for h in m.highlights:
+		state["highlights"].append({"date": f["date"], "comp": label, "opp": opp, "inning": "%d회%s" % [h["inning"], "초" if h["top"] else "말"],
+			"kind": h["kind"], "text": h["text"], "won": m.winner == u})
+	var hl: Array = state["highlights"]
+	if hl.size() > HIGHLIGHT_MAX:
+		state["highlights"] = hl.slice(hl.size() - HIGHLIGHT_MAX)
+
+
 ## 졸업생 고교 통산 요약 (명예의 전당)
 static func career_summary(p: Dictionary) -> Dictionary:
 	var b: Dictionary = p["career"]["bat"]

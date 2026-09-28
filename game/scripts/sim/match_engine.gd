@@ -98,6 +98,8 @@ var journal_on := false
 var save_info := {}
 ## 특수능력 발동 문구 횟수 (선수+능력 → 횟수)
 var _note_count := {}
+## 우리 팀 명장면 [{inning, top, kind, text}] (quiet 가 아닐 때만)
+var highlights: Array = []
 
 
 func _init(home_input: Dictionary, away_input: Dictionary, rng_: Rng, rules_: Dictionary = DEFAULT_RULES) -> void:
@@ -531,11 +533,43 @@ func step(orders: Dictionary = {}) -> Dictionary:
 	var act_b := active_abilities(b, true)
 	var act_p := active_abilities(p, false)
 	var risp_before := risp()
+	var o := off()
+	var d := def()
+	var lead_before := o.score - d.score
+	var inn := inning
+	var tp := top
 	var ev := _step(orders)
 	ev["rispBefore"] = risp_before
 	if ev["paResult"] != "" or ev.get("steal") != null:
 		ev["abilityNote"] = _ability_note(ev, b, p, act_b, act_p)
+	if ev["paResult"] != "" and (o.is_user or d.is_user):
+		_highlight(ev, o, d, lead_before, risp_before, b, p, inn, tp)
 	return ev
+
+
+## 우리 팀 명장면: 홈런, 7회 이후 역전·결승타, 끝내기, 6회 이후 득점권 위기를 끝낸 삼진
+func _highlight(ev: Dictionary, o: TeamSide, d: TeamSide, lead_before: int, risp_before: bool, b: SimPlayer, p: SimPlayer, inn: int, tp: bool) -> void:
+	var res: String = ev["batted"]["result"] if ev.get("batted") != null else ""
+	var lead_after := o.score - d.score
+	var txt := ""
+	var kind := ""
+	if o.is_user:
+		if ev["gameOver"] and not tp and winner == o.team_id and lead_before <= 0:
+			kind = "walkoff"
+			txt = "%s 끝내기 %s!" % [b.name, "홈런" if res == "HR" else ("안타" if res in ["1B", "2B", "3B"] else ev["paResult"])]
+		elif res == "HR":
+			kind = "hr"
+			txt = "%s %s!" % [b.name, "만루 홈런" if int(ev["runs"]) >= 4 else ("%d점 홈런" % int(ev["runs"]) if int(ev["runs"]) > 1 else "솔로 홈런")]
+			if inn >= 7 and lead_before <= 0 and lead_after > 0:
+				txt += " (%s)" % ("역전" if lead_before < 0 else "균형을 깨는 한 방")
+		elif inn >= 7 and lead_before <= 0 and lead_after > 0:
+			kind = "clutch"
+			txt = "%s %s %s" % [b.name, "역전" if lead_before < 0 else "균형을 깨는", "적시타" if res in ["1B", "2B", "3B"] else ev["paResult"]]
+	elif d.is_user and inn >= 6 and risp_before and str(ev["paResult"]).ends_with("삼진") and ev["endHalf"] and absf(lead_before) <= 3:
+		kind = "escape"
+		txt = "%s 위기에서 %s 삼진으로 이닝 종료" % [p.name, b.name]
+	if kind != "":
+		highlights.append({"inning": inn, "top": tp, "kind": kind, "text": txt})
 
 
 ## 타석 결과에 영향을 준 특수능력 한 줄 (없으면 "")

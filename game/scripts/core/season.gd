@@ -433,6 +433,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	if is_user_game:
 		TeamMood.after_match(state, m.winner == u, m.winner == null, official)
 		Manager.exp_for_match(state, m.winner == u, m.winner == null, official)
+		Records.add_highlights(state, comp, f, m)
 	for side in [m.home, m.away]:
 		var team: Dictionary = state["teams"][side.team_id]
 		var won: bool = m.winner == team["id"]

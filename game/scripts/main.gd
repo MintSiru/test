@@ -305,7 +305,10 @@ func show_match_result(m: MatchEngine, done: Callable) -> void:
 	if m.winner == u.team_id:
 		Game.sfx("fanfare")
 	var after := func(): drain_popups(done)
-	show_modal("경기 종료", BoxScore.summary(m), "good" if m.winner == u.team_id else "info", Callable(), [
+	var body := BoxScore.summary(m)
+	if not m.highlights.is_empty():
+		body += "\n\n[명장면]\n" + "\n".join(m.highlights.map(func(h): return "· %d회%s %s" % [h["inning"], "초" if h["top"] else "말", h["text"]]))
+	show_modal("경기 종료", body, "good" if m.winner == u.team_id else "info", Callable(), [
 		["박스스코어", func(): show_panel("박스스코어", BoxScore.build(m), after)],
 		["확인", after],
 	])

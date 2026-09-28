@@ -1,7 +1,7 @@
 extends BaseScreen
 ## 기록실: 연도별 성적 · 개인 타이틀 · 학교 기록 · 명예의 전당(졸업생) · 프로야구(가상 리그)
 
-const TABS := [["years", "연도별 성적"], ["titles", "개인 타이틀"], ["school", "학교 기록"], ["hall", "명예의 전당"], ["pro", "프로야구"]]
+const TABS := [["years", "연도별 성적"], ["titles", "개인 타이틀"], ["school", "학교 기록"], ["highlights", "명장면"], ["hall", "명예의 전당"], ["pro", "프로야구"]]
 
 var tab := "years"
 var body: VBoxContainer
@@ -39,6 +39,7 @@ func _fill() -> void:
 		"titles": _titles()
 		"school": _school()
 		"hall": _hall()
+		"highlights": _highlights()
 		"pro": _pro()
 
 
@@ -117,6 +118,20 @@ func _school() -> void:
 				best_v = v
 		if best != null:
 			body.add_child(UI.label("  %s  %s %s" % [t["name"].replace("왕", ""), PlayerUtil.full_name(best), Records.fmt(t, best_v)], UI.TEXT, true))
+
+
+func _highlights() -> void:
+	var s := st()
+	body.add_child(UI.title_label("명장면 앨범"))
+	var hl = s.get("highlights")
+	if hl == null or hl.is_empty():
+		body.add_child(UI.label("우리 경기의 홈런·끝내기·역전 결승타·위기 탈출 삼진이 여기에 모입니다.", UI.DIM, true))
+		return
+	var list: Array = hl.duplicate()
+	list.reverse()
+	for h in list:
+		var col: Color = UI.TIER_COLORS["gold"] if h["kind"] == "walkoff" else (UI.GOOD if h["kind"] in ["hr", "clutch"] else UI.IDOL)
+		body.add_child(UI.label("%s %s vs %s  %s  [%s] %s" % [Cal.short(h["date"]), h["comp"], h["opp"], h["inning"], Records.HIGHLIGHT_KO.get(h["kind"], ""), h["text"]], col, true))
 
 
 func _hall() -> void:

@@ -207,6 +207,14 @@ func _init() -> void:
 		fails.append("살림꾼 특기 실패")
 	mg["perks"].erase("earner")
 	state["points"] = pts_e
+	# 명장면 앨범
+	var hl: Array = state.get("highlights", [])
+	var kinds := {}
+	for h in hl:
+		kinds[h["kind"]] = int(kinds.get(h["kind"], 0)) + 1
+	print("명장면 %d개 %s 예: %s" % [hl.size(), kinds, hl[0]["text"] if not hl.is_empty() else "-"])
+	if hl.size() < 3:
+		fails.append("명장면이 너무 적음 %d" % hl.size())
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])
