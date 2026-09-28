@@ -415,6 +415,9 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 	f["result"] = res
 	var u: String = state["userTeamId"]
 	var is_user_game: bool = f["home"] == u or f["away"] == u
+	# 이닝별 점수는 우리 경기만 남긴다 (CPU 경기 1000개의 점수표는 세이브만 키운다)
+	if not is_user_game:
+		res.erase("lineScore")
 	# 연습 경기는 공식 기록에 넣지 않는다 (실전 경험치·피로·투구수 휴식만 반영)
 	var official: bool = comp["kind"] != "friendly"
 	for side in [m.home, m.away]:
@@ -437,12 +440,15 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 			var box: Dictionary = side.box[id]
 			if official:
 				# 빈 기록(타석에 안 선 투수의 타격, 던지지 않은 야수의 투구)은 더하지 않는다
+				# 통산 기록은 우리 선수만 (CPU 선수 통산은 어디에도 쓰지 않아 세이브만 커진다)
 				if int(box["bat"]["g"]) > 0 or int(box["bat"]["e"]) > 0:
 					PlayerUtil.add_line(p["season"]["bat"], box["bat"])
-					PlayerUtil.add_line(p["career"]["bat"], box["bat"])
+					if team["isUser"]:
+						PlayerUtil.add_line(p["career"]["bat"], box["bat"])
 				if int(box["pit"]["g"]) > 0:
 					PlayerUtil.add_line(p["season"]["pit"], box["pit"])
-					PlayerUtil.add_line(p["career"]["pit"], box["pit"])
+					if team["isUser"]:
+						PlayerUtil.add_line(p["career"]["pit"], box["pit"])
 			p["fatigue"] = clampf(p["fatigue"] + 4 + box["pit"]["np"] / 4.0, 0, 100)
 			if box["pit"]["np"] > 0:
 				p["restUntil"] = Cal.add_days(f["date"], rest_days(box["pit"]["np"]) + 1)

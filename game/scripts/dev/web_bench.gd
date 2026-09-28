@@ -39,11 +39,15 @@ func _ready() -> void:
 	res["busyDayGames"] = _played(s2) - games_before
 	res["busyDayMs"] = Time.get_ticks_msec() - t0 - user_ms
 	res["userMatchMs"] = user_ms
-	# 3) 저장
+	# 3) 저장 (v0.6 부터 압축 바이너리: Game.save_game 과 같은 방식)
 	t0 = Time.get_ticks_msec()
-	var js := JSON.stringify(s2)
-	res["saveStringifyMs"] = Time.get_ticks_msec() - t0
-	res["saveKB"] = js.length() / 1024
+	var f := FileAccess.open_compressed("user://_bench.bin", FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	f.store_var(s2)
+	f.close()
+	res["saveMs"] = Time.get_ticks_msec() - t0
+	var sz := FileAccess.open("user://_bench.bin", FileAccess.READ).get_length()
+	res["saveKB"] = sz / 1024
+	DirAccess.remove_absolute("user://_bench.bin")
 	res["platform"] = OS.get_name()
 	var line := JSON.stringify(res)
 	print("BENCH ", line)

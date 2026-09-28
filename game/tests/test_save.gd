@@ -82,6 +82,23 @@ func _init() -> void:
 	if MatchEngine.resume(stale, loaded["matchSave"]) != null:
 		print("FAIL: 경기일이 아닌데 재개됨")
 		fails += 1
+	# 세이브 파일 형식: v0.6 압축 바이너리 + 이전 JSON 텍스트 둘 다 읽기
+	var G = load("res://scripts/autoload/game.gd")
+	var jf := FileAccess.open("user://_test_legacy.json", FileAccess.WRITE)
+	jf.store_string(JSON.stringify(state))
+	jf.close()
+	var bf := FileAccess.open_compressed("user://_test_new.bin", FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	bf.store_var(state)
+	bf.close()
+	var a1: Dictionary = G.read_save("user://_test_legacy.json")
+	var a2: Dictionary = G.read_save("user://_test_new.bin")
+	var sz := FileAccess.open("user://_test_new.bin", FileAccess.READ).get_length()
+	print("세이브 파일 %d KB (JSON %d KB)" % [sz / 1024, JSON.stringify(state).length() / 1024])
+	if a1.get("date") != state["date"] or a2.get("date") != state["date"] or a2["players"].size() != state["players"].size() or typeof(a2["year"]) != TYPE_INT:
+		print("FAIL: 세이브 형식 읽기")
+		fails += 1
+	DirAccess.remove_absolute("user://_test_legacy.json")
+	DirAccess.remove_absolute("user://_test_new.bin")
 	print("SAVE ", "OK" if fails == 0 else "FAILED")
 	quit(1 if fails else 0)
 
