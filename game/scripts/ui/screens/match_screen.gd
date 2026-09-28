@@ -158,7 +158,7 @@ func _loop() -> void:
 		_log_event(ev, inning_txt)
 		# 이닝이 바뀔 때마다 자동 저장 (경기 도중 종료해도 이 이닝부터 재개)
 		if ev["endHalf"] and not m.over and m.top:
-			Game.save_game()
+			Game.save_match()
 		if ev["paResult"] != "":
 			_announce_gold()
 			off_order = "normal"
@@ -243,7 +243,7 @@ func _save_quit() -> void:
 		waiting = true
 		quit_after = true
 		return
-	Game.save_game()
+	Game.save_match()
 	Game.current_match = null
 	Game.goto("title")
 

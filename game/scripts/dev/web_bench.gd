@@ -47,7 +47,27 @@ func _ready() -> void:
 	res["saveMs"] = Time.get_ticks_msec() - t0
 	var sz := FileAccess.open("user://_bench.bin", FileAccess.READ).get_length()
 	res["saveKB"] = sz / 1024
+	# 불러오기
+	t0 = Time.get_ticks_msec()
+	Game.read_save("user://_bench.bin")
+	res["loadMs"] = Time.get_ticks_msec() - t0
 	DirAccess.remove_absolute("user://_bench.bin")
+	# 4) 경기 중 이닝 자동 저장 (입력 기록만: Game.save_match 와 같은 방식), 150구 진행한 경기
+	var nx := Season.next_user_fixture(s2)
+	if not nx.is_empty():
+		var um := Season.create_match(s2, nx["f"], Rng.new(3))
+		um.save_info = {"fixtureId": nx["f"]["id"], "seed": 3, "starterId": null}
+		um.journal_on = true
+		for i in 150:
+			if um.over:
+				break
+			um.step(MatchAI.orders(um))
+		t0 = Time.get_ticks_msec()
+		var mf := FileAccess.open_compressed("user://_bench_m.bin", FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+		mf.store_var({"seq": 1, "matchSave": um.save_data()})
+		mf.close()
+		res["inningSaveMs"] = Time.get_ticks_msec() - t0
+		DirAccess.remove_absolute("user://_bench_m.bin")
 	res["platform"] = OS.get_name()
 	var line := JSON.stringify(res)
 	print("BENCH ", line)

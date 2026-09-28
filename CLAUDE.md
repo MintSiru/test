@@ -115,6 +115,7 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - CPU 학교 흥망은 `Fortune.season_start` (새 시즌, 성적 초기화 전). CPU 시설은 팀의 `facLevel`.
 - 합숙 에피소드는 합숙 주 `Season.use_card` 에서 `Offseason.camp_episode`, 대졸 드래프트는 `run_draft` 끝에서 `Offseason.college_draft`.
 - 세이브는 `Game.save_game()` 이 압축 바이너리로 쓴다. 파일을 직접 읽을 때는 `Game.read_save(path)` (이전 JSON 도 읽음).
+  경기 중 이닝 자동 저장은 `Game.save_match()` (입력 기록만 `save_N_match.bin`, 전체 저장 번호 `saveSeq` 가 같을 때만 불러옴). 경기 중에는 게임 상태를 바꾸지 말 것 — 바꾸면 전체 저장이 필요하다.
 - 개발용 인자는 `main.gd` 의 `dev_args()` 로 읽는다 (다른 스크립트에서는 `load("res://scripts/main.gd").dev_args()`) (명령줄 + 웹 주소 `?newgame&days=5&screen=match&notut`). 터치 화면은 버튼을 길게 누르면 `tooltip_text` 가 설명으로 뜬다 → 새 버튼에도 설명을 넣는다.
 - 주장·팀 분위기는 `TeamMood` (`state.teamMood`, `state.captainId`, `state.streak`). 경기 뒤 `after_match`, 매주 `week`, 은퇴식 직후 `captain_event`.
 - 감독 성장은 `Manager` (`data/manager.json`, `state.manager`). 특기 효과는 `Manager.bonus(state, key)`. 「작전가」는 우리 팀 `TeamSide.tac` 으로 작전 공식(`steal_prob` 등)에 더해져 안내와 판정이 함께 바뀐다.

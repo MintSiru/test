@@ -154,6 +154,8 @@ func _migrate_old_save() -> void:
 func delete_slot(n: int) -> void:
 	if slot_used(n):
 		DirAccess.remove_absolute(slot_path(n))
+	if FileAccess.file_exists(match_path(n)):
+		DirAccess.remove_absolute(match_path(n))
 	_write_meta(n, {})
 
 
@@ -165,12 +167,31 @@ func save_game() -> void:
 		state["matchSave"] = current_match.save_data()
 	else:
 		state.erase("matchSave")
+	# 저장 번호: 경기 중 저장 파일(match_path)이 이 저장본에 딸린 것인지 확인하는 데 쓴다
+	state["saveSeq"] = int(state.get("saveSeq", 0)) + 1
 	# Godot 바이너리 + zstd 압축: JSON 보다 저장이 2배 빠르고 파일은 1/8 (v0.6)
 	var f := FileAccess.open_compressed(slot_path(slot), FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
 	if f:
 		f.store_var(state)
 		f.close()
 		_write_meta(slot, _summary(state))
+	if FileAccess.file_exists(match_path(slot)):
+		DirAccess.remove_absolute(match_path(slot))
+
+
+static func match_path(n: int) -> String:
+	return "user://save_%d_match.bin" % n
+
+
+## 경기 중 자동 저장 (이닝마다): 경기 동안 게임 상태는 바뀌지 않으므로 입력 기록만 작은 파일로.
+## 경기 시작 때의 전체 저장본(saveSeq)에 딸린 것으로 표시해 두고, 불러올 때 번호가 같을 때만 쓴다.
+func save_match() -> void:
+	if state.is_empty() or current_match == null or not current_match.journal_on:
+		return
+	var f := FileAccess.open_compressed(match_path(slot), FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	if f:
+		f.store_var({"seq": int(state.get("saveSeq", 0)), "matchSave": current_match.save_data()})
+		f.close()
 
 
 ## 세이브 파일 읽기: v0.6 부터 압축 바이너리, 그 전은 JSON 텍스트. 실패하면 빈 Dictionary
@@ -196,6 +217,12 @@ func load_game(n := slot) -> bool:
 	var d := read_save(slot_path(n))
 	if d.is_empty():
 		return false
+	# 경기 중 저장 파일이 이 저장본에 딸린 것이면 그 경기 기록을 쓴다 (이닝마다 저장한 최신 상황)
+	if FileAccess.file_exists(match_path(n)):
+		var mf := FileAccess.open_compressed(match_path(n), FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+		var mv = mf.get_var() if mf != null else null
+		if typeof(mv) == TYPE_DICTIONARY and int(mv.get("seq", -1)) == int(d.get("saveSeq", 0)):
+			d["matchSave"] = mv["matchSave"]
 	state = d
 	# 이전 버전 세이브 호환: 새로 생긴 항목 기본값
 	# v0.2 예산(만원) → 포인트, 이전 세이브의 프로 명단은 가상 명단
