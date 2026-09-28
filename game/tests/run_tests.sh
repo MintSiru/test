@@ -15,7 +15,7 @@ done
 [ $status -eq 0 ] && echo "  파스 검사 OK"
 # 2) 테스트 실행. 스크립트 오류가 나면 테스트가 끝나지 않고 멈춘 것처럼 보이므로,
 #    출력에 SCRIPT ERROR 가 보이면 바로 중단하고 오류를 보여 준다.
-for t in tests/test_balance.gd tests/test_season.gd tests/test_save.gd tests/test_tactics.gd; do
+for t in tests/test_parity.gd tests/test_balance.gd tests/test_season.gd tests/test_save.gd tests/test_tactics.gd; do
   echo "== $t"
   log=$(mktemp)
   timeout 900 "$GODOT" --headless --path . -s "$t" > "$log" 2>&1 &

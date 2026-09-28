@@ -31,7 +31,9 @@
 | sim/ai.ts | sim/match_ai.gd |
 | sim/build.ts | sim/side_builder.gd + sim/sim_player.gd |
 
-규칙(확률·수치)을 바꾸면 **양쪽을 같이** 고치고 양쪽 테스트를 돌린다. 새 기능은 Godot 쪽만 있어도 되지만,
+규칙(확률·수치)을 바꾸면 **양쪽을 같이** 고치고 양쪽 테스트를 돌린다.
+난수를 쓰지 않는 규칙 함수(종합 능력치·경기용 능력 변환·성장 배율·포인트·대회 날짜·할인가 등)는 `game/tests/parity.json` 기준값으로
+양쪽이 같은 값을 내는지 검사한다 (웹 `tests/parity.test.ts`, Godot `tests/test_parity.gd`). 규칙을 일부러 바꿨으면 `PARITY_UPDATE=1 npx vitest run tests/parity.test.ts` 로 기준값을 다시 만든다. 새 기능은 Godot 쪽만 있어도 되지만,
 경기 엔진·성장 수치처럼 밸런스에 영향을 주는 것은 web 에서 먼저 실험하는 편이 빠르다.
 
 ## 테스트 (변경 후 항상 실행)
