@@ -108,6 +108,16 @@ static func _update_school_records(state: Dictionary) -> void:
 		state["news"].append({"date": state["date"], "kind": "good", "text": "학교 신기록! 한 시즌 %s" % n})
 
 
+## 전국대회 우승 기록 + 우승 연출 팝업 (main.gd show_trophy)
+static func add_trophy(state: Dictionary, def: Dictionary, opp_name: String, us: int, them: int, date: String) -> void:
+	if state.get("trophies") == null:
+		state["trophies"] = []
+	var fin_score := "%d:%d" % [us, them]
+	state["trophies"].append({"year": state["year"], "comp": def["short"], "name": def["name"], "opp": opp_name, "score": fin_score, "date": date})
+	state["popups"].append({"kind": "trophy", "title": "%s 우승!" % def["short"], "sub": "결승 vs %s %s" % [opp_name, fin_score],
+		"body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
+
+
 ## 명장면 앨범: 우리 경기의 명장면을 state.highlights 에 (최근 60개)
 const HIGHLIGHT_MAX := 60
 const HIGHLIGHT_KO := {"walkoff": "끝내기", "hr": "홈런", "clutch": "승부처", "escape": "위기 탈출"}

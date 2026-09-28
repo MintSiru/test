@@ -96,6 +96,11 @@ static func next_user_fixture(state: Dictionary) -> Dictionary:
 	return {}
 
 
+## 전국대회 결승인가
+static func is_final(comp: Dictionary, f: Dictionary) -> bool:
+	return comp["kind"] == "tournament" and Competition.round_name(comp, int(f["round"])) == "결승"
+
+
 static func fixture_label(comp: Dictionary, f: Dictionary) -> String:
 	if comp["kind"] == "friendly":
 		return "연습 경기"
@@ -547,7 +552,7 @@ static func apply_result(state: Dictionary, comp: Dictionary, f: Dictionary, m: 
 						Achievements.event(state, "doubleCrown")
 				if r == "우승":
 					state["reputation"] = clampi(state["reputation"] + int(def["repWin"]), 0, 100)
-					state["popups"].append({"kind": "good", "title": "%s 우승!" % def["short"], "body": "%s, %s 우승!!\n전국에 이름을 떨쳤다. (명성 +%d)" % [WorldGen.user_team(state)["name"], def["name"], def["repWin"]]})
+					Records.add_trophy(state, def, opp["name"], us, them, f["date"])
 				else:
 					var bonus := roundi(def["repWin"] / 2.0) if r == "준우승" else (4 if r == "4강" else (2 if r == "8강" else 0))
 					state["reputation"] = clampi(state["reputation"] + bonus, 0, 100)

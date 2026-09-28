@@ -46,6 +46,12 @@ func _fill() -> void:
 
 func _years() -> void:
 	var s := st()
+	var tro = s.get("trophies")
+	if tro != null and not tro.is_empty():
+		body.add_child(UI.title_label("우승 트로피 %d개" % tro.size()))
+		for t in tro:
+			body.add_child(UI.label("  ★ %d %s 우승 — 결승 vs %s %s" % [t["year"], t["name"], t["opp"], t["score"]], UI.TIER_COLORS["gold"], true))
+		body.add_child(UI.spacer(0, 4))
 	body.add_child(UI.title_label("연도별 성적"))
 	if s["history"].is_empty():
 		body.add_child(UI.label("아직 기록이 없습니다. (첫 시즌이 끝나면 쌓입니다)", UI.DIM, true))

@@ -49,6 +49,7 @@ xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/
 #   --pitches=N : 경기일에 경기를 만들고 N구 진행 / --watch : 자동 관전 / --delay=초
 #   --usecard : 훈련 카드 사용 직후 / --boxscore : 경기 후 박스스코어 / --night : 야간·가랑비 연출
 #   --notut : 처음 안내 팝업 끄기 (스크린샷용) / --catalog : 특수능력 도감 열기
+#   --trophy : 우승 연출 화면 보기
 #   --screen=records --tab=highlights --replay : 명장면 다시 보기 (가장 최근 홈런)
 #   --splash --shot=game/assets/splash.png : 웹·데스크톱 로딩 이미지 다시 만들기 (버전 올린 뒤)
 # 여러 해 밸런스: godot --headless --path game -s tests/multi_year.gd  (5년 × 3시드, 약 4분)

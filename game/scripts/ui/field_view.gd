@@ -31,6 +31,7 @@ var def_colors := [Color.WHITE, Color.BLUE, Color.WHITE]
 var crowd_seed := 1
 ## 야간 경기 / 날씨 ("맑음", "흐림", "가랑비", "비")
 var night := false
+var big_game := false # 결승전: 관중이 많아 함성이 크다
 var weather := "맑음"
 var drops: Array = []
 var _t := 0.0
@@ -69,7 +70,7 @@ func crowd_db(base: float) -> float:
 	if m == null:
 		return base
 	var diff := absi(m.home.score - m.away.score)
-	var db := base
+	var db := base + (3.0 if big_game else 0.0)
 	if m.inning >= 7 and diff <= 2:
 		db += 3.0 + (2.0 if m.inning >= 9 and diff <= 1 else 0.0)
 	elif diff >= 6:

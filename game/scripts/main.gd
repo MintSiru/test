@@ -87,6 +87,9 @@ func _ready() -> void:
 			drain_popups()
 	if "--catalog" in dev_args():
 		show_panel("특수능력 도감", UI.ability_catalog())
+	# 개발용: 우승 연출 보기 (--trophy)
+	if "--trophy" in dev_args() and not Game.state.is_empty():
+		show_trophy({"title": "청룡기 우승!", "sub": "결승 vs 남산고 5:3", "body": "한빛고, 청룡기 우승!!\n전국에 이름을 떨쳤다. (명성 +10)"}, Callable())
 	# 개발용: 기록실에서 가장 최근 명장면 다시 보기 (--screen=records --replay)
 	if "--replay" in dev_args() and current.has_method("_replay") and not Game.state.get("highlights", []).is_empty():
 		var hls: Array = Game.state["highlights"]
@@ -333,7 +336,22 @@ func drain_popups(done: Callable = Callable()) -> void:
 	if pop.get("kind", "") == "choice":
 		show_choice(pop, func(): drain_popups(done))
 		return
+	if pop.get("kind", "") == "trophy":
+		show_trophy(pop, func(): drain_popups(done))
+		return
 	show_modal(pop["title"], pop["body"], pop.get("kind", "info"), func(): drain_popups(done))
+
+
+## 우승 연출: 헹가래 도트 화면 + 우승 문구, 확인을 누르면 done
+func show_trophy(pop: Dictionary, done: Callable) -> void:
+	Game.sfx("fanfare")
+	Game.sfx("cheer", 2.0)
+	var v := UI.vbox(4)
+	var cv := CelebrationView.new()
+	cv.setup_celebration(WorldGen.user_team(Game.state), pop["title"], pop.get("sub", ""))
+	v.add_child(cv)
+	v.add_child(UI.wrap_label(str(pop["body"]).replace("\n", " "), 540, UI.GOOD, true))
+	show_panel("우승!", v, done)
 
 
 ## 선택 팝업 (비시즌 합숙 장소·진로 상담 등): 버튼을 세로로 늘어놓고, 고르면 결과를 보여 준 뒤 done

@@ -96,8 +96,11 @@ func setup(_p := {}) -> void:
 		cond_txt = "  날씨: %s%s" % [field.weather, " · 야간 경기" if field.night else ""]
 		if Rival.is_rival_game(st(), fx["f"]):
 			cond_txt += " · [color=#ef6f6c]라이벌전![/color]"
+		field.big_game = Season.is_final(fx["comp"], fx["f"])
 	field.sync(m)
 	_announce_gold()
+	if field.big_game and m.pitch_no == 0:
+		_banner("결승전!", "%s — 우승까지 한 경기" % Cal.comp_def(fx["comp"]["key"])["short"])
 	if m.pitch_no > 0:
 		_add_line("[color=#f4d35e]%s vs %s — 저장한 곳부터 이어서 (%d회%s %d:%d)[/color]%s" % [m.away.name, m.home.name, m.inning, "초" if m.top else "말", m.away.score, m.home.score, cond_txt])
 	else:

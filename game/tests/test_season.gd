@@ -248,6 +248,14 @@ func _init() -> void:
 	if Stories.rival_ace(state).is_empty():
 		fails.append("라이벌 에이스 없음")
 	print("라이벌 에이스 기록: ", state.get("rivalAceLog", {}).size(), "명 ", Stories.ace_record_text(state, Stories.rival_ace(state)))
+	# 우승 기록·연출 팝업
+	var pops0: int = state["popups"].size()
+	Records.add_trophy(state, Cal.comp_def("cheongryong"), "남산고", 5, 3, state["date"])
+	var tro: Array = state.get("trophies", [])
+	if tro.is_empty() or tro[-1]["score"] != "5:3" or state["popups"].size() != pops0 + 1 or state["popups"][-1]["kind"] != "trophy":
+		fails.append("우승 기록 실패")
+	state["trophies"].pop_back()
+	state["popups"].pop_back()
 	# 주장 · 팀 분위기
 	var cap := TeamMood.captain(state)
 	print("팀 분위기 %d, 주장 %s, 연속 %d" % [TeamMood.mood(state), PlayerUtil.full_name(cap) if not cap.is_empty() else "-", int(state.get("streak", 0))])
