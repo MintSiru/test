@@ -624,38 +624,78 @@ func _show_result() -> void:
 
 # ───────────── 전광판 ─────────────
 
+static var _led_bg: ImageTexture
+
+
+## 전광판 LED 점무늬 바탕 (2px 격자)
+static func _led_texture() -> ImageTexture:
+	if _led_bg == null:
+		var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+		img.fill(Color("#0b2016"))
+		img.set_pixel(0, 0, Color("#0f2a1d"))
+		_led_bg = ImageTexture.create_from_image(img)
+	return _led_bg
+
+
 func _draw_board() -> void:
-	board.draw_rect(Rect2(0, 0, 640, 35), Color("#0d2a1c"))
-	board.draw_rect(Rect2(0, 34, 640, 1), UI.LINE)
+	# 나무 테두리 + LED 점무늬 바탕
+	board.draw_rect(Rect2(0, 0, 640, 35), Color("#4a3320"))
+	board.draw_rect(Rect2(0, 0, 640, 1), Color("#7a5634"))
+	board.draw_rect(Rect2(0, 34, 640, 1), Color("#1e140a"))
+	board.draw_texture_rect(_led_texture(), Rect2(2, 2, 636, 31), true)
 	var inn := maxi(9, maxi(m.home.line.size(), m.away.line.size()))
 	var cw := 16 if inn <= 12 else 13
-	var x0 := 96
+	var x0 := 100
 	var f := UI.font_small
+	var led := Color("#ffd24a")
+	var led_dim := Color("#6f6a3a")
+	# 이닝 번호 + 칸
 	for i in inn:
 		var x := x0 + i * cw
 		var cur := i + 1 == m.inning and not m.over
-		board.draw_string(f, Vector2(x, 10), str(i + 1), HORIZONTAL_ALIGNMENT_CENTER, cw, 10, UI.ACCENT if cur else UI.DIM)
-	var rx := x0 + inn * cw + 8
+		board.draw_rect(Rect2(x + 1, 12, cw - 2, 20), Color("#08170f") if not cur else Color("#1c3a22"))
+		if cur:
+			board.draw_rect(Rect2(x + 1, 12, cw - 2, 20), Color("#6fd08c"), false)
+		board.draw_string(f, Vector2(x, 10), str(i + 1), HORIZONTAL_ALIGNMENT_CENTER, cw, 10, led if cur else Color("#8fa895"))
+	var rx := x0 + inn * cw + 6
 	for j in 3:
-		board.draw_string(f, Vector2(rx + j * 22, 10), ["R", "H", "E"][j], HORIZONTAL_ALIGNMENT_CENTER, 22, 10, UI.DIM)
+		board.draw_rect(Rect2(rx + j * 22 + 1, 12, 20, 20), Color("#3a1414") if j == 0 else Color("#08170f"))
+		board.draw_string(f, Vector2(rx + j * 22, 10), ["R", "H", "E"][j], HORIZONTAL_ALIGNMENT_CENTER, 22, 10, Color("#ff8a7a") if j == 0 else Color("#8fa895"))
 	var rows := [m.away, m.home]
 	for r in 2:
 		var sd: MatchEngine.TeamSide = rows[r]
-		var y := 21 + r * 11
+		var y := 21 + r * 10
 		var batting := (r == 0) == m.top and not m.over
-		board.draw_string(f, Vector2(4, y), ("▶" if batting else " ") + sd.name, HORIZONTAL_ALIGNMENT_LEFT, 90, 10, Color(sd.colors[0]).lightened(0.5) if not sd.is_user else UI.ACCENT)
+		# 팀 색 칩 + 이름 (공격 중이면 ▶)
+		board.draw_rect(Rect2(4, y - 7, 6, 7), Color(sd.colors[0]))
+		board.draw_rect(Rect2(4, y - 7, 6, 2), Color(sd.colors[1]))
+		board.draw_string(f, Vector2(13, y), ("▶" if batting else "") + sd.name, HORIZONTAL_ALIGNMENT_LEFT, 84, 10, UI.ACCENT if sd.is_user else Color("#e8e8f0"))
 		for i in inn:
 			var txt := ""
 			if i < sd.line.size():
 				txt = str(sd.line[i])
 			elif i + 1 == m.inning and batting:
 				txt = "0"
-			board.draw_string(f, Vector2(x0 + i * cw, y), txt, HORIZONTAL_ALIGNMENT_CENTER, cw, 10, Color("#f4f4f4"))
-		board.draw_string(f, Vector2(rx, y), str(sd.score), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, UI.ACCENT)
-		board.draw_string(f, Vector2(rx + 22, y), str(sd.hits), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, Color("#f4f4f4"))
-		board.draw_string(f, Vector2(rx + 44, y), str(sd.errors), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, Color("#f4f4f4"))
+			var col := led if txt != "" and txt != "0" else (led_dim if txt == "0" else led)
+			board.draw_string(f, Vector2(x0 + i * cw, y), txt, HORIZONTAL_ALIGNMENT_CENTER, cw, 10, col)
+		board.draw_string(f, Vector2(rx, y), str(sd.score), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, Color("#ffb0a0"))
+		board.draw_string(f, Vector2(rx + 22, y), str(sd.hits), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, led)
+		board.draw_string(f, Vector2(rx + 44, y), str(sd.errors), HORIZONTAL_ALIGNMENT_CENTER, 22, 10, led)
+	# 볼·스트라이크·아웃 램프
+	var bx := 640 - 64
+	var lamps := [["B", m.balls, 3, Color("#6fd08c")], ["S", m.strikes, 2, Color("#f4d35e")], ["O", m.outs, 2, Color("#ef6f6c")]]
+	for li in 3:
+		var ly := 8 + li * 9
+		board.draw_string(f, Vector2(bx, ly + 3), lamps[li][0], HORIZONTAL_ALIGNMENT_LEFT, 10, 10, Color("#8fa895"))
+		for k in int(lamps[li][2]):
+			var on: bool = k < int(lamps[li][1]) and not m.over
+			var c: Color = lamps[li][3] if on else Color("#1a2a20")
+			board.draw_circle(Vector2(bx + 14 + k * 9, ly), 3.0, c)
+			if on:
+				board.draw_circle(Vector2(bx + 13 + k * 9, ly - 1), 1.0, c.lightened(0.5))
 	var comp_txt := ""
 	var found := Season.find_fixture(st(), st().get("pendingFixture", ""))
 	if not found.is_empty():
 		comp_txt = Season.fixture_label(found["comp"], found["f"])
-	board.draw_string(f, Vector2(rx + 72, 10), comp_txt, HORIZONTAL_ALIGNMENT_LEFT, 640 - rx - 76, 10, UI.DIM)
+	board.draw_string(f, Vector2(rx + 72, 10), comp_txt, HORIZONTAL_ALIGNMENT_LEFT, bx - rx - 76, 10, Color("#8fa895"))
+	board.draw_string(f, Vector2(rx + 72, 24), "%d회%s" % [m.inning, "초" if m.top else "말"] if not m.over else "경기 종료", HORIZONTAL_ALIGNMENT_LEFT, bx - rx - 76, 10, led)

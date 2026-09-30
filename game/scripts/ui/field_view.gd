@@ -324,34 +324,51 @@ func _render_background() -> ImageTexture:
 			var fair := absf(ang) <= 45.0
 			var fence_r := 120.0 + (98.0 + (1.0 - absf(ang) / 45.0) * 20.0 - 40.0) * 1.25
 			var c := sky
-			if d > fence_r + 4 or (not fair and y < HOME.y - 150):
-				# 관중석
-				c = Color("#232948") if (y / 3) % 2 == 0 else Color("#1f2542")
-				if (y / 3) % 2 == 0 and x % 3 != 0 and r.randf() < 0.3:
-					c = [Color("#ef6f6c"), Color("#f4d35e"), Color("#7fa6ff"), Color("#e8e8f0"), Color("#6fd08c")][r.randi_range(0, 4)].darkened(0.5)
+			var mow := (int((x + y) / 14.0) + int((x - y + 400) / 14.0)) % 2 # 잔디 깎은 결 (대각선 체크)
+			if d > fence_r + 6 or (not fair and y < HOME.y - 150):
+				# 관중석: 4px 단마다 좌석 줄, 사람(머리 1px + 옷 2px), 24px 마다 통로
+				var row := (y / 4) % 2
+				c = Color("#242a4a") if row == 0 else Color("#1d2240")
+				var in_aisle := (x % 24) < 2
+				if in_aisle:
+					c = Color("#2e3558")
+				elif y % 4 != 0 and x % 2 == 0 and r.randf() < 0.55:
+					var shirt: Color = [Color("#ef6f6c"), Color("#f4d35e"), Color("#7fa6ff"), Color("#e8e8f0"), Color("#6fd08c"), Color("#c792ea"), Color("#ff9f43")][r.randi_range(0, 6)]
+					c = Color("#e0b08a").darkened(0.35) if y % 4 == 1 else shirt.darkened(0.35)
 			elif d > fence_r and fair:
-				c = Color("#16482a")  # 펜스
-				if d < fence_r + 1.2:
+				# 외야 펜스 (광고판) + 노란 윗선
+				var seg := int((ang + 45.0) / 9.0)
+				var ads := [Color("#1f5f9a"), Color("#b33a3a"), Color("#1e7a4a"), Color("#c98a1e"), Color("#5a3fa0")]
+				c = ads[seg % ads.size()]
+				if d > fence_r + 5:
 					c = Color("#f4d35e")
+				elif d < fence_r + 1:
+					c = Color("#0f3a22")
+				elif int(ang * 4) % 7 == 0 and d > fence_r + 2 and d < fence_r + 4:
+					c = Color("#f4f4f4") # 광고 글자 느낌
 			else:
-				var band := int(d / 10.0) % 2
-				c = Color("#2f7a3f") if band == 0 else Color("#2a7039")
+				var gr := Color("#3c8a45") if mow == 0 else Color("#337c3c")
+				c = gr
 				if not fair:
-					c = c.darkened(0.08)
-				# 내야 흙
+					c = c.darkened(0.1)
+				# 경고 트랙 (펜스 앞 흙길)
+				if fair and d > fence_r - 5:
+					c = Color("#8a5a36") if r.randf() < 0.8 else Color("#7a4e2e")
+				# 내야 흙 (점무늬 질감)
 				if d < 122 and d > 70 and fair:
-					c = Color("#b07a4a") if band == 0 else Color("#a87346")
+					c = Color("#b8804c") if r.randf() < 0.82 else Color("#a26e3e")
 				if d < 70 and fair:
-					c = Color("#3a8a48")
+					c = Color("#46994f") if mow == 0 else Color("#3f9048")
 				# 베이스 라인 주변 흙길
 				if absf(absf(ang) - 45.0) < 1.6 and d < 90:
-					c = Color("#b07a4a")
-				# 마운드
-				if p.distance_to(to_screen(0, 18.4)) < 9:
-					c = Color("#b8824f")
+					c = Color("#b8804c")
+				# 마운드 (위쪽이 밝게)
+				var mp := to_screen(0, 18.4)
+				if p.distance_to(mp) < 9:
+					c = Color("#c68d56") if p.y < mp.y else Color("#b07a48")
 				# 홈 주변
 				if d < 16:
-					c = Color("#b07a4a")
+					c = Color("#b8804c") if r.randf() < 0.85 else Color("#a26e3e")
 				# 파울 라인
 				if absf(absf(ang) - 45.0) < 0.45 and d > 3:
 					c = Color("#f4f4f4")
@@ -444,5 +461,7 @@ func _draw() -> void:
 
 
 func _draw_sprite(cols: Array, feet: Vector2, frame: int) -> void:
+	# 발밑 그림자
+	draw_rect(Rect2((feet + Vector2(-3, -1)).round(), Vector2(7, 2)), Color(0, 0, 0, 0.35))
 	var tex := PixelArt.sprite(cols[0], cols[1], cols[2], frame)
 	draw_texture(tex, (feet - Vector2(4, 12)).round())
