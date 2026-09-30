@@ -368,20 +368,52 @@ func _after_popups() -> void:
 func _draw_scene() -> void:
 	var w := 280.0
 	var h := 84.0
-	scene.draw_rect(Rect2(0, 0, w, h), Color("#2f7a3f"))
-	for y in range(0, int(h), 8):
-		scene.draw_rect(Rect2(0, y, w, 4), Color("#2a6e39"))
-	scene.draw_rect(Rect2(0, 0, w, 14), Color("#5a4a3a"))
-	scene.draw_rect(Rect2(0, 12, w, 2), Color("#3a2f25"))
-	# 교사 건물
-	scene.draw_rect(Rect2(10, 0, 90, 12), Color("#c8c0b0"))
+	var m := Cal.month_of(st()["date"])
+	var season := "spring" if m in [3, 4, 5] else ("summer" if m in [6, 7, 8] else ("autumn" if m in [9, 10, 11] else "winter"))
+	var sky_c: Color = {"spring": Color("#9ec9f0"), "summer": Color("#5fb0ff"), "autumn": Color("#f0b878"), "winter": Color("#b8c4d8")}[season]
+	var leaf: Color = {"spring": Color("#f6b6c8"), "summer": Color("#2f8a3a"), "autumn": Color("#e0782f"), "winter": Color("#6a5a4a")}[season]
+	var grass_a: Color = {"spring": Color("#3f9048"), "summer": Color("#348a3e"), "autumn": Color("#6a8a3a"), "winter": Color("#5f7a5a")}[season]
+	# 하늘
+	scene.draw_rect(Rect2(0, 0, w, 16), sky_c)
+	scene.draw_rect(Rect2(0, 10, w, 6), sky_c.darkened(0.08))
+	# 잔디 (깎은 결)
+	scene.draw_rect(Rect2(0, 16, w, h - 16), grass_a)
+	for y in range(16, int(h), 8):
+		scene.draw_rect(Rect2(0, y, w, 4), grass_a.darkened(0.08))
+	# 교사 건물: 지붕 · 창문 · 시계
+	scene.draw_rect(Rect2(8, 2, 100, 14), Color("#d8d0c0"))
+	scene.draw_rect(Rect2(6, 0, 104, 3), Color("#7a3b30"))
 	for i in 8:
-		scene.draw_rect(Rect2(14 + i * 11, 3, 6, 5), Color("#6a8ab0"))
-	scene.draw_rect(Rect2(200, 2, 60, 10), Color("#9a8a70"))
+		scene.draw_rect(Rect2(12 + i * 12, 6, 7, 5), Color("#6a8ab0"))
+		scene.draw_rect(Rect2(12 + i * 12, 6, 7, 1), Color("#9ab8d8"))
+	scene.draw_circle(Vector2(58, 3), 3, Color("#f4f4f4"))
+	scene.draw_rect(Rect2(58, 1, 1, 2), Color("#303030"))
+	# 나무 (계절 색)
+	for tx in [122, 150, 250, 268]:
+		scene.draw_rect(Rect2(tx, 8, 2, 8), Color("#5a3a22"))
+		if season != "winter":
+			scene.draw_circle(Vector2(tx + 1, 6), 6, leaf)
+			scene.draw_circle(Vector2(tx - 1, 5), 3, leaf.lightened(0.15))
+		else:
+			scene.draw_line(Vector2(tx + 1, 8), Vector2(tx - 3, 2), leaf, 1.0)
+			scene.draw_line(Vector2(tx + 1, 8), Vector2(tx + 5, 3), leaf, 1.0)
+			scene.draw_rect(Rect2(tx - 3, 2, 3, 1), Color("#f4f8ff"))
+	# 백네트
+	scene.draw_rect(Rect2(196, 2, 44, 14), Color(0.2, 0.25, 0.3, 0.35))
+	for nx in range(196, 241, 4):
+		scene.draw_rect(Rect2(nx, 2, 1, 14), Color("#8a9aa8"))
+	scene.draw_rect(Rect2(196, 2, 45, 1), Color("#8a9aa8"))
+	scene.draw_rect(Rect2(0, 15, w, 1), Color("#3a2f25"))
 	# 내야 흙
-	scene.draw_colored_polygon(PackedVector2Array([Vector2(140, 34), Vector2(190, 58), Vector2(140, 82), Vector2(90, 58)]), Color("#b07a4a"))
+	scene.draw_colored_polygon(PackedVector2Array([Vector2(140, 34), Vector2(190, 58), Vector2(140, 82), Vector2(90, 58)]), Color("#b8804c") if season != "winter" else Color("#b89a7c"))
 	for b in [Vector2(140, 34), Vector2(190, 58), Vector2(140, 82), Vector2(90, 58)]:
 		scene.draw_rect(Rect2(b.x - 1, b.y - 1, 3, 3), Color.WHITE)
+	# 겨울: 운동장에 쌓인 눈
+	if season == "winter":
+		var sr := RandomNumberGenerator.new()
+		sr.seed = 3
+		for i in 140:
+			scene.draw_rect(Rect2(sr.randi_range(0, 279), sr.randi_range(16, 83), sr.randi_range(2, 5), 1), Color("#eef4ff"))
 	var t: Dictionary = st()["teams"][st()["userTeamId"]]
 	var cap := Color(t["colors"][0])
 	var acc := Color(t["colors"][1])
@@ -391,6 +423,7 @@ func _draw_scene() -> void:
 		var x := fmod(phase * 280.0, 320.0) - 20
 		var y := 20.0 + i * 12
 		var frame := 1 + int(anim_t * 8 + i) % 2
+		scene.draw_rect(Rect2(roundi(x) + 1, roundi(y) + 11, 7, 2), Color(0, 0, 0, 0.3))
 		scene.draw_texture(PixelArt.sprite(Color("#f4f4f4"), cap, acc, frame), Vector2(roundi(x), roundi(y)))
 	# 투수 연습
 	var sw := int(anim_t * 2) % 2
@@ -399,5 +432,17 @@ func _draw_scene() -> void:
 	var by := 58.0 + fmod(anim_t * 60.0, 24.0)
 	if sw == 0:
 		scene.draw_rect(Rect2(bx, by, 2, 2), Color.WHITE)
+	# 계절 입자: 벚꽃잎 · 낙엽 · 눈
+	var season2 := "spring" if Cal.month_of(st()["date"]) in [3, 4] else ("autumn" if Cal.month_of(st()["date"]) in [10, 11] else ("winter" if Cal.month_of(st()["date"]) in [12, 1, 2] else ""))
+	if season2 != "":
+		var pc: Color = {"spring": Color("#ffd0dc"), "autumn": Color("#e8903a"), "winter": Color("#ffffff")}[season2]
+		for i in 18:
+			var px := fmod(i * 37.0 + anim_t * (8.0 + i % 4) + sin(anim_t * 1.3 + i) * 6.0, 290.0) - 5.0
+			var py := fmod(i * 13.0 + anim_t * (10.0 + i % 3 * 4.0), 90.0) - 4.0
+			scene.draw_rect(Rect2(roundi(px), roundi(py), 2 if season2 != "winter" else 1 + i % 2, 1 + i % 2), pc)
+	# 테두리 (안쪽 밝은 선 + 바깥 어두운 선)
+	scene.draw_rect(Rect2(0, 0, w, h), Color("#0c0f22"), false)
+	scene.draw_rect(Rect2(1, 1, w - 2, 1), Color(1, 1, 1, 0.15))
 	var label := "이번 주: 훈련 카드 선택 대기" if not st()["weekTrained"] else ("경기일" if st().get("pendingFixture") != null else "연습 중")
+	scene.draw_rect(Rect2(2, 70, UI.font_small.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 6, 12), Color(0, 0, 0, 0.45))
 	scene.draw_string(UI.font_small, Vector2(4, 80), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color("#ffffffcc"))
