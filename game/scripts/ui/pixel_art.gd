@@ -145,18 +145,18 @@ static func portrait(seed_val: int, cap: Color, accent: Color) -> Texture2D:
 # 필드 선수 스프라이트 8×12 (C=모자, S=피부, J=유니폼, A=포인트색, P=바지, K=양말·신발)
 const BODY := [
 	"..CCCC..",
-	".CCCCCC.",
-	"..SSSS..",
-	"..SSSS..",
-	".JJAJJJ.",
-	"SJJJJJJS",
-	".JJJJJJ.",
-	"..PPPP..",
+	".CCCCCB.",
+	"..SeSS..",
+	"..SSSs..",
+	".JJAJJj.",
+	"GJJJJJjS",
+	".JJJJJj.",
+	"..bbbb..",
 ]
 const LEGS := [
-	["..P..P..", "..P..P..", "..K..K..", ".KK..KK."],
-	[".P....P.", ".P...P..", "KK...K..", "......KK"],
-	["..P.P...", ".P...P..", ".K....K.", "KK....KK"],
+	["..P..p..", "..P..p..", "..K..K..", ".xx..xx."],
+	[".P....p.", ".P...p..", "KK...K..", "......xx"],
+	["..P.p...", ".P...p..", ".K....K.", "xx....xx"],
 ]
 
 
@@ -167,7 +167,10 @@ static func sprite(jersey: Color, cap: Color, accent: Color, frame := 0) -> Text
 		return _cache[key]
 	var img := _img(8, 12)
 	var rows: Array = BODY + LEGS[frame]
-	var pal := {"C": cap, "S": SKINS[1], "J": jersey, "A": accent, "P": jersey.darkened(0.1) if jersey.v > 0.8 else Color("#e8e8e8"), "K": cap.darkened(0.2)}
+	var pants: Color = jersey.darkened(0.1) if jersey.v > 0.8 else Color("#e8e8e8")
+	var pal := {"C": cap, "B": cap.darkened(0.4), "S": SKINS[1], "s": SKINS[1].darkened(0.18), "e": Color("#1a1a22"),
+		"J": jersey, "j": jersey.darkened(0.2), "A": accent, "G": Color("#8a5a2b"), "b": Color("#2a2a38"),
+		"P": pants, "p": pants.darkened(0.14), "K": cap.darkened(0.2), "x": Color("#1c1c26")}
 	for y in rows.size():
 		var row: String = rows[y]
 		for x in row.length():
