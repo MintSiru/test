@@ -50,6 +50,7 @@ xvfb-run -a godot --path game --rendering-driver opengl3 -- --uiseason --shots=/
 #   --pitches=N : 경기일에 경기를 만들고 N구 진행 / --watch : 자동 관전 / --delay=초
 #   --usecard : 훈련 카드 사용 직후 / --boxscore : 경기 후 박스스코어 / --night : 야간·가랑비 연출
 #   --notut : 처음 안내 팝업 끄기 (스크린샷용) / --catalog : 특수능력 도감 열기
+#   --fx : 경기 연출 효과(불꽃놀이·불꽃·흙먼지) 보기 (--pitches 와 함께)
 #   --trophy : 우승 연출 화면 보기 / --album : 졸업 앨범 미리보기 (지금 3학년)
 #   --screen=records --tab=highlights --replay : 명장면 다시 보기 (가장 최근 홈런)
 #   --splash --shot=game/assets/splash.png : 웹·데스크톱 로딩 이미지 다시 만들기 (버전 올린 뒤)
@@ -142,6 +143,10 @@ Godot 바이너리가 없으면 `https://github.com/godotengine/godot/releases/d
 - 도트 그래픽은 `PixelArt` 에서 코드로 생성·캐시한다. 외부 이미지를 추가하면 `default_texture_filter=0`(Nearest) 유지.
 - 새 화면: `scripts/ui/screens/xxx_screen.gd` (extends BaseScreen, `setup(params)`) + `main.gd` 의 `SCREENS` 에 등록.
   `data/help.json` 의 `topics` 에 화면 이름과 같은 키로 도움말을 넣으면 상단 「?」 버튼이 그 도움말을 보여 준다.
+- 그래픽 규칙 (v0.10): 패널·버튼 테두리는 `UI.sb()` → `UI.frame()` 도트풍 입체 프레임(윗변 밝게·아랫변 어둡게·그림자 1px). 테두리 없는 단색은 `UI.flat()`.
+  제목은 `UI.title_label()`(왼쪽 노란 막대 띠), 주요 행동 버튼은 `UI.primary(버튼)`(초록), 아이콘은 `Icons`(10×10 도트, `UI.icon_button(글자, 아이콘, 콜백)`, `UI.icon(이름)`).
+  새 아이콘은 `scripts/ui/icons.gd` 의 `DATA` 에 10줄×10글자로. 화면 전환 페이드·팝업 등장은 `main.gd` 가 자동으로 한다.
+  경기 연출 입자는 `FieldView.spark/dust/fireworks` (개발용 `--screen=match --pitches=5 --fx`).
 - 특수능력 표시는 `UI.ability_chip()` / `UI.ability_flow()` 로 (색: 금특 노랑 · 긍정 파랑 · 부정 빨강). 처음 한 번 안내는 `Help.once(key)`.
 
 ## 데이터·내용 원칙

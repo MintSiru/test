@@ -7,7 +7,7 @@ config_version=5
 
 config/name="청춘나인"
 config/description="한국 고교야구부 육성 시뮬레이션"
-config/version="0.9.0"
+config/version="0.10.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7")
 config/icon="res://icon.svg"

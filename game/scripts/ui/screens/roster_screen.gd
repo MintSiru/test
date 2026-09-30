@@ -55,18 +55,25 @@ func _fill_list() -> void:
 		var l := UI.label(h[0], UI.DIM, true)
 		l.custom_minimum_size.x = h[1]
 		header.add_child(l)
-	list_box.add_child(header)
+	var hp := PanelContainer.new()
+	hp.add_theme_stylebox_override("panel", UI.flat(UI.PANEL2, UI.PANEL2, 0, 1))
+	hp.add_child(header)
+	list_box.add_child(hp)
 	var ps := _players()
 	if selected_id == "" and not ps.is_empty():
 		selected_id = ps[0]["id"]
+	var zi := 0
 	for p in ps:
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(236, 15)
 		var sel: bool = p["id"] == selected_id
-		b.add_theme_stylebox_override("normal", UI.sb(UI.PANEL2 if sel else UI.PANEL, UI.ACCENT if sel else UI.PANEL, 1, 1))
-		b.add_theme_stylebox_override("hover", UI.sb(UI.PANEL2, UI.LINE, 1, 1))
-		b.add_theme_stylebox_override("pressed", UI.sb(UI.PANEL2, UI.ACCENT, 1, 1))
+		# 줄 바탕은 번갈아 옅게 (얼룩말 무늬), 선택한 줄만 노란 테두리
+		var zc: Color = UI.PANEL.lightened(0.05) if zi % 2 == 0 else UI.PANEL
+		zi += 1
+		b.add_theme_stylebox_override("normal", UI.frame(UI.PANEL2, UI.ACCENT, "panel", 1) if sel else UI.flat(zc, zc, 0, 1))
+		b.add_theme_stylebox_override("hover", UI.flat(UI.PANEL2, UI.LINE, 1, 1))
+		b.add_theme_stylebox_override("pressed", UI.frame(UI.PANEL2, UI.ACCENT, "pressed", 1))
 		var id: String = p["id"]
 		b.pressed.connect(func():
 			selected_id = id
