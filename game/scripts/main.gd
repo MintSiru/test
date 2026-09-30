@@ -97,6 +97,11 @@ func _ready() -> void:
 			if PlayerUtil.grade(p, Game.state["year"]) == 3:
 				al.append(Season.album_entry(Game.state, p, "대학 진학" if al.size() % 2 else "프로 입단", al.size() % 2 == 0))
 		show_album({"title": "졸업 앨범 (미리보기)", "album": al}, Callable())
+	# 개발용: 경기 연출 효과 보기 (--screen=match --fx)
+	if "--fx" in dev_args() and current_name == "match" and current.get("field") != null:
+		current.field.fireworks(3)
+		current.field.spark(FieldView.HOME + Vector2(0, -9))
+		current.field.dust(FieldView.base_pos(2), 12)
 	# 개발용: 우승 연출 보기 (--trophy)
 	if "--trophy" in dev_args() and not Game.state.is_empty():
 		show_trophy({"title": "청룡기 우승!", "sub": "결승 vs 남산고 5:3", "body": "한빛고, 청룡기 우승!!\n전국에 이름을 떨쳤다. (명성 +10)"}, Callable())

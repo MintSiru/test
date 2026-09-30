@@ -22,6 +22,7 @@ var ball_pos := Vector2(-100, -100)
 var ball_h := 0.0
 var ball_visible := false
 var texts := [] # [{text, pos, color, big}]
+var parts := [] # 연출 입자 [{p, v, c, ttl, g(중력), sz}]
 var zone_loc := Vector2(99, 99)
 var zone_call := ""
 var pitch_info := ""
@@ -121,7 +122,36 @@ func _process(delta: float) -> void:
 	for t in texts:
 		t["ttl"] -= delta
 	texts = texts.filter(func(t): return t["ttl"] > 0)
+	for q in parts:
+		q["ttl"] -= delta
+		q["v"] += Vector2(0, q["g"]) * delta
+		q["p"] += q["v"] * delta
+	parts = parts.filter(func(q): return q["ttl"] > 0)
 	queue_redraw()
+
+
+## 타격 불꽃: 배트에 맞는 순간 흰·노란 불똥
+func spark(at: Vector2, n := 8) -> void:
+	for i in n:
+		var a := TAU * i / n + randf() * 0.4
+		parts.append({"p": at, "v": Vector2(cos(a), sin(a)) * randf_range(40, 80), "c": Color("#fff6c8") if i % 2 else Color("#f4d35e"), "ttl": 0.25, "g": 0.0, "sz": 1})
+
+
+## 흙먼지: 슬라이딩·땅볼
+func dust(at: Vector2, n := 10) -> void:
+	for i in n:
+		parts.append({"p": at + Vector2(randf_range(-3, 3), 0), "v": Vector2(randf_range(-30, 30), randf_range(-25, -5)), "c": Color("#c9a070", 0.9), "ttl": randf_range(0.3, 0.55), "g": 60.0, "sz": 2})
+
+
+## 불꽃놀이: 홈런
+func fireworks(bursts := 3) -> void:
+	var cols := [Color("#ef6f6c"), Color("#f4d35e"), Color("#7fd0ff"), Color("#6fd08c"), Color("#c792ea")]
+	for b in bursts:
+		var c: Vector2 = Vector2(randf_range(90, 310), randf_range(25, 70))
+		var col: Color = cols[randi() % cols.size()]
+		for i in 26:
+			var a := TAU * i / 26.0
+			parts.append({"p": c, "v": Vector2(cos(a), sin(a)) * randf_range(45, 70), "c": col if i % 3 else Color.WHITE, "ttl": 0.9 + b * 0.25, "g": 35.0, "sz": 2})
 
 
 func add_text(text: String, pos: Vector2, color: Color = Color.WHITE, big := false, ttl := 1.2) -> void:
@@ -203,6 +233,8 @@ func play(ev: Dictionary, speed: float) -> void:
 		Game.sfx("foul", -4.0)
 	elif call == "inplay":
 		Game.sfx("hit", -2.0)
+		if call == "inplay":
+			spark(plate + Vector2(0, -4))
 	elif call == "hbp":
 		Game.sfx("hbp", -2.0)
 	match call:
@@ -228,6 +260,7 @@ func play(ev: Dictionary, speed: float) -> void:
 		await _animate_moves(ev, 0.3 * k)
 	if ev.get("steal") != null:
 		Game.sfx("slide", -3.0)
+		dust(base_pos(ev["steal"]["from"] + 2) if ev["steal"]["from"] < 2 else HOME)
 		add_text("도루 성공!" if ev["steal"]["success"] else "도루 실패", base_pos(ev["steal"]["from"] + 1) + Vector2(-20, -20), Color("#6fd08c") if ev["steal"]["success"] else Color("#ef6f6c"))
 	await get_tree().create_timer(0.18 * k).timeout
 
@@ -253,10 +286,13 @@ func _animate_batted(ev: Dictionary, k: float) -> void:
 	if type == "GB" and fielders.has(fpos) and b["result"] in ["OUT", "DP", "FC", "E"]:
 		land = fielders[fpos].lerp(land, 0.3)
 	await _tween_ball(plate, land, dur, peak)
+	if type in ["GB", "BUNT"]:
+		dust(land, 6)
 	match b["result"]:
 		"HR":
 			add_text("홈런!!", Vector2(160, 70), Color("#f4d35e"), true, 1.6)
 			Game.sfx("cheer", crowd_db(0.0))
+			fireworks(3)
 		"1B", "2B", "3B":
 			add_text({"1B": "안타!", "2B": "2루타!", "3B": "3루타!"}[b["result"]], land + Vector2(-16, -24), Color("#6fd08c"))
 			# 장타는 관중이 들썩인다 (접전·후반일수록 크게)
@@ -452,6 +488,10 @@ func _draw() -> void:
 		draw_rect(Rect2(zc - Vector2(2, 2), Vector2(4, 4)), col)
 	if pitch_info != "":
 		draw_string(UI.font_small, Vector2(318, 56), pitch_info, HORIZONTAL_ALIGNMENT_RIGHT, 76, 10, Color.WHITE)
+	# 연출 입자 (불꽃·흙먼지·불꽃놀이)
+	for q in parts:
+		var a := clampf(q["ttl"] * 2.5, 0.0, 1.0)
+		draw_rect(Rect2(q["p"].round(), Vector2(q["sz"], q["sz"])), Color(q["c"], q["c"].a * a))
 	# 떠 있는 글자
 	for t in texts:
 		var sz := 24 if t["big"] else 12
