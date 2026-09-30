@@ -102,7 +102,7 @@ func setup(_p := {}) -> void:
 	row.add_child(UI.button("오더 편집", func(): Game.goto("lineup")))
 	row.add_child(UI.expand(UI.spacer()))
 	row.add_child(UI.button("위임 (결과만)", _delegate))
-	row.add_child(UI.button("▶ 경기 시작", _start, 110))
+	row.add_child(UI.primary(UI.button("▶ 경기 시작", _start, 110)))
 	Help.once("firstMatch")
 
 

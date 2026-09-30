@@ -218,7 +218,7 @@ func _fill_action() -> void:
 		v.add_child(UI.label("상대: %s (%s · 전통 %d)" % [opp["name"], opp["province"], opp["prestige"]], UI.TEXT, true))
 		var row := UI.hbox(6)
 		v.add_child(row)
-		row.add_child(UI.button("경기 준비 (직접 지휘)", func(): Game.goto("prematch")))
+		row.add_child(UI.primary(UI.button("경기 준비 (직접 지휘)", func(): Game.goto("prematch"))))
 		row.add_child(UI.button("위임", _delegate))
 		return
 	if not train_lines.is_empty():
@@ -227,7 +227,7 @@ func _fill_action() -> void:
 		action_box.add_child(v)
 		for i in train_lines.size():
 			v.add_child(UI.label(train_lines[i], UI.GOOD if i == 0 else (UI.BAD if train_lines[i].begins_with("부상") else UI.TEXT), true))
-	var b := UI.button("▶ 다음으로 진행", _start_advance, 200)
+	var b := UI.primary(UI.button("▶ 다음으로 진행", _start_advance, 200))
 	UI.place(b, 40, 96 if not train_lines.is_empty() else 40, 200, 20)
 	action_box.add_child(b)
 	if train_lines.is_empty() and Season.friendly_date(s) != "":

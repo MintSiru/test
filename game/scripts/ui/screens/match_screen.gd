@@ -73,7 +73,7 @@ func setup(_p := {}) -> void:
 	var row := UI.hbox(4)
 	UI.place(row, 2, 325 if touch else 341, 636, 33 if touch else 18)
 	add_child(row)
-	play_btn = UI.button("▶ 플레이", _toggle_play, 90)
+	play_btn = UI.primary(UI.button("▶ 플레이", _toggle_play, 90))
 	row.add_child(play_btn)
 	speed_btn = UI.button("속도 " + SPEED_KO[speed_idx], _cycle_speed, 80, true)
 	row.add_child(speed_btn)

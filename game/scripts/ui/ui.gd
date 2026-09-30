@@ -192,6 +192,20 @@ static func button(text: String, cb: Callable, min_w := 0, small := false) -> Bu
 	return b
 
 
+## 주요 행동 버튼 (초록 강조: 진행·경기 시작 등)
+static func primary(b: Button) -> Button:
+	var g := Color("#2f8a4a")
+	b.add_theme_stylebox_override("normal", frame(g, Color("#0c2214"), "raised"))
+	b.add_theme_stylebox_override("hover", frame(g.lightened(0.12), ACCENT, "raised"))
+	b.add_theme_stylebox_override("pressed", frame(g.darkened(0.2), Color("#0c2214"), "pressed"))
+	b.add_theme_color_override("font_color", Color("#f4fff4"))
+	b.add_theme_color_override("font_hover_color", Color("#ffffff"))
+	b.add_theme_color_override("font_pressed_color", Color("#dfffe4"))
+	b.add_theme_color_override("font_outline_color", Color("#0c2214"))
+	b.add_theme_constant_override("outline_size", 2)
+	return b
+
+
 ## 아이콘 + 글자 버튼 (왼쪽 정렬)
 static func icon_button(text: String, icon_name: String, cb: Callable, min_w := 0, small := false) -> Button:
 	var b := button(text, cb, min_w, small)

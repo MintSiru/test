@@ -434,13 +434,17 @@ func show_choice(pop: Dictionary, done: Callable) -> void:
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	modal_layer.add_child(shade)
 	var p := UI.panel(UI.PANEL, UI.ACCENT, 8)
-	UI.place(p, 110, 30, 420, 300)
+	UI.place(p, 110, 30, 420, 10)
 	shade.add_child(p)
-	_pop_in(shade, p)
+	p.modulate.a = 0.0
 	var v := UI.vbox(5)
 	p.add_child(v)
 	v.add_child(UI.title_label(pop["title"]))
-	v.add_child(UI.scroll(UI.wrap_label(pop["body"], 390, UI.TEXT, true), Vector2(404, 170)))
+	# 본문 높이는 내용에 맞춰 (최대 170)
+	var body: String = pop["body"]
+	var bh := mini(170, 14 + (body.count("\n") + 1 + body.length() / 60) * 12)
+	v.add_child(UI.scroll(UI.wrap_label(body, 390, UI.TEXT, true), Vector2(404, bh)))
+	v.add_child(UI.spacer(0, 2))
 	for o in pop["options"]:
 		var key: String = o[0]
 		v.add_child(UI.button(o[1], func():
@@ -452,3 +456,8 @@ func show_choice(pop: Dictionary, done: Callable) -> void:
 				show_modal(pop["title"], msg, "good", done)
 			else:
 				done.call(), 400, true))
+	p.reset_size()
+	await get_tree().process_frame
+	if is_instance_valid(p):
+		p.position = ((Vector2(640, 360) - p.size) / 2).floor()
+		_pop_in(shade, p)
