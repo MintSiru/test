@@ -26,8 +26,9 @@ var shot_delay := 0.0
 func _ready() -> void:
 	theme = UI.init_theme()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var bg := ColorRect.new()
-	bg.color = UI.BG
+	var bg := TextureRect.new()
+	bg.texture = UI.bg_pattern()
+	bg.stretch_mode = TextureRect.STRETCH_TILE
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	host = Control.new()
@@ -242,6 +243,9 @@ func show_screen(screen: String, params := {}) -> void:
 	host.add_child(s)
 	if s.has_method("setup"):
 		s.setup(params)
+	# 화면 전환: 짧은 페이드 인
+	s.modulate.a = 0.0
+	create_tween().tween_property(s, "modulate:a", 1.0, 0.15)
 	Game.bgm(bgm_for(screen))
 
 
@@ -256,6 +260,19 @@ static func bgm_for(screen: String) -> String:
 
 
 ## 모달 대화상자. on_close 는 닫힐 때 호출
+## 팝업 등장: 배경이 서서히 어두워지고 창이 살짝 아래에서 떠오른다
+func _pop_in(shade: ColorRect, p: Control) -> void:
+	var a := shade.color.a
+	shade.color.a = 0.0
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(shade, "color:a", a, 0.12)
+	p.modulate.a = 0.0
+	var y := p.position.y
+	p.position.y = y + 8
+	tw.tween_property(p, "modulate:a", 1.0, 0.14)
+	tw.tween_property(p, "position:y", y, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 func show_modal(title: String, body: String, kind := "info", on_close: Callable = Callable(), buttons: Array = []) -> void:
 	var shade := ColorRect.new()
 	shade.color = Color(0, 0, 0, 0.6)
@@ -289,10 +306,12 @@ func show_modal(title: String, body: String, kind := "info", on_close: Callable 
 				close.call()
 				cb.call(), 60))
 	shade.add_child(p)
+	p.modulate.a = 0.0
 	p.reset_size()
 	await get_tree().process_frame
 	if is_instance_valid(p):
 		p.position = ((Vector2(640, 360) - p.size) / 2).floor()
+		_pop_in(shade, p)
 
 
 ## 임의의 컨트롤을 담는 모달 (스크롤)
@@ -305,6 +324,7 @@ func show_panel(title: String, content: Control, on_close: Callable = Callable()
 	var p := UI.panel(UI.PANEL, UI.ACCENT, 6)
 	UI.place(p, 40, 16, 560, 328)
 	shade.add_child(p)
+	_pop_in(shade, p)
 	var v := UI.vbox(4)
 	p.add_child(v)
 	v.add_child(UI.title_label(title))
@@ -411,6 +431,7 @@ func show_choice(pop: Dictionary, done: Callable) -> void:
 	var p := UI.panel(UI.PANEL, UI.ACCENT, 8)
 	UI.place(p, 110, 30, 420, 300)
 	shade.add_child(p)
+	_pop_in(shade, p)
 	var v := UI.vbox(5)
 	p.add_child(v)
 	v.add_child(UI.title_label(pop["title"]))
